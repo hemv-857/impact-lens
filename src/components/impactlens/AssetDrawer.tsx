@@ -16,6 +16,10 @@ import {
   FileText,
   GitCompareArrows,
   Loader2,
+  Upload,
+  Image as ImageIcon,
+  Wand2,
+  Activity,
 } from "lucide-react";
 import {
   Sheet,
@@ -35,6 +39,39 @@ import { useAnalyzeMedia, useDeleteMedia, useMediaById } from "@/components/impa
 import { useToast } from "@/hooks/use-toast";
 import { formatDateTime } from "@/lib/format";
 import type { TransformStep } from "@/lib/types";
+
+// Transform-step → icon map (for the evidence chain visualization)
+const TRANSFORM_ICONS: Record<string, React.ReactNode> = {
+  upload: <Upload className="size-3" />,
+  generate: <Wand2 className="size-3" />,
+  "ai-analyze": <Sparkles className="size-3" />,
+  enhance: <RefreshCw className="size-3" />,
+  resize: <ImageIcon className="size-3" />,
+  crop: <ImageIcon className="size-3" />,
+};
+
+// Transform-step → node color (earthy palette)
+const TRANSFORM_COLORS: Record<string, string> = {
+  upload: "bg-stone-500 ring-stone-50",
+  generate: "bg-amber-500 ring-amber-50",
+  "ai-analyze": "bg-emerald-600 ring-emerald-50",
+  enhance: "bg-teal-500 ring-teal-50",
+  resize: "bg-stone-400 ring-stone-50",
+  crop: "bg-stone-400 ring-stone-50",
+};
+
+// Format a duration in ms as a human-readable string (e.g. "2s", "5m", "3h", "2d")
+function formatDuration(ms: number): string {
+  if (ms < 1000) return "<1s";
+  const s = Math.floor(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  return `${d}d`;
+}
 
 export function AssetDrawer() {
   const assetId = useImpactStore((s) => s.selectedAssetId);
@@ -351,29 +388,55 @@ export function AssetDrawer() {
                 </Section>
               )}
 
-              {/* Traceability timeline */}
+              {/* Evidence chain / traceability timeline */}
               {asset.transformations?.length > 0 && (
                 <Section
-                  title="Traceability timeline"
+                  title="Evidence chain"
                   icon={<History className="size-4" />}
                 >
-                  <ol className="relative space-y-3 border-l border-stone-200 pl-4">
-                    {asset.transformations.map((step: TransformStep, i) => (
-                      <li key={i} className="relative">
-                        <span className="absolute -left-[21px] top-1 size-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-50" />
-                        <p className="text-sm font-medium text-stone-800">
-                          {step.type}
-                          {step.note && (
-                            <span className="ml-2 text-xs font-normal text-stone-500">
-                              {step.note}
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-[11px] text-stone-400">
-                          {formatDateTime(step.at)}
-                        </p>
-                      </li>
-                    ))}
+                  {/* Summary bar */}
+                  <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md bg-stone-50 p-2 text-[11px] text-stone-500">
+                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
+                      {asset.transformations.length} step{asset.transformations.length === 1 ? "" : "s"}
+                    </Badge>
+                    <span>From <strong className="text-stone-700">{formatDateTime(asset.transformations[0].at)}</strong></span>
+                    <span>→</span>
+                    <span>To <strong className="text-stone-700">{formatDateTime(asset.transformations[asset.transformations.length - 1].at)}</strong></span>
+                  </div>
+                  <ol className="relative space-y-3 border-l-2 border-stone-200 pl-5">
+                    {asset.transformations.map((step: TransformStep, i) => {
+                      const isLast = i === asset.transformations.length - 1;
+                      const icon = TRANSFORM_ICONS[step.type] ?? <Activity className="size-3" />;
+                      const color = TRANSFORM_COLORS[step.type] ?? "bg-stone-400 ring-stone-50";
+                      const prevStep = i > 0 ? asset.transformations[i - 1] : null;
+                      const durationMs = prevStep ? +new Date(step.at) - +new Date(prevStep.at) : 0;
+                      return (
+                        <li key={i} className="relative">
+                          {/* Node */}
+                          <span className={`absolute -left-[26px] top-0.5 flex size-5 items-center justify-center rounded-full text-white ring-4 ${color}`}>
+                            {icon}
+                          </span>
+                          <div className="rounded-md border border-stone-100 bg-white p-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-semibold capitalize text-stone-800">
+                                {step.type.replace(/[-_]/g, " ")}
+                              </p>
+                              {!isLast && durationMs > 0 && (
+                                <Badge variant="outline" className="bg-stone-50 text-[9px] text-stone-400">
+                                  +{formatDuration(durationMs)}
+                                </Badge>
+                              )}
+                            </div>
+                            {step.note && (
+                              <p className="mt-0.5 text-xs text-stone-500">{step.note}</p>
+                            )}
+                            <p className="mt-0.5 text-[10px] text-stone-400">
+                              {formatDateTime(step.at)}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ol>
                 </Section>
               )}

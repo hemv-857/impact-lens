@@ -522,3 +522,44 @@ Unresolved / Next-phase priorities:
 - Add multi-variant report generation (not just campaigns).
 - Add scheduled report generation / email delivery.
 - Add a project comparison view (compare 2 projects side by side).
+
+---
+Task ID: 15 (cron round 8)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA, add project comparison view, evidence chain visualization, polish.
+
+Work Log:
+- Reviewed worklog: platform very mature — 8 tabs, 12/12 assets analyzed+verified, dedicated Timeline tab, Overview date-range filter, CSV export, A/B campaign variants, command palette, campaign platform preview, SDG coverage, top tags cloud, map view, saved searches, PDF export, bulk actions, timeline view, date-range filtering, keyboard shortcuts all in place.
+- QA via agent-browser: all 8 tabs render correctly, no runtime errors.
+- Built NEW features:
+  1. Project comparison view (ProjectComparison.tsx):
+     - New POST /api/projects/compare route: fetches 2 projects with their assets, computes sharedSdgs, sharedCategories, sharedLocations, unique categories per project, stats (assetCount, analyzed, verified, avgConfidence, uniqueCategories), and a natural-language summary.
+     - New ProjectComparison.tsx component: modal with Project A/B selectors + Compare button. Results show: summary banner, side-by-side stats table (with winner highlighting via emerald), shared/unique categories cards, shared SDGs card with both projects' SDG lists.
+     - ProjectsTab: added "Compare" button (outline, GitCompare icon) in header next to New project. Mounts the ProjectComparison modal.
+     - Verified via API: returned valid comparison (Women's Coop vs Mangrove Restoration) with stats + summary.
+     - Verified via browser: Compare button present, modal opens with selectors + empty state.
+  2. Evidence chain visualization (AssetDrawer):
+     - Renamed "Traceability timeline" → "Evidence chain" with a richer visualization.
+     - Added summary bar: step count badge + from/to timestamps.
+     - Each step now renders as a card with: colored circular node (icon inside, earthy palette: stone=upload, amber=generate, emerald=ai-analyze, teal=enhance), type label (capitalized), note, timestamp, and duration badge (+2s, +5m, etc.) computed from previous step.
+     - Added TRANSFORM_ICONS + TRANSFORM_COLORS constants + formatDuration helper.
+     - Added Upload, Wand2, ImageIcon, Activity icon imports.
+  3. Polish:
+     - api.ts: added compareProjects + ProjectComparisonResponse + ProjectComparisonStats types.
+     - ProjectsTab: GitCompare icon import + ProjectComparison import + compareOpen state.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: src/app/api/projects/compare/route.ts, src/components/impactlens/ProjectComparison.tsx.
+- Modified: api.ts (compareProjects + types), ProjectsTab.tsx (Compare button + modal mount + GitCompare import), AssetDrawer.tsx (evidence chain visualization + TRANSFORM_ICONS/COLORS + formatDuration + icon imports).
+- All features verified: compare endpoint returns valid comparison, Compare button + modal render correctly, evidence chain code lint-clean.
+- Analytics: 12 assets, 12 analyzed, 12 verified, 10 projects (10 with coords), 2 reports, 1 comparison.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Consider real map tiles (Leaflet) for geographic precision.
+- Add multi-variant report generation (not just campaigns).
+- Add scheduled report generation / email delivery.
+- Add a "Favorites / bookmarks" feature for media assets.
+- Add a project health-score widget combining assets, analysis, verification, SDG coverage.

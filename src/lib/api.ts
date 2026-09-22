@@ -250,6 +250,35 @@ export const generateCampaignVariants = (body: {
     body: JSON.stringify(body),
   });
 
+// ----------------- Project Comparison -----------------
+export interface ProjectComparisonStats {
+  assetCount: number;
+  analyzed: number;
+  verified: number;
+  avgConfidence: number | null;
+  uniqueCategories: number;
+}
+
+export interface ProjectComparisonResponse {
+  a: Project;
+  b: Project;
+  aAssets: MediaAsset[];
+  bAssets: MediaAsset[];
+  sharedSdgs: string[];
+  sharedCategories: string[];
+  sharedLocations: string[];
+  aOnlyCategories: string[];
+  bOnlyCategories: string[];
+  stats: { a: ProjectComparisonStats; b: ProjectComparisonStats };
+  summary: string;
+}
+
+export const compareProjects = (body: { projectIdA: string; projectIdB: string }) =>
+  fetcher<ProjectComparisonResponse>("/api/projects/compare", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
 // ----------------- Seed -----------------
 export const seedSampleData = () =>
   fetcher<{ ok: true; count: number }>("/api/seed", { method: "POST" });

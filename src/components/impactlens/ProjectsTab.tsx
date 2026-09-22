@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Clock,
   LayoutGrid,
+  GitCompare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -50,6 +51,7 @@ import { MediaCard, MediaCardSkeleton } from "@/components/impactlens/MediaCard"
 import { EmptyState } from "@/components/impactlens/EmptyState";
 import { MapView } from "@/components/impactlens/MapView";
 import { TimelineView } from "@/components/impactlens/TimelineView";
+import { ProjectComparison } from "@/components/impactlens/ProjectComparison";
 import {
   useCreateProject,
   useMedia,
@@ -91,6 +93,7 @@ export function ProjectsTab() {
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [detailProject, setDetailProject] = React.useState<Project | null>(null);
+  const [compareOpen, setCompareOpen] = React.useState(false);
 
   return (
     <div className="space-y-5">
@@ -103,13 +106,23 @@ export function ProjectsTab() {
             Organize media, comparisons & reports by sustainability initiative
           </p>
         </div>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
-        >
-          <Plus className="size-4" />
-          New project
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setCompareOpen(true)}
+            className="border-stone-300 text-stone-700 hover:bg-stone-50"
+          >
+            <GitCompare className="size-4" />
+            Compare
+          </Button>
+          <Button
+            onClick={() => setDialogOpen(true)}
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            <Plus className="size-4" />
+            New project
+          </Button>
+        </div>
       </div>
 
       {projectsQ.isLoading ? (
@@ -189,6 +202,9 @@ export function ProjectsTab() {
           setTab("reports");
         }}
       />
+
+      {/* Project comparison modal */}
+      <ProjectComparison open={compareOpen} onOpenChange={setCompareOpen} />
     </div>
   );
 }
