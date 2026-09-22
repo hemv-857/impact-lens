@@ -57,6 +57,7 @@ export interface MediaAsset {
   transformations: TransformStep[];
   captureDate: string | null;
   verified: boolean;
+  favorite: boolean;
   analyzedAt: string | null;
 
   projectId: string | null;

@@ -52,6 +52,7 @@ import { EmptyState } from "@/components/impactlens/EmptyState";
 import { MapView } from "@/components/impactlens/MapView";
 import { TimelineView } from "@/components/impactlens/TimelineView";
 import { ProjectComparison } from "@/components/impactlens/ProjectComparison";
+import { ProjectHealthScore } from "@/components/impactlens/ProjectHealthScore";
 import {
   useCreateProject,
   useMedia,
@@ -528,6 +529,13 @@ function ProjectDetailSheet({
                     ))}
                 </div>
               )}
+
+              <Separator className="my-3" />
+
+              {/* Project health score */}
+              <div className="mb-3">
+                <ProjectHealthScore project={project} assets={projectMediaQ.data ?? []} />
+              </div>
 
               <Separator className="my-3" />
 

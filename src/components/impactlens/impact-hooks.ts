@@ -23,6 +23,7 @@ import {
   fetchReports,
   fetchSavedSearches,
   generateCampaignVariants,
+  toggleFavorite,
   type MediaQuery,
   type BulkActionInput,
   saveSearch,
@@ -109,6 +110,18 @@ export function useDeleteMedia() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["media"] });
       qc.invalidateQueries({ queryKey: qk.analytics });
+    },
+  });
+}
+
+export function useToggleFavorite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: string; favorite?: boolean }) =>
+      toggleFavorite(args.id, args.favorite),
+    onSuccess: (asset) => {
+      qc.invalidateQueries({ queryKey: ["media"] });
+      qc.setQueryData(qk.mediaById(asset.id), asset);
     },
   });
 }

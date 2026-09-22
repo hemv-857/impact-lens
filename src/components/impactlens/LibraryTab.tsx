@@ -18,6 +18,8 @@ import {
   Sparkle,
   X,
   Download,
+  Star,
+  StarOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -84,6 +86,7 @@ export function LibraryTab() {
   const [category, setCategory] = React.useState("all");
   const [source, setSource] = React.useState("all");
   const [verifiedOnly, setVerifiedOnly] = React.useState(false);
+  const [favoritesOnly, setFavoritesOnly] = React.useState(false);
   const [sort, setSort] = React.useState("newest");
   const [limit, setLimit] = React.useState(24);
   const [dateFrom, setDateFrom] = React.useState("");
@@ -111,12 +114,13 @@ export function LibraryTab() {
       category,
       source,
       verified: verifiedOnly,
+      favorite: favoritesOnly,
       sort,
       limit,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
     }),
-    [debounced, category, source, verifiedOnly, sort, limit, dateFrom, dateTo]
+    [debounced, category, source, verifiedOnly, favoritesOnly, sort, limit, dateFrom, dateTo]
   );
 
   const mediaQ = useMedia(query);
@@ -149,7 +153,7 @@ export function LibraryTab() {
   }, []);
 
   const runBulk = async (
-    action: "analyze" | "verify" | "unverify" | "delete",
+    action: "analyze" | "verify" | "unverify" | "delete" | "favorite" | "unfavorite",
     successMsg: string
   ) => {
     const ids = Array.from(selected);
@@ -317,6 +321,21 @@ export function LibraryTab() {
             </Label>
           </div>
 
+          <div className="flex items-center gap-2 pb-2">
+            <Switch
+              checked={favoritesOnly}
+              onCheckedChange={setFavoritesOnly}
+              id="favorites-only"
+              disabled={selectMode}
+            />
+            <Label
+              htmlFor="favorites-only"
+              className="cursor-pointer text-xs text-stone-600"
+            >
+              ★ Favorites
+            </Label>
+          </div>
+
           {/* Date range */}
           <div className="flex items-end gap-1.5">
             <div className="space-y-1.5">
@@ -342,7 +361,7 @@ export function LibraryTab() {
             </div>
           </div>
 
-          {(search || category !== "all" || source !== "all" || verifiedOnly || sort !== "newest" || dateFrom || dateTo) && !selectMode && (
+          {(search || category !== "all" || source !== "all" || verifiedOnly || favoritesOnly || sort !== "newest" || dateFrom || dateTo) && !selectMode && (
             <Button
               variant="ghost"
               size="sm"
@@ -351,6 +370,7 @@ export function LibraryTab() {
                 setCategory("all");
                 setSource("all");
                 setVerifiedOnly(false);
+                setFavoritesOnly(false);
                 setSort("newest");
                 setDateFrom("");
                 setDateTo("");
@@ -417,6 +437,24 @@ export function LibraryTab() {
                 className="border-stone-300 bg-white text-stone-600 hover:bg-stone-50"
               >
                 <XCircle className="size-3.5" /> Unverify
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => runBulk("favorite", "Added to favorites")}
+                disabled={bulk.isPending}
+                className="border-amber-300 bg-white text-amber-700 hover:bg-amber-50"
+              >
+                <Star className="size-3.5" /> Favorite
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => runBulk("unfavorite", "Removed from favorites")}
+                disabled={bulk.isPending}
+                className="border-stone-300 bg-white text-stone-600 hover:bg-stone-50"
+              >
+                <StarOff className="size-3.5" /> Unfavorite
               </Button>
               <Button
                 size="sm"

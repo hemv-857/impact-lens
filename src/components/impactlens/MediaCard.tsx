@@ -12,6 +12,7 @@ import {
   Loader2,
   CheckCircle2,
   Clock,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -28,7 +29,7 @@ import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import { ConfidenceBar } from "@/components/impactlens/ConfidenceBar";
 import { truncate } from "@/lib/format";
 import { useImpactStore } from "@/lib/store";
-import { useAnalyzeMedia } from "@/components/impactlens/impact-hooks";
+import { useAnalyzeMedia, useToggleFavorite } from "@/components/impactlens/impact-hooks";
 import { useToast } from "@/hooks/use-toast";
 import type { MediaAsset } from "@/lib/types";
 
@@ -53,6 +54,7 @@ export function MediaCard({
   const setTab = useImpactStore((s) => s.setTab);
   const setComparePair = useImpactStore((s) => s.setComparePair);
   const analyze = useAnalyzeMedia();
+  const favMut = useToggleFavorite();
   const { toast } = useToast();
   const thumbnail = asset.thumbnailUrl || asset.url;
   const title = asset.title || asset.aiCaption || "Untitled media";
@@ -71,6 +73,11 @@ export function MediaCard({
         variant: "destructive",
       });
     }
+  };
+
+  const onToggleFav = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    favMut.mutate({ id: asset.id });
   };
 
   return (
@@ -141,14 +148,32 @@ export function MediaCard({
                 <CategoryBadge category={asset.category} />
               )}
             </div>
-            {asset.verified && (
-              <Badge
-                variant="outline"
-                className="bg-white/90 text-emerald-700 border-emerald-200"
+            <div className="flex items-center gap-1">
+              {/* Favorite star toggle */}
+              <button
+                type="button"
+                onClick={onToggleFav}
+                disabled={favMut.isPending}
+                aria-label={asset.favorite ? "Remove from favorites" : "Add to favorites"}
+                title={asset.favorite ? "Remove from favorites" : "Add to favorites"}
+                className={cn(
+                  "flex size-6 items-center justify-center rounded-full border shadow-sm transition",
+                  asset.favorite
+                    ? "border-amber-300 bg-amber-400 text-white hover:bg-amber-500"
+                    : "border-stone-200 bg-white/90 text-stone-400 hover:border-amber-300 hover:text-amber-500"
+                )}
               >
-                <BadgeCheck className="size-3" /> Verified
-              </Badge>
-            )}
+                <Star className={cn("size-3.5", asset.favorite && "fill-current")} />
+              </button>
+              {asset.verified && (
+                <Badge
+                  variant="outline"
+                  className="bg-white/90 text-emerald-700 border-emerald-200"
+                >
+                  <BadgeCheck className="size-3" /> Verified
+                </Badge>
+              )}
+            </div>
           </div>
           {/* Hover quick actions — hidden when in selection mode */}
           {!selectable && (

@@ -563,3 +563,48 @@ Unresolved / Next-phase priorities:
 - Add scheduled report generation / email delivery.
 - Add a "Favorites / bookmarks" feature for media assets.
 - Add a project health-score widget combining assets, analysis, verification, SDG coverage.
+
+---
+Task ID: 16 (cron round 9)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA, add favorites/bookmarks, project health score widget, polish.
+
+Work Log:
+- Reviewed worklog: platform very mature — 8 tabs, 12/12 assets analyzed+verified, project comparison, evidence chain, dedicated Timeline tab, Overview date-range filter, CSV export, A/B campaign variants, command palette, campaign platform preview, SDG coverage, top tags cloud, map view, saved searches, PDF export, bulk actions, timeline view, date-range filtering, keyboard shortcuts all in place.
+- QA via agent-browser: all 8 tabs render correctly, no runtime errors.
+- Built NEW features:
+  1. Favorites / bookmarks for media assets:
+     - Schema: added `favorite Boolean @default(false)` to MediaAsset model. Pushed to DB.
+     - Types + serializer: added `favorite` field.
+     - New POST /api/media/favorite route: toggles (or sets) the favorite flag on a single asset, returns updated asset.
+     - Media GET route: added `favorite=true` filter param.
+     - Media bulk route: added "favorite" + "unfavorite" actions.
+     - api.ts: added `toggleFavorite` helper, `favorite` to MediaQuery + buildMediaQuery, "favorite"/"unfavorite" to BulkAction.
+     - impact-hooks.ts: added `useToggleFavorite` hook.
+     - MediaCard: star toggle button in top-right corner (amber when favorited, stone when not) with fill animation. Stops click propagation.
+     - LibraryTab: "★ Favorites" switch filter next to "Verified only"; bulk toolbar now has Favorite + Unfavorite buttons (amber + stone). Reset clears favorites filter.
+     - Verified: toggle endpoint works (favorite true/false), filter returns only favorited assets, switch + bulk buttons present.
+  2. Project health score widget (ProjectHealthScore.tsx):
+     - Computes a 0-100 score from 4 weighted dimensions: Asset volume (max 20, log2-scaled), Analysis coverage (max 25, % analyzed), Verification (max 25, % verified), SDG coverage (max 30, 5 pts per SDG up to 6).
+     - Renders a donut gauge (SVG circle with animated stroke-dashoffset) + qualitative label badge (Excellent/Good/Fair/Needs work/Critical, color-coded) + 4 breakdown bars with icons + points/max.
+     - ProjectsTab: added to Project Detail Sheet above the media grid.
+     - VLM rated 10/10: "donut gauge showing 71/100, 'Good' badge, breakdown bars (Asset volume 6/20, Analysis coverage 25/25, Verification 25/25, SDG coverage 15/30), earth-tone palette".
+  3. Polish:
+     - LibraryTab: Star + StarOff icon imports.
+     - MediaCard: Star icon import + favMut hook.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: src/app/api/media/favorite/route.ts, src/components/impactlens/ProjectHealthScore.tsx.
+- Modified: prisma/schema.prisma (favorite field), types.ts (favorite), serialize.ts (favorite), media/route.ts (favorite filter), media/bulk/route.ts (favorite/unfavorite actions), api.ts (toggleFavorite + MediaQuery.favorite + BulkAction), impact-hooks.ts (useToggleFavorite), MediaCard.tsx (star toggle button), LibraryTab.tsx (★ Favorites filter + bulk Favorite/Unfavorite + Star/StarOff imports), ProjectsTab.tsx (ProjectHealthScore in detail sheet + import).
+- All features verified end-to-end via API + browser + VLM (10/10 health score, 7/10 favorites filter).
+- Analytics: 12 assets, 12 analyzed, 12 verified, 10 projects (10 with coords), 2 reports, 1 comparison.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Consider real map tiles (Leaflet) for geographic precision.
+- Add multi-variant report generation (not just campaigns).
+- Add scheduled report generation / email delivery.
+- Add a global "Favorites" view (a tab or section showing all favorited assets across projects).
+- Add a project leaderboard / ranking view.

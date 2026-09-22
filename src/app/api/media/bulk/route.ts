@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const ids: string[] = body.ids.slice(0, 200); // hard cap
     const action: string = body.action;
     const projectId: string | undefined = body.projectId;
-    const validActions = ["analyze", "verify", "unverify", "delete", "assign"];
+    const validActions = ["analyze", "verify", "unverify", "delete", "assign", "favorite", "unfavorite"];
     if (!validActions.includes(action)) {
       return NextResponse.json({ error: `action must be one of: ${validActions.join(", ")}` }, { status: 400 });
     }
@@ -48,6 +48,12 @@ export async function POST(req: NextRequest) {
     if (action === "verify" || action === "unverify") {
       const verified = action === "verify";
       const r = await db.mediaAsset.updateMany({ where: { id: { in: ids } }, data: { verified } });
+      return NextResponse.json({ action, processed: r.count, failed: ids.length - r.count });
+    }
+
+    if (action === "favorite" || action === "unfavorite") {
+      const favorite = action === "favorite";
+      const r = await db.mediaAsset.updateMany({ where: { id: { in: ids } }, data: { favorite } });
       return NextResponse.json({ action, processed: r.count, failed: ids.length - r.count });
     }
 

@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
     const source = sp.get("source") || undefined;
     const search = sp.get("search") || undefined;
     const verified = sp.get("verified");
+    const favorite = sp.get("favorite");
     const sort = sp.get("sort") || "newest";
     const limitRaw = sp.get("limit");
     const limit = limitRaw ? Math.max(1, Math.min(500, parseInt(limitRaw, 10) || 50)) : 50;
@@ -61,6 +62,7 @@ export async function GET(req: NextRequest) {
     if (source) where.source = source;
     if (verified === "true") where.verified = true;
     if (verified === "false") where.verified = false;
+    if (favorite === "true") where.favorite = true;
     if (idsParam) {
       const ids = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
       if (ids.length) where.id = { in: ids };

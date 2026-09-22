@@ -51,6 +51,7 @@ type PrismaMedia = {
   transformations: string | null;
   captureDate: Date | null;
   verified: boolean;
+  favorite: boolean;
   analyzedAt: Date | null;
 
   projectId: string | null;
@@ -170,6 +171,7 @@ export function serializeAsset(p: PrismaMedia): MediaAsset {
     transformations,
     captureDate: iso(p.captureDate),
     verified: p.verified,
+    favorite: p.favorite,
     analyzedAt: iso(p.analyzedAt),
 
     projectId: p.projectId,

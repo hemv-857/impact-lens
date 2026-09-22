@@ -35,6 +35,7 @@ export interface MediaQuery {
   source?: string;
   search?: string;
   verified?: boolean;
+  favorite?: boolean;
   sort?: string; // newest | oldest | confidence | quality
   limit?: number;
   ids?: string; // comma-separated
@@ -49,6 +50,7 @@ export function buildMediaQuery(q: MediaQuery = {}) {
   if (q.source && q.source !== "all") p.set("source", q.source);
   if (q.search) p.set("search", q.search);
   if (typeof q.verified === "boolean") p.set("verified", String(q.verified));
+  if (typeof q.favorite === "boolean") p.set("favorite", String(q.favorite));
   if (q.sort) p.set("sort", q.sort);
   if (q.limit) p.set("limit", String(q.limit));
   if (q.ids) p.set("ids", q.ids);
@@ -86,8 +88,15 @@ export const analyzeMedia = (id: string) =>
 export const deleteMedia = (id: string) =>
   fetcher<{ ok: true }>(`/api/media/${id}`, { method: "DELETE" });
 
+// ----------------- Favorite toggle -----------------
+export const toggleFavorite = (id: string, favorite?: boolean) =>
+  fetcher<MediaAsset>("/api/media/favorite", {
+    method: "POST",
+    body: JSON.stringify({ id, favorite }),
+  });
+
 // ----------------- Bulk actions -----------------
-export type BulkAction = "analyze" | "verify" | "unverify" | "delete" | "assign";
+export type BulkAction = "analyze" | "verify" | "unverify" | "delete" | "assign" | "favorite" | "unfavorite";
 
 export interface BulkActionInput {
   ids: string[];
