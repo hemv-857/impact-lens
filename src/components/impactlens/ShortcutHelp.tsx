@@ -18,7 +18,7 @@ const SHORTCUTS: ShortcutItem[] = [
   { keys: <ArrowUpDown className="inline size-3" />, description: "Navigate list items", group: "Command palette" },
   { keys: <CornerDownLeft className="inline size-3" />, description: "Select highlighted command", group: "Command palette" },
   { keys: <><Search className="inline size-3" /> type</>, description: "Filter commands by keyword", group: "Command palette" },
-  { keys: <kbd className="rounded border border-stone-200 bg-stone-50 px-1 text-[10px]">1-7</kbd>, description: "Jump to tab (Overview→Campaign)", group: "Navigation" },
+  { keys: <kbd className="rounded border border-stone-200 bg-stone-50 px-1 text-[10px]">1-8</kbd>, description: "Jump to tab (Overview→Campaign, incl. Timeline)", group: "Navigation" },
   { keys: <kbd className="rounded border border-stone-200 bg-stone-50 px-1 text-[10px]">U</kbd>, description: "Open upload / analyze dialog", group: "Actions" },
 ];
 
@@ -44,9 +44,9 @@ export function ShortcutHelp() {
         setOpen(false);
         return;
       }
-      // Digit shortcuts 1-7 → tabs (only when not typing and no modifier)
-      if (!isTyping && !e.metaKey && !e.ctrlKey && !e.altKey && /^[1-7]$/.test(e.key)) {
-        const tabs = ["overview", "library", "projects", "compare", "reports", "search", "campaign"] as const;
+      // Digit shortcuts 1-8 → tabs (only when not typing and no modifier)
+      if (!isTyping && !e.metaKey && !e.ctrlKey && !e.altKey && /^[1-8]$/.test(e.key)) {
+        const tabs = ["overview", "library", "projects", "compare", "timeline", "reports", "search", "campaign"] as const;
         const idx = parseInt(e.key, 10) - 1;
         const tab = tabs[idx];
         if (tab) {

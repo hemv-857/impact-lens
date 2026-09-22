@@ -15,6 +15,7 @@ import {
   Sparkles,
   CornerDownLeft,
   Command,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useImpactStore, type ImpactTab } from "@/lib/store";
@@ -70,6 +71,7 @@ export function CommandPalette() {
       { id: "nav-library", label: "Media Library", hint: "Browse assets", icon: <Images className="size-4" />, group: "Navigate", keywords: ["media", "assets", "photos", "images"], action: () => setTab("library") },
       { id: "nav-projects", label: "Projects", hint: "Initiatives & map", icon: <FolderKanban className="size-4" />, group: "Navigate", keywords: ["projects", "initiatives", "map"], action: () => setTab("projects") },
       { id: "nav-compare", label: "Before / After", hint: "Compare media", icon: <GitCompareArrows className="size-4" />, group: "Navigate", keywords: ["compare", "before", "after", "diff"], action: () => setTab("compare") },
+      { id: "nav-timeline", label: "Timeline", hint: "Chronological view", icon: <Clock className="size-4" />, group: "Navigate", keywords: ["timeline", "chronological", "dates", "history"], action: () => setTab("timeline") },
       { id: "nav-reports", label: "Reports", hint: "Impact reports", icon: <FileText className="size-4" />, group: "Navigate", keywords: ["reports", "impact", "donor"], action: () => setTab("reports") },
       { id: "nav-search", label: "Semantic Search", hint: "AI search", icon: <SearchIcon className="size-4" />, group: "Navigate", keywords: ["search", "semantic", "ai"], action: () => setTab("search") },
       { id: "nav-campaign", label: "Campaign Studio", hint: "Social content", icon: <Megaphone className="size-4" />, group: "Navigate", keywords: ["campaign", "social", "instagram", "twitter"], action: () => setTab("campaign") },

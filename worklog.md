@@ -480,3 +480,45 @@ Unresolved / Next-phase priorities:
 - Add asset detail "evidence chain" visualization improvements.
 - Add multi-variant report generation (not just campaigns).
 - Add scheduled report generation / email delivery.
+
+---
+Task ID: 14 (cron round 7)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA, add dedicated Timeline tab, Overview date-range filter, polish.
+
+Work Log:
+- Reviewed worklog: platform very mature — 12/12 assets analyzed+verified, CSV export, A/B campaign variants, command palette, campaign platform preview, SDG coverage, top tags cloud, map view, saved searches, PDF export, bulk actions, timeline view (in project sheet), date-range filtering (Library), keyboard shortcuts all in place.
+- QA via agent-browser: all 7 tabs render correctly, no runtime errors.
+- Built NEW features:
+  1. Dedicated Timeline tab (TimelineTab.tsx):
+     - New top-level tab with heading + 4 stats cards (Assets, Unique days, Time span, Avg confidence).
+     - Filter bar: Project, Category, Order (newest/oldest), date-range (From/To).
+     - Renders the existing TimelineView component (vertical timeline with date nodes + media cards).
+     - Added "timeline" to ImpactTab type, Header NAV, page.tsx routing, CommandPalette commands, ShortcutHelp digit range (1-8).
+     - VLM confirmed: heading + 4 stats cards, filter bar, vertical timeline with date nodes + media cards.
+  2. Dashboard date-range filter (Overview):
+     - New DateRangeFilter.tsx: compact card with preset buttons (All time, Today, 7 days, 30 days, 90 days, 1 year) + From/To date inputs + Clear button.
+     - OverviewTab: added DateRangeFilter above KPIs. mediaQ now scoped by dateFrom/dateTo. KPI cards show date-scoped counts ("Assets in range", "Analyzed", "Verified", "Avg confidence" computed from scoped media).
+     - Verified: applying "30 days" preset updates the media query + KPIs.
+  3. Polish:
+     - Header: added Clock icon import + Timeline nav item.
+     - CommandPalette: added Timeline to Navigate group + Clock icon.
+     - ShortcutHelp: updated digit range to 1-8, help text mentions Timeline.
+     - page.tsx: mounted TimelineTab + added "timeline" routing case.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: TimelineTab.tsx, DateRangeFilter.tsx.
+- Modified: store.ts (added "timeline" tab type), page.tsx (TimelineTab import + routing), Header.tsx (Timeline nav + Clock icon), CommandPalette.tsx (Timeline command + Clock icon), ShortcutHelp.tsx (digit range 1-8 + help text), OverviewTab.tsx (DateRangeFilter + date-scoped mediaQ + scoped KPIs).
+- All features verified end-to-end via agent-browser + VLM.
+- Platform now has 8 tabs (Overview, Media Library, Projects, Before/After, Timeline, Reports, Semantic Search, Campaign Studio).
+- Analytics: 12 assets, 12 analyzed, 12 verified, 10 projects (10 with coords), 2 reports, 1 comparison.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Add asset detail "evidence chain" visualization improvements.
+- Consider real map tiles (Leaflet) for geographic precision.
+- Add multi-variant report generation (not just campaigns).
+- Add scheduled report generation / email delivery.
+- Add a project comparison view (compare 2 projects side by side).

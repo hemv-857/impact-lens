@@ -37,6 +37,7 @@ import { GeoDistribution } from "@/components/impactlens/GeoDistribution";
 import { ConfidenceDistribution } from "@/components/impactlens/ConfidenceDistribution";
 import { SDGCoverage } from "@/components/impactlens/SDGCoverage";
 import { TopTagsCloud } from "@/components/impactlens/TopTagsCloud";
+import { DateRangeFilter, type DateRangeValue } from "@/components/impactlens/DateRangeFilter";
 import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import {
   useAnalytics,
@@ -76,7 +77,12 @@ const ACTIVITY_ICON: Record<string, React.ReactNode> = {
 export function OverviewTab() {
   const analyticsQ = useAnalytics();
   const projectsQ = useProjects();
-  const mediaQ = useMedia({ limit: 200 });
+  const [dateRange, setDateRange] = React.useState<DateRangeValue>({ from: "", to: "" });
+  const mediaQ = useMedia({
+    limit: 200,
+    dateFrom: dateRange.from || undefined,
+    dateTo: dateRange.to || undefined,
+  });
   const setTab = useImpactStore((s) => s.setTab);
   const setUploadOpen = useImpactStore((s) => s.setUploadOpen);
   const openAsset = useImpactStore((s) => s.openAsset);
@@ -217,6 +223,9 @@ export function OverviewTab() {
         </Card>
       )}
 
+      {/* Date range filter for dashboard scoping */}
+      <DateRangeFilter value={dateRange} onChange={setDateRange} />
+
       {/* KPIs */}
       <section>
         <div className="mb-3 flex items-end justify-between">
@@ -239,15 +248,15 @@ export function OverviewTab() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             <KpiCard
               icon={<Images className="size-4" />}
-              label="Total assets"
-              value={analytics.totalAssets}
+              label="Assets in range"
+              value={mediaQ.data?.length ?? analytics.totalAssets}
               tint="emerald"
               animate
             />
             <KpiCard
               icon={<Sparkles className="size-4" />}
               label="Analyzed"
-              value={analytics.analyzedAssets}
+              value={mediaQ.data?.filter((a) => a.analyzedAt).length ?? analytics.analyzedAssets}
               tint="teal"
               animate
             />
@@ -268,14 +277,18 @@ export function OverviewTab() {
             <KpiCard
               icon={<BadgeCheck className="size-4" />}
               label="Verified"
-              value={analytics.verifiedAssets}
+              value={mediaQ.data?.filter((a) => a.verified).length ?? analytics.verifiedAssets}
               tint="green"
               animate
             />
             <KpiCard
               icon={<TrendingUp className="size-4" />}
-              label="Avg impact score"
-              value={formatAvgImpact(analytics)}
+              label="Avg confidence"
+              value={(() => {
+                const confs = (mediaQ.data ?? []).filter((a) => typeof a.confidence === "number").map((a) => a.confidence!);
+                if (confs.length === 0) return formatAvgImpact(analytics);
+                return `${Math.round((confs.reduce((s, c) => s + c, 0) / confs.length) * 100)}%`;
+              })()}
               tint="orange"
             />
           </div>

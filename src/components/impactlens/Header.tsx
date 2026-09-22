@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, Leaf, Sparkles, Command, Search } from "lucide-react";
+import { Menu, Leaf, Sparkles, Command, Search, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ const NAV: NavItem[] = [
   { id: "library", label: "Media Library", icon: <Sparkles className="size-4" /> },
   { id: "projects", label: "Projects", icon: <Leaf className="size-4" /> },
   { id: "compare", label: "Before / After", icon: <Leaf className="size-4" /> },
+  { id: "timeline", label: "Timeline", icon: <Clock className="size-4" /> },
   { id: "reports", label: "Reports", icon: <Leaf className="size-4" /> },
   { id: "search", label: "Semantic Search", icon: <Leaf className="size-4" /> },
   { id: "campaign", label: "Campaign Studio", icon: <Leaf className="size-4" /> },

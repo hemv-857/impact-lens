@@ -11,6 +11,7 @@ import { CompareTab } from "@/components/impactlens/CompareTab";
 import { ReportsTab } from "@/components/impactlens/ReportsTab";
 import { SearchTab } from "@/components/impactlens/SearchTab";
 import { CampaignTab } from "@/components/impactlens/CampaignTab";
+import { TimelineTab } from "@/components/impactlens/TimelineTab";
 import { AssetDrawer } from "@/components/impactlens/AssetDrawer";
 import { UploadDialog } from "@/components/impactlens/UploadDialog";
 import { CommandPalette } from "@/components/impactlens/CommandPalette";
@@ -40,6 +41,7 @@ export default function Home() {
               {activeTab === "reports" && <ReportsTab />}
               {activeTab === "search" && <SearchTab />}
               {activeTab === "campaign" && <CampaignTab />}
+              {activeTab === "timeline" && <TimelineTab />}
             </motion.div>
           </AnimatePresence>
         </div>
