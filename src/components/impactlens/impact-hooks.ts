@@ -17,6 +17,7 @@ import {
   deleteSavedSearch,
   fetchAnalytics,
   fetchComparisons,
+  fetchLeaderboard,
   fetchMedia,
   fetchMediaById,
   fetchProjects,
@@ -40,6 +41,7 @@ export const qk = {
   reports: ["reports"] as const,
   searches: ["searches"] as const,
   search: (query: string) => ["search", query] as const,
+  leaderboard: ["leaderboard"] as const,
 };
 
 export function useAnalytics() {
@@ -219,4 +221,9 @@ export function useGenerateCampaignVariants() {
   return useMutation({
     mutationFn: generateCampaignVariants,
   });
+}
+
+// ----- Project leaderboard -----
+export function useLeaderboard(limit = 10) {
+  return useQuery({ queryKey: qk.leaderboard, queryFn: () => fetchLeaderboard(limit) });
 }

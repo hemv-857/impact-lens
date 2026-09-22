@@ -288,6 +288,27 @@ export const compareProjects = (body: { projectIdA: string; projectIdB: string }
     body: JSON.stringify(body),
   });
 
+// ----------------- Project Leaderboard -----------------
+export interface LeaderboardEntry {
+  project: Project;
+  rank: number;
+  score: number;
+  breakdown: {
+    total: number;
+    volume: number;
+    analysis: number;
+    verification: number;
+    sdg: number;
+  };
+  assetCount: number;
+  analyzedCount: number;
+  verifiedCount: number;
+  sdgCount: number;
+}
+
+export const fetchLeaderboard = (limit = 10) =>
+  fetcher<LeaderboardEntry[]>(`/api/projects/leaderboard?limit=${limit}`);
+
 // ----------------- Seed -----------------
 export const seedSampleData = () =>
   fetcher<{ ok: true; count: number }>("/api/seed", { method: "POST" });

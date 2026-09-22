@@ -38,6 +38,8 @@ import { ConfidenceDistribution } from "@/components/impactlens/ConfidenceDistri
 import { SDGCoverage } from "@/components/impactlens/SDGCoverage";
 import { TopTagsCloud } from "@/components/impactlens/TopTagsCloud";
 import { DateRangeFilter, type DateRangeValue } from "@/components/impactlens/DateRangeFilter";
+import { ProjectLeaderboard } from "@/components/impactlens/ProjectLeaderboard";
+import { FavoritesStrip } from "@/components/impactlens/FavoritesStrip";
 import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import {
   useAnalytics,
@@ -459,6 +461,16 @@ export function OverviewTab() {
           </Card>
         </section>
       )}
+
+      {/* Project leaderboard */}
+      <section>
+        <ProjectLeaderboard limit={5} />
+      </section>
+
+      {/* Favorites strip */}
+      <section>
+        <FavoritesStrip />
+      </section>
 
       {/* Active projects preview */}
       <section>

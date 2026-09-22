@@ -608,3 +608,45 @@ Unresolved / Next-phase priorities:
 - Add scheduled report generation / email delivery.
 - Add a global "Favorites" view (a tab or section showing all favorited assets across projects).
 - Add a project leaderboard / ranking view.
+
+---
+Task ID: 17 (cron round 10)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA, add project leaderboard, favorites strip, polish.
+
+Work Log:
+- Reviewed worklog: platform very mature — 8 tabs, 12/12 assets analyzed+verified, favorites/bookmarks, project health score, project comparison, evidence chain, dedicated Timeline tab, Overview date-range filter, CSV export, A/B campaign variants, command palette, campaign platform preview, SDG coverage, top tags cloud, map view, saved searches, PDF export, bulk actions, timeline view, date-range filtering, keyboard shortcuts all in place.
+- QA via agent-browser: all 8 tabs render correctly, no runtime errors.
+- Built NEW features:
+  1. Project leaderboard (ProjectLeaderboard.tsx):
+     - New GET /api/projects/leaderboard route: ranks all projects by composite health score (same formula as ProjectHealthScore: asset volume max 20, analysis coverage max 25, verification max 25, SDG coverage max 30). Returns ranked array with rank, score, breakdown, assetCount, analyzedCount, verifiedCount, sdgCount.
+     - New ProjectLeaderboard.tsx: renders top N projects with rank medals (Trophy for #1, Medal for #2/#3, number for rest), color-coded rows (amber bg for #1, stone for #2, orange for #3), per-row stats (assets, analyzed, verified, SDGs icons), score /100 with color + mini bar gauge. Click → Projects tab.
+     - OverviewTab: added ProjectLeaderboard section before Active projects.
+     - VLM rated 9/10: "Trophy for 1st, medal for top 3, name + category badge + stats + score /100, teal progress bar, earth-tone palette".
+     - Verified via API: returned 5 ranked entries (Women's Coop 71, Reforestation 70, Urban Garden 70, Solar 66, Highland Wind 66).
+  2. Favorites strip (FavoritesStrip.tsx):
+     - Horizontal carousel of favorited media assets (uses MediaQuery.favorite=true).
+     - Each card: thumbnail + category badge + star badge (amber) + title + time-ago.
+     - Empty state: "No favorites yet" with CTA to browse media.
+     - OverviewTab: added FavoritesStrip section after leaderboard.
+     - VLM rated 10/10: "Favorites heading with star icon + '2 bookmarked assets', thumbnails with star badges in top-right, category badges + details, earth-tone palette".
+  3. Polish:
+     - api.ts: added fetchLeaderboard + LeaderboardEntry type.
+     - impact-hooks.ts: added useLeaderboard hook + qk.leaderboard query key.
+     - OverviewTab.tsx: ProjectLeaderboard + FavoritesStrip imports + sections.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: src/app/api/projects/leaderboard/route.ts, src/components/impactlens/ProjectLeaderboard.tsx, src/components/impactlens/FavoritesStrip.tsx.
+- Modified: api.ts (fetchLeaderboard + LeaderboardEntry), impact-hooks.ts (useLeaderboard + qk.leaderboard), OverviewTab.tsx (ProjectLeaderboard + FavoritesStrip sections + imports).
+- All features verified end-to-end via API + browser + VLM (9/10 leaderboard, 10/10 favorites strip).
+- Analytics: 12 assets, 12 analyzed, 12 verified, 10 projects (10 with coords), 2 reports, 1 comparison. 2 assets favorited.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Consider real map tiles (Leaflet) for geographic precision.
+- Add multi-variant report generation (not just campaigns).
+- Add scheduled report generation / email delivery.
+- Add a project leaderboard with trend indicators (up/down arrows vs last period).
+- Add an "Impact Highlights" carousel (auto-rotating featured stories).
