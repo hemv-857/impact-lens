@@ -1,0 +1,110 @@
+// ImpactLens — AI-Powered Impact & Sustainability Media Platform
+// Prisma schema (SQLite)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  location    String?
+  region      String?
+  category    String? // reforestation, solar, water, education, cleanup, agriculture, infrastructure
+  status      String   @default("active") // active, completed, planning
+  startDate   DateTime?
+  endDate     DateTime?
+  sdgGoals    String?  // comma-separated UN SDG numbers
+  coverUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assets      MediaAsset[]
+  reports     Report[]
+}
+
+model MediaAsset {
+  id            String   @id @default(cuid())
+  publicId      String   @unique // cloudinary-style public id
+  title         String
+  description   String?
+  type          String   @default("image") // image, video
+  url           String
+  thumbnailUrl  String?
+  format        String?  // png, jpg
+  width         Int?
+  height        Int?
+  bytes         Int?
+
+  // AI-extracted intelligence
+  aiCaption     String?
+  aiSummary     String?
+  aiDescription String? // long-form VLM analysis
+  projectName   String? // detected project name
+  location      String? // detected location
+  activity      String? // detected activity
+  category      String? // detected category
+  signals       String? // JSON array of visual signals
+  objects       String? // JSON array of detected objects
+  tagsCsv       String? // comma-separated tags
+  mood          String? // tone/mood
+  confidence    Float?  // 0-1 analysis confidence
+  ocrText       String? // extracted text
+  qualityScore  Float?
+
+  // Traceability
+  source        String?  // upload, generated, web-search
+  originalUrl   String?  // original source if transformed
+  transformations String? // JSON array of transform steps
+  captureDate   DateTime?
+  verified      Boolean  @default(false)
+  analyzedAt    DateTime?
+
+  projectId     String?
+  project       Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  // Before/after pairing
+  pairGroup     String? // shared id links before/after set
+  pairRole      String? // "before" | "after"
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([category])
+  @@index([pairGroup])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  title       String
+  type        String   @default("impact") // impact, summary, campaign, comparison
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  headline    String?
+  summary     String
+  narrative   String? // long-form markdown
+  metrics     String? // JSON of KPIs
+  mediaIds    String? // JSON array of referenced asset ids
+  callToAction String?
+  tone        String? // professional, emotional, data-driven
+  createdAt   DateTime @default(now())
+}
+
+model Comparison {
+  id           String   @id @default(cuid())
+  beforeId     String
+  afterId      String
+  projectId    String?
+  narrative    String?
+  changes      String? // JSON array of detected changes
+  impactScore  Float?
+  createdAt    DateTime @default(now())
+}

@@ -1,0 +1,179 @@
+import type {
+  Analytics,
+  ComparisonResult,
+  MediaAsset,
+  Project,
+  Report,
+} from "@/lib/types";
+
+/** Generic fetcher that throws on non-OK responses. */
+export async function fetcher<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(
+      `${res.status} ${res.statusText}${text ? ` — ${text.slice(0, 200)}` : ""}`
+    );
+  }
+  return (await res.json()) as T;
+}
+
+// ----------------- Analytics -----------------
+export const fetchAnalytics = () => fetcher<Analytics>("/api/analytics");
+
+// ----------------- Media -----------------
+export interface MediaQuery {
+  projectId?: string;
+  category?: string;
+  source?: string;
+  search?: string;
+  verified?: boolean;
+  sort?: string; // newest | oldest | confidence | quality
+  limit?: number;
+  ids?: string; // comma-separated
+}
+
+export function buildMediaQuery(q: MediaQuery = {}) {
+  const p = new URLSearchParams();
+  if (q.projectId) p.set("projectId", q.projectId);
+  if (q.category && q.category !== "all") p.set("category", q.category);
+  if (q.source && q.source !== "all") p.set("source", q.source);
+  if (q.search) p.set("search", q.search);
+  if (typeof q.verified === "boolean") p.set("verified", String(q.verified));
+  if (q.sort) p.set("sort", q.sort);
+  if (q.limit) p.set("limit", String(q.limit));
+  if (q.ids) p.set("ids", q.ids);
+  const s = p.toString();
+  return s ? `?${s}` : "";
+}
+
+export const fetchMedia = (q: MediaQuery = {}) =>
+  fetcher<MediaAsset[]>(`/api/media${buildMediaQuery(q)}`);
+
+export const fetchMediaById = (id: string) =>
+  fetcher<MediaAsset>(`/api/media/${id}`);
+
+export interface CreateMediaInput {
+  url: string;
+  title?: string;
+  source?: string;
+  projectId?: string;
+  pairGroup?: string;
+  pairRole?: "before" | "after" | null;
+  captureDate?: string;
+}
+
+export const createMedia = (body: CreateMediaInput) =>
+  fetcher<MediaAsset>("/api/media", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+export const analyzeMedia = (id: string) =>
+  fetcher<MediaAsset>(`/api/analyze/${id}`, { method: "POST" });
+
+export const deleteMedia = (id: string) =>
+  fetcher<{ ok: true }>(`/api/media/${id}`, { method: "DELETE" });
+
+// ----------------- Projects -----------------
+export const fetchProjects = () => fetcher<Project[]>("/api/projects");
+
+export interface CreateProjectInput {
+  name: string;
+  description?: string;
+  location?: string;
+  region?: string;
+  category?: string;
+  status?: "active" | "completed" | "planning";
+  startDate?: string;
+  endDate?: string;
+  sdgGoals?: string;
+  coverUrl?: string;
+}
+
+export const createProject = (body: CreateProjectInput) =>
+  fetcher<Project>("/api/projects", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+// ----------------- Comparisons -----------------
+// Both the list and create endpoints include `before` and `after` MediaAsset
+// records alongside the ComparisonResult, so the frontend can render
+// thumbnails without extra round-trips.
+export interface ComparisonWithAssets extends ComparisonResult {
+  before?: MediaAsset | null;
+  after?: MediaAsset | null;
+}
+
+export const fetchComparisons = () =>
+  fetcher<ComparisonWithAssets[]>("/api/comparisons");
+
+export const createComparison = (body: {
+  beforeId: string;
+  afterId: string;
+  projectId?: string;
+}) =>
+  fetcher<ComparisonWithAssets>("/api/compare", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+// ----------------- Reports -----------------
+export const fetchReports = () => fetcher<Report[]>("/api/reports");
+
+export interface CreateReportInput {
+  type: "impact" | "summary" | "campaign" | "comparison";
+  tone: "professional" | "emotional" | "data-driven";
+  projectId?: string;
+  assetIds: string[];
+  audience?: string;
+  comparisonId?: string;
+}
+
+export const createReport = (body: CreateReportInput) =>
+  fetcher<Report>("/api/report", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+// ----------------- Campaign -----------------
+export interface CreateCampaignInput {
+  projectId?: string;
+  assetIds: string[];
+  platform: "instagram" | "twitter" | "linkedin" | "newsletter";
+  tone: "professional" | "emotional" | "data-driven";
+}
+
+export const createCampaign = (body: CreateCampaignInput) =>
+  fetcher<Report>("/api/campaign", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+// ----------------- Semantic Search -----------------
+export interface SearchHit {
+  asset: MediaAsset;
+  score: number;
+  reason: string;
+}
+
+export interface SearchResponse {
+  hits: SearchHit[];
+}
+
+export const semanticSearch = (query: string, limit = 24) =>
+  fetcher<SearchResponse>("/api/search", {
+    method: "POST",
+    body: JSON.stringify({ query, limit }),
+  });
+
+// ----------------- Seed -----------------
+export const seedSampleData = () =>
+  fetcher<{ ok: true; count: number }>("/api/seed", { method: "POST" });

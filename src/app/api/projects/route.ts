@@ -1,0 +1,93 @@
+// GET  /api/projects — list projects with assetCount
+// POST /api/projects — create a project (auto-unique slug)
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { serializeProject } from "@/lib/serialize";
+
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+async function ensureUniqueSlug(base: string): Promise<string> {
+  let slug = base || "project";
+  let suffix = 1;
+  while (true) {
+    const exists = await db.project.findUnique({ where: { slug } });
+    if (!exists) return slug;
+    suffix++;
+    slug = `${base}-${suffix}`;
+  }
+}
+
+export async function GET() {
+  try {
+    const projects = await db.project.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { assets: true } } },
+    });
+    return NextResponse.json(projects.map(serializeProject));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object" || !body.name) {
+      return NextResponse.json({ error: "Missing required field: name" }, { status: 400 });
+    }
+    const {
+      name,
+      description,
+      location,
+      region,
+      category,
+      status = "active",
+      startDate,
+      endDate,
+      sdgGoals,
+      coverUrl,
+    } = body as {
+      name: string;
+      description?: string;
+      location?: string;
+      region?: string;
+      category?: string;
+      status?: string;
+      startDate?: string;
+      endDate?: string;
+      sdgGoals?: string;
+      coverUrl?: string;
+    };
+
+    const slug = await ensureUniqueSlug(slugify(name));
+
+    const project = await db.project.create({
+      data: {
+        name,
+        slug,
+        description: description || null,
+        location: location || null,
+        region: region || null,
+        category: category || null,
+        status: status || "active",
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        sdgGoals: sdgGoals || null,
+        coverUrl: coverUrl || null,
+      },
+      include: { _count: { select: { assets: true } } },
+    });
+
+    return NextResponse.json(serializeProject(project), { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
