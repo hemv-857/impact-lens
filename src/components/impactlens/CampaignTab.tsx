@@ -14,6 +14,7 @@ import {
   Check,
   Hash,
   Image as ImageIcon,
+  GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -34,12 +35,14 @@ import { MarkdownRenderer } from "@/components/impactlens/MarkdownRenderer";
 import { PlatformPreview } from "@/components/impactlens/PlatformPreview";
 import {
   useCreateCampaign,
+  useGenerateCampaignVariants,
   useMedia,
   useProjects,
 } from "@/components/impactlens/impact-hooks";
 import { useImpactStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateTime } from "@/lib/format";
+import type { CampaignVariant } from "@/lib/api";
 import type { Report } from "@/lib/types";
 
 const PLATFORMS = [
@@ -79,6 +82,8 @@ export function CampaignTab() {
   const [projectId, setProjectId] = React.useState<string>("none");
   const [selectedAssetIds, setSelectedAssetIds] = React.useState<string[]>([]);
   const [result, setResult] = React.useState<Report | null>(null);
+  const [variants, setVariants] = React.useState<CampaignVariant[] | null>(null);
+  const [showVariants, setShowVariants] = React.useState(false);
 
   const projectsQ = useProjects();
   const mediaQ = useMedia({
@@ -86,6 +91,7 @@ export function CampaignTab() {
     projectId: projectId !== "none" ? projectId : undefined,
   });
   const create = useCreateCampaign();
+  const variantsMut = useGenerateCampaignVariants();
   const setUploadOpen = useImpactStore((s) => s.setUploadOpen);
   const { toast } = useToast();
 
@@ -131,6 +137,39 @@ export function CampaignTab() {
       toast({ title: `${label} copied` });
     } catch {
       toast({ title: "Copy failed", variant: "destructive" });
+    }
+  };
+
+  const onGenerateVariants = async () => {
+    if (selectedAssetIds.length === 0) {
+      toast({
+        title: "Pick at least one media asset",
+        description: "Campaigns reference specific field evidence.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowVariants(true);
+    setVariants(null);
+    try {
+      const r = await variantsMut.mutateAsync({
+        platform,
+        tone,
+        projectId: projectId !== "none" ? projectId : undefined,
+        assetIds: selectedAssetIds,
+      });
+      setVariants(r.variants);
+      toast({
+        title: "3 variants generated",
+        description: "Story-first, Data-first, and Question-hook angles ready.",
+      });
+    } catch (e) {
+      toast({
+        title: "Variant generation failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+      setShowVariants(false);
     }
   };
 
@@ -305,11 +344,24 @@ export function CampaignTab() {
               )}
               Generate campaign
             </Button>
+            <Button
+              onClick={onGenerateVariants}
+              disabled={variantsMut.isPending}
+              variant="outline"
+              className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+            >
+              {variantsMut.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <GitBranch className="size-4" />
+              )}
+              Generate 3 A/B variants
+            </Button>
           </div>
         </Card>
 
         {/* Result */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 space-y-4">
           {create.isPending && !result ? (
             <Card className="p-6">
               <CampaignGenerating />
@@ -325,11 +377,19 @@ export function CampaignTab() {
               }
               onCopy={onCopy}
             />
+          ) : showVariants ? (
+            variantsMut.isPending ? (
+              <Card className="p-6">
+                <CampaignGenerating label="Generating 3 A/B variants…" icon={<GitBranch className="size-12 animate-pulse text-amber-500" />} />
+              </Card>
+            ) : variants && variants.length > 0 ? (
+              <VariantsView variants={variants} onCopy={onCopy} platformLabel={platformMeta.label} />
+            ) : null
           ) : (
             <EmptyState
               emoji="📣"
               title="No campaign yet"
-              description="Pick a platform, tone, and the media you want to feature, then click Generate campaign."
+              description="Pick a platform, tone, and the media you want to feature, then click Generate campaign or Generate 3 A/B variants."
               actionLabel="Analyze new media"
               onAction={() => setUploadOpen(true)}
             />
@@ -340,12 +400,105 @@ export function CampaignTab() {
   );
 }
 
-function CampaignGenerating() {
+function VariantsView({
+  variants,
+  onCopy,
+  platformLabel,
+}: {
+  variants: CampaignVariant[];
+  onCopy: (text: string, label: string) => void;
+  platformLabel: string;
+}) {
+  const ANGLE_STYLES: Record<string, { color: string; bg: string; icon: string }> = {
+    "Story-first": { color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", icon: "📖" },
+    "Data-first": { color: "text-amber-700", bg: "bg-amber-50 border-amber-200", icon: "📊" },
+    "Question-hook": { color: "text-teal-700", bg: "bg-teal-50 border-teal-200", icon: "❓" },
+  };
+  return (
+    <div className="space-y-3">
+      <Card className="gap-0 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+              <GitBranch className="size-4 text-amber-600" />
+              A/B Variants — {platformLabel}
+            </h3>
+            <p className="text-xs text-stone-500">3 strategic angles for testing. Copy your favorite.</p>
+          </div>
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+            {variants.length} variants
+          </Badge>
+        </div>
+      </Card>
+      {variants.map((v, i) => {
+        const style = ANGLE_STYLES[v.angle] ?? ANGLE_STYLES["Story-first"];
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+          >
+            <Card className={cn("gap-0 p-4 border", style.bg)}>
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{style.icon}</span>
+                  <div>
+                    <p className={cn("text-xs font-bold uppercase tracking-wide", style.color)}>
+                      Variant {i + 1} · {v.angle}
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-white/70">
+                  {v.caption.length} chars
+                </Badge>
+              </div>
+              <h4 className="text-base font-bold text-stone-900">{v.headline}</h4>
+              <div className="mt-2 rounded-md border border-stone-200 bg-white p-3">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-stone-700">{v.caption}</p>
+              </div>
+              {v.hashtags.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {v.hashtags.map((h) => (
+                    <Badge key={h} variant="secondary" className="bg-emerald-50 text-emerald-800 text-[10px]">
+                      {h}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <p className="flex-1 truncate text-xs text-stone-500">
+                  <strong>CTA:</strong> {v.callToAction}
+                </p>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="outline" className="h-7 bg-white text-xs" onClick={() => onCopy(v.caption, `Variant ${i + 1} caption`)}>
+                    <Copy className="size-3" /> Caption
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 bg-white text-xs" onClick={() => onCopy(`${v.headline}\n\n${v.caption}\n\n${v.hashtags.join(" ")}\n\n${v.callToAction}`, `Variant ${i + 1} full`)}>
+                    <Copy className="size-3" /> All
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CampaignGenerating({
+  label,
+  icon,
+}: {
+  label?: string;
+  icon?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Megaphone className="size-12 animate-pulse text-amber-500" />
+      {icon ?? <Megaphone className="size-12 animate-pulse text-amber-500" />}
       <h3 className="mt-4 text-lg font-semibold text-stone-800">
-        Crafting your campaign…
+        {label ?? "Crafting your campaign…"}
       </h3>
       <p className="mt-1 max-w-sm text-sm text-stone-500">
         Writing platform-ready copy with hashtags and a clear call-to-action.

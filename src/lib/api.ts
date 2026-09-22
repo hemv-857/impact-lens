@@ -221,6 +221,35 @@ export const deleteSavedSearch = (id: string) =>
 // ----------------- Report PDF -----------------
 export const reportPdfUrl = (id: string) => `/api/report-pdf?id=${encodeURIComponent(id)}`;
 
+// ----------------- Media CSV Export -----------------
+export function mediaExportUrl(q: MediaQuery = {}): string {
+  return `/api/media/export${buildMediaQuery(q)}`;
+}
+
+// ----------------- Campaign Variants -----------------
+export interface CampaignVariant {
+  angle: string;
+  headline: string;
+  caption: string;
+  hashtags: string[];
+  callToAction: string;
+}
+
+export interface CampaignVariantsResponse {
+  variants: CampaignVariant[];
+}
+
+export const generateCampaignVariants = (body: {
+  projectId?: string;
+  assetIds: string[];
+  platform: "instagram" | "twitter" | "linkedin" | "newsletter";
+  tone: "professional" | "emotional" | "data-driven";
+}) =>
+  fetcher<CampaignVariantsResponse>("/api/campaign/variants", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
 // ----------------- Seed -----------------
 export const seedSampleData = () =>
   fetcher<{ ok: true; count: number }>("/api/seed", { method: "POST" });

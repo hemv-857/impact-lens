@@ -17,6 +17,7 @@ import {
   FolderInput,
   Sparkle,
   X,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -46,6 +47,7 @@ import { useImpactStore } from "@/lib/store";
 import { useBulkMediaAction, useMedia, useProjects } from "@/components/impactlens/impact-hooks";
 import { useToast } from "@/hooks/use-toast";
 import type { MediaQuery } from "@/lib/api";
+import { mediaExportUrl } from "@/lib/api";
 
 const CATEGORIES = [
   "all",
@@ -217,6 +219,15 @@ export function LibraryTab() {
             <CheckSquare className="size-4" />
             {selectMode ? "Exit select" : "Select"}
           </Button>
+          <a
+            href={mediaExportUrl(query)}
+            download
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-stone-300 bg-white px-3 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+            title="Export current filter as CSV"
+          >
+            <Download className="size-4" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </a>
           <Button
             onClick={() => setUploadOpen(true)}
             className="bg-emerald-600 text-white hover:bg-emerald-700"

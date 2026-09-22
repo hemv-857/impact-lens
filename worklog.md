@@ -438,3 +438,45 @@ Unresolved / Next-phase priorities:
 - Consider real map tiles (Leaflet) for geographic precision.
 - Add asset detail "evidence chain" visualization improvements.
 - Add export-to-CSV for media library.
+
+---
+Task ID: 13 (cron round 6)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA, add CSV export, multi-variant campaign generation, polish.
+
+Work Log:
+- Reviewed worklog: platform very mature — 12/12 assets analyzed+verified, command palette, campaign platform preview, SDG coverage, top tags cloud, map view, saved searches, PDF export, bulk actions, timeline view, date-range filtering, keyboard shortcuts all in place.
+- QA via agent-browser: all 7 tabs render correctly, no runtime errors.
+- Built NEW features:
+  1. CSV export for media library:
+     - New GET /api/media/export route: accepts same filters as /api/media (projectId, category, source, search, verified, sort, dateFrom, dateTo), returns a CSV file with 32 columns (id, publicId, title, type, url, format, dimensions, AI fields, tags, signals, objects, verified, dates, source, pair info, etc.).
+     - Proper CSV escaping (quotes, commas, newlines), Content-Disposition header with dated filename.
+     - LibraryTab: added "Export CSV" download link button (with Download icon) in the header next to Select + Analyze.
+     - Verified: HTTP 200, 14748 bytes, correct CSV with all AI intelligence fields.
+  2. Multi-variant campaign generation (A/B testing):
+     - New POST /api/campaign/variants route: generates 3 distinct caption variants using different strategic angles (Story-first, Data-first, Question-hook). Returns { variants: [{ angle, headline, caption, hashtags[], callToAction }] }.
+     - LLM prompt instructs 3 different angles with platform-appropriate length.
+     - CampaignTab: added "Generate 3 A/B variants" button (amber outline, GitBranch icon) below the main Generate campaign button.
+     - New VariantsView component: renders 3 color-coded variant cards (emerald=Story-first, amber=Data-first, teal=Question-hook) with headline, caption, hashtags, CTA, char count, and Copy buttons (caption + full).
+     - Verified via direct API: returned 3 variants — "Every thread tells a story of resilience." (Story), "1 basket = 3 meals for a family for a week." (Data), "What if your hands could change the world?" (Question).
+  3. Polish:
+     - CampaignGenerating: now accepts optional label + icon props (used for the variants loading state).
+     - api.ts: added mediaExportUrl + generateCampaignVariants + CampaignVariant type.
+     - impact-hooks.ts: added useGenerateCampaignVariants hook.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: src/app/api/media/export/route.ts, src/app/api/campaign/variants/route.ts.
+- Modified: api.ts (mediaExportUrl, generateCampaignVariants, CampaignVariant), impact-hooks.ts (useGenerateCampaignVariants), LibraryTab.tsx (Export CSV button + Download icon import), CampaignTab.tsx (variants state, onGenerateVariants, A/B button, VariantsView component, CampaignGenerating props, GitBranch import).
+- All features verified end-to-end: CSV export endpoint returns valid CSV, variants endpoint returns 3 distinct angles, both UI buttons present.
+- Analytics: 12 assets, 12 analyzed, 12 verified, 10 projects (10 with coords), 2 reports, 1 comparison.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Add a dedicated Timeline tab (currently in project sheet only).
+- Add dashboard date-range filtering on Overview (currently only Library).
+- Consider real map tiles (Leaflet) for geographic precision.
+- Add asset detail "evidence chain" visualization improvements.
+- Add multi-variant report generation (not just campaigns).
+- Add scheduled report generation / email delivery.

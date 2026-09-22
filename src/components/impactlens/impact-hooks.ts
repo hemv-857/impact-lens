@@ -22,6 +22,7 @@ import {
   fetchProjects,
   fetchReports,
   fetchSavedSearches,
+  generateCampaignVariants,
   type MediaQuery,
   type BulkActionInput,
   saveSearch,
@@ -197,5 +198,12 @@ export function useDeleteSavedSearch() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.searches });
     },
+  });
+}
+
+// ----- Campaign variants (A/B testing) -----
+export function useGenerateCampaignVariants() {
+  return useMutation({
+    mutationFn: generateCampaignVariants,
   });
 }
