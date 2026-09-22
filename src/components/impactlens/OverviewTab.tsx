@@ -36,6 +36,7 @@ import { AnimatedCounter } from "@/components/impactlens/AnimatedCounter";
 import { GeoDistribution } from "@/components/impactlens/GeoDistribution";
 import { ConfidenceDistribution } from "@/components/impactlens/ConfidenceDistribution";
 import { SDGCoverage } from "@/components/impactlens/SDGCoverage";
+import { TopTagsCloud } from "@/components/impactlens/TopTagsCloud";
 import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import {
   useAnalytics,
@@ -363,9 +364,10 @@ export function OverviewTab() {
         <ConfidenceDistribution assets={mediaQ.data ?? []} />
       </section>
 
-      {/* SDG coverage */}
-      <section>
+      {/* SDG coverage + Top tags cloud */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <SDGCoverage projects={projectsQ.data ?? []} />
+        <TopTagsCloud assets={mediaQ.data ?? []} />
       </section>
 
       {/* Recent uploads strip + quick verify */}

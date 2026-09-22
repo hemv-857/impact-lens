@@ -1,6 +1,6 @@
 "use client";
 
-import { Leaf, Heart } from "lucide-react";
+import { Leaf, Heart, Keyboard } from "lucide-react";
 
 export function Footer() {
   return (
@@ -33,9 +33,24 @@ export function Footer() {
           </span>
         </div>
       </div>
-      <div className="border-t border-stone-100 bg-stone-50 px-4 py-2 text-center text-[11px] text-stone-400 sm:px-6">
-        Demo platform — sample field media may be AI-generated for
-        illustration. Not affiliated with any real NGO.
+      <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t border-stone-100 bg-stone-50 px-4 py-2 text-[11px] text-stone-400 sm:px-6">
+        <span>
+          Demo platform — sample field media may be AI-generated for
+          illustration. Not affiliated with any real NGO.
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <kbd className="rounded border border-stone-200 bg-white px-1 py-0.5 text-[9px] font-medium text-stone-500">
+            ?
+          </kbd>
+          <Keyboard className="size-2.5" />
+          shortcuts
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <kbd className="rounded border border-stone-200 bg-white px-1 py-0.5 text-[9px] font-medium text-stone-500">
+            ⌘K
+          </kbd>
+          command palette
+        </span>
       </div>
     </footer>
   );

@@ -390,3 +390,51 @@ Unresolved / Next-phase priorities:
 - Consider real map tiles (Leaflet) for geographic precision.
 - Add multi-variant campaign generation (generate 3 caption variants).
 - Add keyboard shortcut help overlay.
+
+---
+Task ID: 12 (cron round 5)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA, add keyboard shortcut help, top tags cloud, digit-tab navigation, polish.
+
+Work Log:
+- Reviewed worklog: platform very mature — 12/12 assets analyzed+verified, command palette, campaign platform preview, SDG coverage, map view, saved searches, PDF export, bulk actions, timeline view, date-range filtering all in place.
+- QA via agent-browser: all 7 tabs render correctly, no runtime errors.
+- Built NEW features:
+  1. Keyboard shortcut help overlay (ShortcutHelp.tsx):
+     - Press ? anywhere (when not typing) opens a modal listing all shortcuts, grouped into Global / Command palette / Navigation / Actions.
+     - Each row shows description + key combination (kbd badges + icons).
+     - Footer hint: "Press ? anywhere to open this help".
+     - VLM rated 10/10: "title + icon, grouped sections, description + key combos, footer hint, earth-tone palette".
+  2. Digit-tab navigation (1-7):
+     - Pressing digit keys 1-7 (when not typing, no modifier) jumps to the corresponding tab (Overview→Campaign).
+     - Verified: pressing 3 navigated to Projects tab.
+  3. U key opens upload dialog:
+     - Pressing U (when not typing) opens the Analyze New Media upload dialog.
+     - Verified: dialog opened with Upload/Paste URL/Generate modes.
+  4. Top tags cloud widget (TopTagsCloud.tsx, Overview):
+     - Aggregates tags across all media assets, renders as a weighted word-cloud with varying font sizes (11-18px) + earth-tone colors (emerald, amber, teal, lime, orange, stone).
+     - Top 3 tags get a ring highlight. Each tag shows count badge. Top-right shows "#mostused".
+     - Shows total unique tags + total occurrences.
+     - Added to Overview next to SDG coverage (2-col grid).
+     - VLM rated 9/10.
+  5. Polish:
+     - Footer: added shortcut hints (?, shortcuts, ⌘K command palette) with kbd badges.
+     - page.tsx: mounted ShortcutHelp globally.
+- Fixed bug: ShortcutHelp initially imported non-existent `Esc` icon from lucide-react → caused HTTP 500. Replaced with kbd text + removed dynamic import (static import of store instead).
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: ShortcutHelp.tsx, TopTagsCloud.tsx.
+- Modified: page.tsx (mount ShortcutHelp), OverviewTab.tsx (Top tags cloud section), Footer.tsx (shortcut hints), ShortcutHelp.tsx (Esc icon fix + static import).
+- All features verified end-to-end via agent-browser + VLM (9-10/10 across the board).
+- Analytics: 12 assets, 12 analyzed, 12 verified, 10 projects (10 with coords), 2 reports, 1 comparison.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Add a dedicated Timeline tab (currently in project sheet only).
+- Add dashboard date-range filtering on Overview (currently only Library).
+- Add multi-variant campaign generation (generate 3 caption variants for A/B testing).
+- Consider real map tiles (Leaflet) for geographic precision.
+- Add asset detail "evidence chain" visualization improvements.
+- Add export-to-CSV for media library.
