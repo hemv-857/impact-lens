@@ -38,6 +38,8 @@ export interface MediaQuery {
   sort?: string; // newest | oldest | confidence | quality
   limit?: number;
   ids?: string; // comma-separated
+  dateFrom?: string; // ISO date — filter captureDate >=
+  dateTo?: string; // ISO date — filter captureDate <=
 }
 
 export function buildMediaQuery(q: MediaQuery = {}) {
@@ -50,6 +52,8 @@ export function buildMediaQuery(q: MediaQuery = {}) {
   if (q.sort) p.set("sort", q.sort);
   if (q.limit) p.set("limit", String(q.limit));
   if (q.ids) p.set("ids", q.ids);
+  if (q.dateFrom) p.set("dateFrom", q.dateFrom);
+  if (q.dateTo) p.set("dateTo", q.dateTo);
   const s = p.toString();
   return s ? `?${s}` : "";
 }

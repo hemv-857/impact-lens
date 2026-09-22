@@ -299,3 +299,46 @@ Unresolved / Next-phase priorities:
 - Add dashboard date-range filtering.
 - Add multi-asset timeline view per project.
 - Consider real map tiles (Leaflet) if geographic precision becomes important.
+
+---
+Task ID: 10 (cron round 3)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA, add timeline view, date-range filtering, verify-all, recent uploads, polish.
+
+Work Log:
+- Reviewed worklog: platform very mature — 12/12 assets analyzed, map view, saved searches, PDF export, bulk actions all in place. Next-phase priorities: timeline view, date-range filtering, verify more assets.
+- QA via agent-browser: all 7 tabs render correctly, no regressions.
+- Built NEW features:
+  1. Multi-asset Timeline View (Project Detail Sheet):
+     - New TimelineView.tsx: vertical timeline with date nodes + connecting gradient line, media assets grouped by captureDate (fallback to createdAt), each entry shows thumbnail + category badge + location + confidence bar + tags.
+     - ProjectDetailSheet: added Grid/Timeline view toggle (LayoutGrid + Clock icons). Timeline view renders the new component.
+     - VLM rated 10/10: "clear date node with vertical connecting line, media cards with category badges, location, confidence bars, clean typography, earth-tone palette".
+  2. Date-range filtering (Media Library):
+     - MediaQuery + buildMediaQuery: added dateFrom/dateTo params.
+     - /api/media GET: date-range filter on captureDate (falls back to createdAt when captureDate is null), combines with search via nested AND/OR.
+     - LibraryTab: added "From" + "→" + "To" date inputs in filter bar, included in reset logic.
+     - VLM rated 10/10: "From/To date inputs with → arrow, all existing filters preserved, earth-tone palette".
+  3. Recent uploads strip + Quick verify (Overview):
+     - OverviewTab: new "Recent uploads" horizontal carousel (8 latest assets with thumbnails + category badges + time-ago labels + verified checkmark).
+     - "Verify N analyzed" quick-action button (emerald outline) — bulk-verifies all analyzed-but-unverified assets via /api/media/bulk.
+     - Tested: clicked Verify → verified count went from 2 → 12 (all assets now verified).
+  4. Polish:
+     - ConfidenceBar: added `compact` prop (smaller bar + font for timeline/dense layouts).
+     - CategoryBadge: added `compact` prop (truncated label + tighter padding for thumbnails).
+     - ProjectsTab: Skeleton import for timeline loading state.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: TimelineView.tsx.
+- Modified: api.ts (dateFrom/dateTo), media/route.ts (date-range filter + search combination), LibraryTab.tsx (date inputs + reset), OverviewTab.tsx (recent uploads strip + verify-all button + bulk hook), ProjectsTab.tsx (Grid/Timeline toggle + Skeleton import), ConfidenceBar.tsx (compact prop), CategoryBadge.tsx (compact prop).
+- All features verified end-to-end via agent-browser + VLM (10/10 for timeline + date filters, 8/10 for recent uploads).
+- Verified count: 2 → 12 (all assets now verified evidence).
+- Analytics: 12 assets, 12 analyzed, 10 projects (10 with coords), 1 report, 1 comparison, 12 verified.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Add dashboard date-range filtering on Overview (currently only Library).
+- Add multi-asset timeline view as a standalone tab (currently in project sheet).
+- Consider real map tiles (Leaflet) if geographic precision becomes important.
+- Add asset detail "evidence chain" visualization improvements.

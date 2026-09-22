@@ -23,6 +23,7 @@ import {
   Database,
   Loader2,
   Leaf,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -34,8 +35,10 @@ import { EmptyState } from "@/components/impactlens/EmptyState";
 import { AnimatedCounter } from "@/components/impactlens/AnimatedCounter";
 import { GeoDistribution } from "@/components/impactlens/GeoDistribution";
 import { ConfidenceDistribution } from "@/components/impactlens/ConfidenceDistribution";
+import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import {
   useAnalytics,
+  useBulkMediaAction,
   useMedia,
   useProjects,
   useSeedData,
@@ -74,8 +77,45 @@ export function OverviewTab() {
   const mediaQ = useMedia({ limit: 200 });
   const setTab = useImpactStore((s) => s.setTab);
   const setUploadOpen = useImpactStore((s) => s.setUploadOpen);
+  const openAsset = useImpactStore((s) => s.openAsset);
   const { toast } = useToast();
   const seed = useSeedData();
+  const bulk = useBulkMediaAction();
+
+  const recentUploads = React.useMemo(
+    () =>
+      (mediaQ.data ?? [])
+        .slice()
+        .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+        .slice(0, 8),
+    [mediaQ.data]
+  );
+
+  const onVerifyAllAnalyzed = async () => {
+    const analyzed = (mediaQ.data ?? []).filter((a) => a.analyzedAt && !a.verified);
+    if (analyzed.length === 0) {
+      toast({ title: "Nothing to verify", description: "All analyzed assets are already verified." });
+      return;
+    }
+    try {
+      const r = await bulk.mutateAsync({
+        ids: analyzed.map((a) => a.id),
+        action: "verify",
+      });
+      toast({
+        title: "Assets verified",
+        description: `${r.processed} analyzed asset${r.processed === 1 ? "" : "s"} marked as verified evidence.`,
+      });
+    } catch (e) {
+      toast({
+        title: "Verification failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const unverifiedAnalyzed = (mediaQ.data ?? []).filter((a) => a.analyzedAt && !a.verified).length;
 
   const analytics = analyticsQ.data;
   const isEmpty = analytics ? analytics.totalAssets === 0 : false;
@@ -321,6 +361,83 @@ export function OverviewTab() {
         <GeoDistribution projects={projectsQ.data ?? []} />
         <ConfidenceDistribution assets={mediaQ.data ?? []} />
       </section>
+
+      {/* Recent uploads strip + quick verify */}
+      {recentUploads.length > 0 && (
+        <section>
+          <Card className="gap-0 p-4 sm:p-6">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+                  <Clock className="size-4 text-emerald-600" />
+                  Recent uploads
+                </h3>
+                <p className="text-xs text-stone-500">Latest media added to your library</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {unverifiedAnalyzed > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onVerifyAllAnalyzed}
+                    disabled={bulk.isPending}
+                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    {bulk.isPending ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <BadgeCheck className="size-3.5" />
+                    )}
+                    Verify {unverifiedAnalyzed} analyzed
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setTab("library")}
+                  className="text-emerald-700"
+                >
+                  View all <ArrowRight className="size-3.5" />
+                </Button>
+              </div>
+            </div>
+            <div className="scrollbar-thin flex gap-3 overflow-x-auto pb-2">
+              {recentUploads.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => openAsset(a.id)}
+                  className="group relative w-40 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-white text-left transition hover:border-emerald-300 hover:shadow-md"
+                >
+                  <div className="relative aspect-video w-full overflow-hidden bg-stone-100">
+                    <img
+                      src={a.thumbnailUrl || a.url}
+                      alt={a.title || a.aiCaption || "media"}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                    <div className="absolute left-1 top-1">
+                      <CategoryBadge category={a.category} compact />
+                    </div>
+                    {a.verified && (
+                      <div className="absolute right-1 top-1">
+                        <Badge variant="outline" className="bg-white/90 text-emerald-700 border-emerald-200 px-1 py-0 text-[9px]">
+                          <BadgeCheck className="size-2.5" />
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <p className="line-clamp-1 text-[11px] font-medium text-stone-800">
+                      {a.title || a.aiCaption || "Untitled"}
+                    </p>
+                    <p className="mt-0.5 text-[9px] text-stone-400">{timeAgo(a.createdAt)}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </Card>
+        </section>
+      )}
 
       {/* Active projects preview */}
       <section>

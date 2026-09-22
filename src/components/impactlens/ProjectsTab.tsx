@@ -11,6 +11,8 @@ import {
   Images,
   FileText,
   ArrowRight,
+  Clock,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -20,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +49,7 @@ import { ProjectCard, ProjectCardSkeleton } from "@/components/impactlens/Projec
 import { MediaCard, MediaCardSkeleton } from "@/components/impactlens/MediaCard";
 import { EmptyState } from "@/components/impactlens/EmptyState";
 import { MapView } from "@/components/impactlens/MapView";
+import { TimelineView } from "@/components/impactlens/TimelineView";
 import {
   useCreateProject,
   useMedia,
@@ -433,6 +437,7 @@ function ProjectDetailSheet({
   onGenerateReport: (p: Project) => void;
 }) {
   const open = !!project;
+  const [view, setView] = React.useState<"grid" | "timeline">("grid");
   const projectMediaQ = useMedia({
     projectId: project?.id,
     limit: 60,
@@ -510,32 +515,71 @@ function ProjectDetailSheet({
 
               <Separator className="my-3" />
 
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold text-stone-800">
                   Project media
                 </h3>
-                <Button
-                  size="sm"
-                  onClick={() => onGenerateReport(project)}
-                  className="bg-emerald-600 text-white hover:bg-emerald-700"
-                >
-                  <FileText className="size-3.5" /> Generate impact report
-                  <ArrowRight className="size-3.5" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {/* View toggle */}
+                  <div className="flex rounded-md border border-stone-200 bg-white p-0.5">
+                    <button
+                      onClick={() => setView("grid")}
+                      className={cn(
+                        "flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
+                        view === "grid"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "text-stone-500 hover:text-stone-800"
+                      )}
+                      title="Grid view"
+                    >
+                      <LayoutGrid className="size-3" /> Grid
+                    </button>
+                    <button
+                      onClick={() => setView("timeline")}
+                      className={cn(
+                        "flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
+                        view === "timeline"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "text-stone-500 hover:text-stone-800"
+                      )}
+                      title="Timeline view"
+                    >
+                      <Clock className="size-3" /> Timeline
+                    </button>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => onGenerateReport(project)}
+                    className="bg-emerald-600 text-white hover:bg-emerald-700"
+                  >
+                    <FileText className="size-3.5" /> Report
+                    <ArrowRight className="size-3.5" />
+                  </Button>
+                </div>
               </div>
 
               {projectMediaQ.isLoading ? (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <MediaCardSkeleton key={i} />
-                  ))}
-                </div>
+                view === "grid" ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <MediaCardSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-20 w-full" />
+                    ))}
+                  </div>
+                )
               ) : !projectMediaQ.data || projectMediaQ.data.length === 0 ? (
                 <EmptyState
                   emoji="🖼️"
                   title="No media in this project yet"
                   description="Assign assets to this project from the Media Library or upload new ones."
                 />
+              ) : view === "timeline" ? (
+                <TimelineView assets={projectMediaQ.data} />
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {projectMediaQ.data.map((a) => (

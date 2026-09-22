@@ -81,14 +81,20 @@ export function categoryStyle(cat?: string | null): CategoryStyle {
 export function CategoryBadge({
   category,
   className,
+  compact = false,
 }: {
   category?: string | null;
   className?: string;
+  compact?: boolean;
 }) {
   const s = categoryStyle(category);
+  const label = category ?? "uncategorized";
   return (
-    <Badge variant="outline" className={cn(s.badge, "capitalize", className)}>
-      {category ?? "uncategorized"}
+    <Badge
+      variant="outline"
+      className={cn(s.badge, "capitalize", compact ? "px-1.5 py-0 text-[9px]" : className)}
+    >
+      {compact ? label.slice(0, 6) : label}
     </Badge>
   );
 }

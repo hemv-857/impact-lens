@@ -10,11 +10,13 @@ export function ConfidenceBar({
   className,
   showLabel = true,
   label,
+  compact = false,
 }: {
   value: number | null | undefined;
   className?: string;
   showLabel?: boolean;
   label?: string;
+  compact?: boolean;
 }) {
   const v = typeof value === "number" ? value : 0;
   const pctVal = Math.round(v * 100);
@@ -26,14 +28,19 @@ export function ConfidenceBar({
         : "bg-rose-500";
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="h-1.5 w-full max-w-[120px] overflow-hidden rounded-full bg-stone-200">
+      <div
+        className={cn(
+          "w-full overflow-hidden rounded-full bg-stone-200",
+          compact ? "h-1 max-w-[60px]" : "h-1.5 max-w-[120px]"
+        )}
+      >
         <div
           className={cn("h-full rounded-full transition-all", color)}
           style={{ width: `${Math.max(2, pctVal)}%` }}
         />
       </div>
       {showLabel && (
-        <span className="text-[11px] tabular-nums text-stone-500">
+        <span className={cn("tabular-nums text-stone-500", compact ? "text-[9px]" : "text-[11px]")}>
           {label ?? `${pctVal}%`}
         </span>
       )}

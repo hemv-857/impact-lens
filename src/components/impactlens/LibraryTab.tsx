@@ -84,6 +84,8 @@ export function LibraryTab() {
   const [verifiedOnly, setVerifiedOnly] = React.useState(false);
   const [sort, setSort] = React.useState("newest");
   const [limit, setLimit] = React.useState(24);
+  const [dateFrom, setDateFrom] = React.useState("");
+  const [dateTo, setDateTo] = React.useState("");
 
   // Bulk selection state
   const [selectMode, setSelectMode] = React.useState(false);
@@ -109,8 +111,10 @@ export function LibraryTab() {
       verified: verifiedOnly,
       sort,
       limit,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
     }),
-    [debounced, category, source, verifiedOnly, sort, limit]
+    [debounced, category, source, verifiedOnly, sort, limit, dateFrom, dateTo]
   );
 
   const mediaQ = useMedia(query);
@@ -302,7 +306,32 @@ export function LibraryTab() {
             </Label>
           </div>
 
-          {(search || category !== "all" || source !== "all" || verifiedOnly || sort !== "newest") && !selectMode && (
+          {/* Date range */}
+          <div className="flex items-end gap-1.5">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">From</Label>
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                disabled={selectMode}
+                className="w-[140px]"
+              />
+            </div>
+            <span className="pb-2 text-xs text-stone-400">→</span>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">To</Label>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                disabled={selectMode}
+                className="w-[140px]"
+              />
+            </div>
+          </div>
+
+          {(search || category !== "all" || source !== "all" || verifiedOnly || sort !== "newest" || dateFrom || dateTo) && !selectMode && (
             <Button
               variant="ghost"
               size="sm"
@@ -312,6 +341,8 @@ export function LibraryTab() {
                 setSource("all");
                 setVerifiedOnly(false);
                 setSort("newest");
+                setDateFrom("");
+                setDateTo("");
               }}
             >
               <RefreshCw className="size-3.5" />

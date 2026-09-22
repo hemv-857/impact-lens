@@ -52,6 +52,8 @@ export async function GET(req: NextRequest) {
     const limitRaw = sp.get("limit");
     const limit = limitRaw ? Math.max(1, Math.min(500, parseInt(limitRaw, 10) || 50)) : 50;
     const idsParam = sp.get("ids");
+    const dateFrom = sp.get("dateFrom") || undefined;
+    const dateTo = sp.get("dateTo") || undefined;
 
     const where: Prisma.MediaAssetWhereInput = {};
     if (projectId) where.projectId = projectId;
@@ -63,7 +65,22 @@ export async function GET(req: NextRequest) {
       const ids = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
       if (ids.length) where.id = { in: ids };
     }
-    if (search) {
+    // Date-range filter: prefer captureDate, fall back to createdAt.
+    if (dateFrom || dateTo) {
+      const range: { gte?: Date; lte?: Date } = {};
+      if (dateFrom) range.gte = new Date(dateFrom);
+      if (dateTo) {
+        const end = new Date(dateTo);
+        // include the whole day
+        end.setUTCHours(23, 59, 59, 999);
+        range.lte = end;
+      }
+      where.OR = [
+        { captureDate: { ...range } },
+        { captureDate: null, createdAt: { ...range } },
+      ];
+    }
+    if (search && !where.OR) {
       where.OR = [
         { title: { contains: search } },
         { tagsCsv: { contains: search } },
@@ -71,6 +88,24 @@ export async function GET(req: NextRequest) {
         { activity: { contains: search } },
         { projectName: { contains: search } },
         { aiCaption: { contains: search } },
+      ];
+    } else if (search) {
+      // combine: search must match AND date range must match. Prisma doesn't allow
+      // two OR clauses on the same level, so nest search into AND.
+      const dateOr = where.OR;
+      where.OR = undefined;
+      where.AND = [
+        { OR: dateOr },
+        {
+          OR: [
+            { title: { contains: search } },
+            { tagsCsv: { contains: search } },
+            { location: { contains: search } },
+            { activity: { contains: search } },
+            { projectName: { contains: search } },
+            { aiCaption: { contains: search } },
+          ],
+        },
       ];
     }
 
