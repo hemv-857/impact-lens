@@ -24,6 +24,10 @@ interface ImpactLensState {
   uploadOpen: boolean;
   setUploadOpen: (open: boolean) => void;
 
+  // Command palette
+  paletteOpen: boolean;
+  setPaletteOpen: (open: boolean) => void;
+
   // Reports tab: preselected project for report generation
   reportsProjectId: string | null;
   setReportsProjectId: (id: string | null) => void;
@@ -47,6 +51,9 @@ export const useImpactStore = create<ImpactLensState>((set) => ({
 
   uploadOpen: false,
   setUploadOpen: (open) => set({ uploadOpen: open }),
+
+  paletteOpen: false,
+  setPaletteOpen: (open) => set({ paletteOpen: open }),
 
   reportsProjectId: null,
   setReportsProjectId: (id) => set({ reportsProjectId: id }),

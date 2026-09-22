@@ -342,3 +342,51 @@ Unresolved / Next-phase priorities:
 - Add multi-asset timeline view as a standalone tab (currently in project sheet).
 - Consider real map tiles (Leaflet) if geographic precision becomes important.
 - Add asset detail "evidence chain" visualization improvements.
+
+---
+Task ID: 11 (cron round 4)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA, add command palette, campaign platform preview, SDG coverage widget, polish.
+
+Work Log:
+- Reviewed worklog: platform very mature — 12/12 assets analyzed+verified, map view, saved searches, PDF export, bulk actions, timeline view, date-range filtering all in place.
+- QA via agent-browser: all 7 tabs render correctly, no runtime errors.
+- Built NEW features:
+  1. Command Palette (Cmd+K):
+     - New CommandPalette.tsx: global Cmd+K / Ctrl+K shortcut opens a modal with search input + grouped commands (Navigate: 7 tabs, Actions: upload, report, campaign).
+     - Keyboard navigation: ↑↓ to move, ↵ to select, esc to close. Active item highlighted with emerald, auto-scroll into view.
+     - Fuzzy filter by label + hint + keywords. Footer shows keyboard hints.
+     - Header: new "Quick actions… ⌘K" trigger button (stone border, md+ visible).
+     - Store: added paletteOpen/setPaletteOpen to Zustand.
+     - VLM rated 9/10.
+  2. Campaign Platform Preview (Campaign Studio):
+     - New PlatformPreview.tsx: renders realistic mockups of how the campaign post would look on each platform:
+       * Instagram: gradient avatar ring, square image, heart/comment/share/bookmark icons, like count, caption with hashtags, timestamp.
+       * Twitter/X: avatar, verified checkmark, truncated 280-char caption, image card, retweet/like/share counts.
+       * LinkedIn: professional card with headline, caption, image, like/comment/repost/send actions, CTA button.
+       * Newsletter: branded header bar, image, caption, CTA button, unsubscribe footer.
+     - CampaignTab: added PlatformPreviewCard below the campaign result — shows "Platform preview · Live mockup" with the rendered preview.
+     - VLM rated 10/10: "realistic Instagram card with avatar, image, engagement icons, like count, caption with hashtags, earth-tone palette".
+  3. UN SDG coverage widget (Overview):
+     - New SDGCoverage.tsx: visualizes all 17 UN SDG goals as colored chips in a grid. Covered goals show their official vibrant colors; uncovered goals are muted gray. Shows coverage % (65%) + "N of 17 goals covered across N projects". Below: labels listing covered goal names.
+     - OverviewTab: added SDG coverage section between insights row and recent uploads.
+     - VLM rated 10/10: "17 chips with official colors, 65% COVERAGE, 11 of 17 goals covered, covered goals colored, uncovered muted".
+  4. Polish:
+     - Header: added Command + Search icon imports, "Quick actions… ⌘K" trigger button with kbd badge.
+     - page.tsx: mounted CommandPalette globally.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: CommandPalette.tsx, PlatformPreview.tsx, SDGCoverage.tsx.
+- Modified: store.ts (paletteOpen), page.tsx (mount palette), Header.tsx (Cmd+K trigger button), OverviewTab.tsx (SDG coverage section), CampaignTab.tsx (platform preview integration).
+- All features verified end-to-end via agent-browser + VLM (9-10/10 across the board).
+- Analytics: 12 assets, 12 analyzed, 12 verified, 10 projects (10 with coords), 2 reports (1 new campaign), 1 comparison.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Add a dedicated Timeline tab (currently in project sheet only).
+- Add dashboard date-range filtering on Overview (currently only Library).
+- Consider real map tiles (Leaflet) for geographic precision.
+- Add multi-variant campaign generation (generate 3 caption variants).
+- Add keyboard shortcut help overlay.

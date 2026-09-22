@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/impactlens/EmptyState";
 import { MarkdownRenderer } from "@/components/impactlens/MarkdownRenderer";
+import { PlatformPreview } from "@/components/impactlens/PlatformPreview";
 import {
   useCreateCampaign,
   useMedia,
@@ -542,6 +543,59 @@ function CampaignView({
           </div>
         )}
       </Card>
+
+      {/* Platform Preview */}
+      <PlatformPreviewCard
+        platform={platformMeta.value}
+        caption={caption}
+        headline={report.headline ?? undefined}
+        callToAction={report.callToAction ?? undefined}
+        imageUrl={selectedAssets[0]?.thumbnailUrl || selectedAssets[0]?.url}
+        hashtags={hashtags}
+      />
     </motion.div>
+  );
+}
+
+function PlatformPreviewCard({
+  platform,
+  caption,
+  headline,
+  callToAction,
+  imageUrl,
+  hashtags,
+}: {
+  platform: "instagram" | "twitter" | "linkedin" | "newsletter";
+  caption: string;
+  headline?: string;
+  callToAction?: string;
+  imageUrl?: string;
+  hashtags: string[];
+}) {
+  return (
+    <Card className="gap-0 p-4 sm:p-6">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
+            <span className="text-emerald-600">↗</span>
+            Platform preview
+          </h3>
+          <p className="text-xs text-stone-500">
+            How your post will look on {platform}
+          </p>
+        </div>
+        <Badge variant="outline" className="capitalize bg-stone-50 text-stone-500">
+          Live mockup
+        </Badge>
+      </div>
+      <PlatformPreview
+        platform={platform}
+        caption={caption}
+        headline={headline}
+        callToAction={callToAction}
+        imageUrl={imageUrl}
+        hashtags={hashtags}
+      />
+    </Card>
   );
 }

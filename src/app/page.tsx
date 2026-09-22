@@ -13,6 +13,7 @@ import { SearchTab } from "@/components/impactlens/SearchTab";
 import { CampaignTab } from "@/components/impactlens/CampaignTab";
 import { AssetDrawer } from "@/components/impactlens/AssetDrawer";
 import { UploadDialog } from "@/components/impactlens/UploadDialog";
+import { CommandPalette } from "@/components/impactlens/CommandPalette";
 import { useImpactStore } from "@/lib/store";
 
 export default function Home() {
@@ -47,6 +48,7 @@ export default function Home() {
       {/* Global overlays */}
       <AssetDrawer />
       <UploadDialog />
+      <CommandPalette />
     </div>
   );
 }

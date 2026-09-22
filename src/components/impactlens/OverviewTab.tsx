@@ -35,6 +35,7 @@ import { EmptyState } from "@/components/impactlens/EmptyState";
 import { AnimatedCounter } from "@/components/impactlens/AnimatedCounter";
 import { GeoDistribution } from "@/components/impactlens/GeoDistribution";
 import { ConfidenceDistribution } from "@/components/impactlens/ConfidenceDistribution";
+import { SDGCoverage } from "@/components/impactlens/SDGCoverage";
 import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import {
   useAnalytics,
@@ -360,6 +361,11 @@ export function OverviewTab() {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <GeoDistribution projects={projectsQ.data ?? []} />
         <ConfidenceDistribution assets={mediaQ.data ?? []} />
+      </section>
+
+      {/* SDG coverage */}
+      <section>
+        <SDGCoverage projects={projectsQ.data ?? []} />
       </section>
 
       {/* Recent uploads strip + quick verify */}

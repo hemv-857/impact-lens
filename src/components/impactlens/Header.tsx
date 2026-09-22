@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, Leaf, Sparkles } from "lucide-react";
+import { Menu, Leaf, Sparkles, Command, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,6 +33,7 @@ export function Header() {
   const activeTab = useImpactStore((s) => s.activeTab);
   const setTab = useImpactStore((s) => s.setTab);
   const setUploadOpen = useImpactStore((s) => s.setUploadOpen);
+  const setPaletteOpen = useImpactStore((s) => s.setPaletteOpen);
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
   const onPick = (t: ImpactTab) => {
@@ -81,8 +82,21 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Right side: CTA + mobile menu */}
+        {/* Right side: Command palette trigger + CTA + mobile menu */}
         <div className="flex items-center gap-2">
+          {/* Command palette trigger */}
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className="hidden items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-xs text-stone-500 transition hover:border-stone-300 hover:bg-stone-100 md:flex"
+            title="Open command palette (Cmd+K)"
+          >
+            <Search className="size-3.5" />
+            <span>Quick actions…</span>
+            <kbd className="flex items-center gap-0.5 rounded border border-stone-200 bg-white px-1 py-0.5 text-[9px] font-medium text-stone-400">
+              <Command className="size-2.5" />K
+            </kbd>
+          </button>
           <Button
             onClick={() => setUploadOpen(true)}
             className="hidden bg-emerald-600 text-white hover:bg-emerald-700 sm:inline-flex"
