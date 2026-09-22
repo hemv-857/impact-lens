@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   Sparkles,
@@ -9,12 +9,22 @@ import {
   Loader2,
   Images,
   RefreshCw,
+  CheckSquare,
+  Square,
+  Trash2,
+  BadgeCheck,
+  XCircle,
+  FolderInput,
+  Sparkle,
+  X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -22,10 +32,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { MediaCard, MediaCardSkeleton } from "@/components/impactlens/MediaCard";
 import { EmptyState } from "@/components/impactlens/EmptyState";
 import { useImpactStore } from "@/lib/store";
-import { useMedia } from "@/components/impactlens/impact-hooks";
+import { useBulkMediaAction, useMedia, useProjects } from "@/components/impactlens/impact-hooks";
+import { useToast } from "@/hooks/use-toast";
 import type { MediaQuery } from "@/lib/api";
 
 const CATEGORIES = [
@@ -66,6 +85,16 @@ export function LibraryTab() {
   const [sort, setSort] = React.useState("newest");
   const [limit, setLimit] = React.useState(24);
 
+  // Bulk selection state
+  const [selectMode, setSelectMode] = React.useState(false);
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [assignProjectId, setAssignProjectId] = React.useState<string>("none");
+
+  const bulk = useBulkMediaAction();
+  const projectsQ = useProjects();
+  const { toast } = useToast();
+
   // Debounce search
   React.useEffect(() => {
     const t = setTimeout(() => setDebounced(search.trim()), 350);
@@ -89,6 +118,76 @@ export function LibraryTab() {
   const totalShown = mediaQ.data?.length ?? 0;
   const hasMore = !mediaQ.isLoading && totalShown >= limit;
 
+  // Selection helpers
+  const toggleSelect = React.useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAllVisible = React.useCallback(() => {
+    if (!mediaQ.data) return;
+    setSelected(new Set(mediaQ.data.map((a) => a.id)));
+  }, [mediaQ.data]);
+
+  const clearSelection = React.useCallback(() => {
+    setSelected(new Set());
+  }, []);
+
+  const exitSelectMode = React.useCallback(() => {
+    setSelectMode(false);
+    setSelected(new Set());
+  }, []);
+
+  const runBulk = async (
+    action: "analyze" | "verify" | "unverify" | "delete",
+    successMsg: string
+  ) => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    try {
+      toast({
+        title: `Bulk ${action} started`,
+        description: `Processing ${ids.length} asset${ids.length === 1 ? "" : "s"}…`,
+      });
+      const r = await bulk.mutateAsync({ ids, action });
+      toast({
+        title: successMsg,
+        description: `${r.processed} succeeded${r.failed > 0 ? `, ${r.failed} failed` : ""}.`,
+      });
+      if (action === "delete") exitSelectMode();
+    } catch (e) {
+      toast({
+        title: "Bulk action failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const onAssign = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0 || assignProjectId === "none") return;
+    try {
+      const r = await bulk.mutateAsync({ ids, action: "assign", projectId: assignProjectId });
+      toast({
+        title: "Assets assigned",
+        description: `${r.processed} asset${r.processed === 1 ? "" : "s"} moved to project.`,
+      });
+      setAssignOpen(false);
+      exitSelectMode();
+    } catch (e) {
+      toast({
+        title: "Assignment failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Heading */}
@@ -101,13 +200,27 @@ export function LibraryTab() {
             AI-analyzed field media with intelligence, signals & traceability
           </p>
         </div>
-        <Button
-          onClick={() => setUploadOpen(true)}
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
-        >
-          <Sparkles className="size-4" />
-          Analyze new media
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={selectMode ? "default" : "outline"}
+            onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+            className={cn(
+              selectMode
+                ? "bg-stone-800 text-white hover:bg-stone-900"
+                : "border-stone-300 text-stone-700 hover:bg-stone-50"
+            )}
+          >
+            <CheckSquare className="size-4" />
+            {selectMode ? "Exit select" : "Select"}
+          </Button>
+          <Button
+            onClick={() => setUploadOpen(true)}
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            <Sparkles className="size-4" />
+            Analyze new media
+          </Button>
+        </div>
       </div>
 
       {/* Filter bar */}
@@ -128,7 +241,7 @@ export function LibraryTab() {
 
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-500">Category</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={setCategory} disabled={selectMode}>
               <SelectTrigger className="w-[150px] capitalize">
                 <SelectValue />
               </SelectTrigger>
@@ -144,7 +257,7 @@ export function LibraryTab() {
 
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-500">Source</Label>
-            <Select value={source} onValueChange={setSource}>
+            <Select value={source} onValueChange={setSource} disabled={selectMode}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue />
               </SelectTrigger>
@@ -160,7 +273,7 @@ export function LibraryTab() {
 
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-500">Sort</Label>
-            <Select value={sort} onValueChange={setSort}>
+            <Select value={sort} onValueChange={setSort} disabled={selectMode}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue />
               </SelectTrigger>
@@ -179,6 +292,7 @@ export function LibraryTab() {
               checked={verifiedOnly}
               onCheckedChange={setVerifiedOnly}
               id="verified-only"
+              disabled={selectMode}
             />
             <Label
               htmlFor="verified-only"
@@ -188,7 +302,7 @@ export function LibraryTab() {
             </Label>
           </div>
 
-          {(search || category !== "all" || source !== "all" || verifiedOnly || sort !== "newest") && (
+          {(search || category !== "all" || source !== "all" || verifiedOnly || sort !== "newest") && !selectMode && (
             <Button
               variant="ghost"
               size="sm"
@@ -212,8 +326,89 @@ export function LibraryTab() {
             : mediaQ.data
               ? `${mediaQ.data.length} asset${mediaQ.data.length === 1 ? "" : "s"} match`
               : "—"}
+          {selectMode && (
+            <Badge variant="secondary" className="ml-2 bg-emerald-50 text-emerald-700">
+              Select mode · {selected.size} selected
+            </Badge>
+          )}
         </div>
       </Card>
+
+      {/* Bulk action toolbar (sticky) */}
+      <AnimatePresence>
+        {selectMode && selected.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="sticky top-2 z-30"
+          >
+            <Card className="flex flex-wrap items-center gap-2 border-emerald-200 bg-emerald-50/95 p-3 shadow-md backdrop-blur">
+              <div className="flex items-center gap-2 text-sm font-medium text-emerald-900">
+                <BadgeCheck className="size-4" />
+                {selected.size} selected
+              </div>
+              <div className="mx-1 h-5 w-px bg-emerald-200" />
+              <Button
+                size="sm"
+                onClick={() => runBulk("analyze", "Bulk analysis complete")}
+                disabled={bulk.isPending}
+                className="bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                {bulk.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkle className="size-3.5" />}
+                Analyze all
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => runBulk("verify", "Assets verified")}
+                disabled={bulk.isPending}
+                className="border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50"
+              >
+                <BadgeCheck className="size-3.5" /> Verify
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => runBulk("unverify", "Verification removed")}
+                disabled={bulk.isPending}
+                className="border-stone-300 bg-white text-stone-600 hover:bg-stone-50"
+              >
+                <XCircle className="size-3.5" /> Unverify
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setAssignOpen(true)}
+                disabled={bulk.isPending}
+                className="border-stone-300 bg-white text-stone-700 hover:bg-stone-50"
+              >
+                <FolderInput className="size-3.5" /> Assign to project
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => runBulk("delete", "Assets deleted")}
+                disabled={bulk.isPending}
+                className="border-red-300 bg-white text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="size-3.5" /> Delete
+              </Button>
+              <div className="ml-auto flex items-center gap-2">
+                <Button size="sm" variant="ghost" onClick={selectAllVisible} className="text-stone-600">
+                  <CheckSquare className="size-3.5" /> Select all visible
+                </Button>
+                <Button size="sm" variant="ghost" onClick={clearSelection} className="text-stone-600">
+                  <Square className="size-3.5" /> Clear
+                </Button>
+                <Button size="sm" variant="ghost" onClick={exitSelectMode} className="text-stone-600">
+                  <X className="size-3.5" /> Exit
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Grid */}
       {mediaQ.isLoading ? (
@@ -253,10 +448,16 @@ export function LibraryTab() {
             className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           >
             {mediaQ.data.map((asset) => (
-              <MediaCard key={asset.id} asset={asset} />
+              <MediaCard
+                key={asset.id}
+                asset={asset}
+                selectable={selectMode}
+                selected={selected.has(asset.id)}
+                onToggleSelect={toggleSelect}
+              />
             ))}
           </motion.div>
-          {hasMore && (
+          {hasMore && !selectMode && (
             <div className="flex justify-center pt-2">
               <Button
                 variant="outline"
@@ -274,6 +475,46 @@ export function LibraryTab() {
           )}
         </>
       )}
+
+      {/* Assign to project dialog */}
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign {selected.size} assets to project</DialogTitle>
+            <DialogDescription>
+              Move the selected media into a project. This updates each asset's project association.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Select value={assignProjectId} onValueChange={setAssignProjectId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Unassigned</SelectItem>
+                {projectsQ.data?.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAssignOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={onAssign}
+              disabled={bulk.isPending || assignProjectId === "none"}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              {bulk.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Assign assets
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

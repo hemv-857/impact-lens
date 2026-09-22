@@ -8,6 +8,10 @@ import {
   MapPin,
   BadgeCheck,
   MoreVertical,
+  Sparkles,
+  Loader2,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -24,20 +28,50 @@ import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import { ConfidenceBar } from "@/components/impactlens/ConfidenceBar";
 import { truncate } from "@/lib/format";
 import { useImpactStore } from "@/lib/store";
+import { useAnalyzeMedia } from "@/components/impactlens/impact-hooks";
+import { useToast } from "@/hooks/use-toast";
 import type { MediaAsset } from "@/lib/types";
 
 interface MediaCardProps {
   asset: MediaAsset;
   className?: string;
   compact?: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
-export function MediaCard({ asset, className, compact }: MediaCardProps) {
+export function MediaCard({
+  asset,
+  className,
+  compact,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
+}: MediaCardProps) {
   const openAsset = useImpactStore((s) => s.openAsset);
   const setTab = useImpactStore((s) => s.setTab);
   const setComparePair = useImpactStore((s) => s.setComparePair);
+  const analyze = useAnalyzeMedia();
+  const { toast } = useToast();
   const thumbnail = asset.thumbnailUrl || asset.url;
   const title = asset.title || asset.aiCaption || "Untitled media";
+  const isAnalyzed = !!asset.analyzedAt;
+
+  const onQuickAnalyze = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      toast({ title: "Analyzing…", description: "VLM extracting intelligence. ~10–20s." });
+      await analyze.mutateAsync(asset.id);
+      toast({ title: "Analysis complete", description: "AI intelligence updated." });
+    } catch (e) {
+      toast({
+        title: "Analysis failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <motion.div
@@ -50,26 +84,63 @@ export function MediaCard({ asset, className, compact }: MediaCardProps) {
       <Card
         role="button"
         tabIndex={0}
-        onClick={() => openAsset(asset.id)}
+        onClick={() => (selectable ? onToggleSelect?.(asset.id) : openAsset(asset.id))}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            openAsset(asset.id);
+            if (selectable) onToggleSelect?.(asset.id);
+            else openAsset(asset.id);
           }
         }}
-        className="lift-on-hover group relative h-full cursor-pointer gap-0 overflow-hidden p-0"
+        className={cn(
+          "lift-on-hover group relative h-full cursor-pointer gap-0 overflow-hidden p-0 transition",
+          selected && "ring-2 ring-emerald-500 ring-offset-1",
+          selectable && !selected && "ring-1 ring-stone-200"
+        )}
       >
         <div className="relative aspect-video w-full overflow-hidden bg-stone-100">
-          { }
           <img
             src={thumbnail}
             alt={title}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className={cn(
+              "h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]",
+              !isAnalyzed && "opacity-90"
+            )}
           />
-          {/* Top overlay: category + verified */}
+          {/* Pending-analysis overlay */}
+          {!isAnalyzed && (
+            <div className="absolute inset-0 flex items-center justify-center bg-stone-900/30">
+              <span className="flex items-center gap-1.5 rounded-full bg-amber-500/95 px-3 py-1 text-[11px] font-medium text-white shadow">
+                <Clock className="size-3" />
+                Pending analysis
+              </span>
+            </div>
+          )}
+          {/* Top overlay: category + selection checkbox / verified */}
           <div className="absolute inset-x-0 top-0 flex items-start justify-between p-2">
-            <CategoryBadge category={asset.category} />
+            <div className="flex items-center gap-1">
+              {selectable ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleSelect?.(asset.id);
+                  }}
+                  className={cn(
+                    "flex size-6 items-center justify-center rounded border-2 bg-white/95 shadow-sm transition",
+                    selected
+                      ? "border-emerald-600 bg-emerald-600 text-white"
+                      : "border-stone-300 text-transparent hover:border-emerald-500"
+                  )}
+                  aria-label={selected ? "Deselect" : "Select"}
+                >
+                  {selected && <CheckCircle2 className="size-4" />}
+                </button>
+              ) : (
+                <CategoryBadge category={asset.category} />
+              )}
+            </div>
             {asset.verified && (
               <Badge
                 variant="outline"
@@ -79,76 +150,94 @@ export function MediaCard({ asset, className, compact }: MediaCardProps) {
               </Badge>
             )}
           </div>
-          {/* Hover quick actions */}
-          <div className="absolute inset-x-0 bottom-0 flex translate-y-2 items-center justify-end gap-1 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-2 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-7 bg-white/95 px-2 text-xs hover:bg-white"
-              onClick={(e) => {
-                e.stopPropagation();
-                openAsset(asset.id);
-              }}
-            >
-              <Eye className="size-3.5" /> View
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-7 bg-white/95 px-2 text-xs hover:bg-white"
-              onClick={(e) => {
-                e.stopPropagation();
-                setComparePair(
-                  asset.pairRole === "after" ? null : asset.id,
-                  asset.pairRole === "after" ? asset.id : null
-                );
-                setTab("compare");
-              }}
-            >
-              <GitCompareArrows className="size-3.5" /> Compare
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+          {/* Hover quick actions — hidden when in selection mode */}
+          {!selectable && (
+            <div className="absolute inset-x-0 bottom-0 flex translate-y-2 items-center justify-end gap-1 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-2 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+              {!isAnalyzed && (
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="h-7 w-7 bg-white/95 p-0 hover:bg-white"
+                  className="h-7 bg-amber-500 px-2 text-xs text-white hover:bg-amber-600"
+                  onClick={onQuickAnalyze}
+                  disabled={analyze.isPending}
+                >
+                  {analyze.isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5" />
+                  )}
+                  Analyze
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-7 bg-white/95 px-2 text-xs hover:bg-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openAsset(asset.id);
+                }}
+              >
+                <Eye className="size-3.5" /> View
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-7 bg-white/95 px-2 text-xs hover:bg-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setComparePair(
+                    asset.pairRole === "after" ? null : asset.id,
+                    asset.pairRole === "after" ? asset.id : null
+                  );
+                  setTab("compare");
+                }}
+              >
+                <GitCompareArrows className="size-3.5" /> Compare
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 w-7 bg-white/95 p-0 hover:bg-white"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <MoreVertical className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <MoreVertical className="size-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DropdownMenuItem
-                  onClick={() => {
-                    setTab("reports");
-                  }}
-                >
-                  <FileText className="size-4" /> Use in report
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    setComparePair(asset.id, null);
-                    setTab("compare");
-                  }}
-                >
-                  <GitCompareArrows className="size-4" /> Set as Before
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setComparePair(null, asset.id);
-                    setTab("compare");
-                  }}
-                >
-                  <GitCompareArrows className="size-4" /> Set as After
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setTab("reports");
+                    }}
+                  >
+                    <FileText className="size-4" /> Use in report
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setComparePair(asset.id, null);
+                      setTab("compare");
+                    }}
+                  >
+                    <GitCompareArrows className="size-4" /> Set as Before
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setComparePair(null, asset.id);
+                      setTab("compare");
+                    }}
+                  >
+                    <GitCompareArrows className="size-4" /> Set as After
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
         <div className={cn("flex flex-col gap-2 p-4", compact && "p-3")}>
           <h3 className="line-clamp-1 text-sm font-semibold text-stone-900">
@@ -157,6 +246,11 @@ export function MediaCard({ asset, className, compact }: MediaCardProps) {
           {asset.aiSummary && (
             <p className="line-clamp-2 text-xs leading-relaxed text-stone-500">
               {truncate(asset.aiSummary, 110)}
+            </p>
+          )}
+          {!isAnalyzed && !asset.aiSummary && (
+            <p className="line-clamp-2 text-xs leading-relaxed text-stone-400 italic">
+              Not yet analyzed. Click Analyze to extract AI intelligence.
             </p>
           )}
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-stone-500">

@@ -154,3 +154,101 @@ Unresolved / Next-phase priorities:
 - Add user auth + multi-org projects.
 - Add map view for project locations.
 - Add export-to-PDF for reports.
+
+---
+Task ID: 8 (cron round 1)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA all tabs, fix bugs, add features + polish.
+
+Work Log:
+- Reviewed worklog: platform fully functional, 3/12 assets analyzed (rest pending due to VLM 429 rate-limits), 10 projects, 1 comparison, 1 report seeded.
+- QA via agent-browser across all 7 tabs: all render correctly, no runtime errors. VLM visual assessment of Overview = 9.2/10.
+- Identified issue: patient reanalyze script from prior round falsely reported "All assets analyzed" because it treated curl failures as "no unanalyzed assets found".
+- Built NEW features:
+  1. **Bulk actions in Media Library** (major scalability feature):
+     - New POST /api/media/bulk endpoint supporting actions: analyze, verify, unverify, delete, assign (with projectId). Cap 200 ids.
+     - LibraryTab: "Select" toggle button → enters selection mode (checkboxes on cards, filters disabled). Sticky bulk-action toolbar appears when ≥1 selected: Analyze all / Verify / Unverify / Assign to project / Delete / Select all visible / Clear / Exit. Assign opens a project-picker dialog.
+     - MediaCard: supports selectable/selected props; renders checkbox overlay; hides hover actions in select mode.
+  2. **Animated KPI counters** on Overview: new AnimatedCounter component (count-up with easeOut, respects prefers-reduced-motion). Applied to 5 numeric KPI cards.
+  3. **Geographic reach widget** on Overview: new GeoDistribution component groups projects by country (parsed from location field), ranked list with bar gauges + earthy palette.
+  4. **Confidence distribution donut** on Overview: new ConfidenceDistribution component with High/Medium/Low buckets, center avg %, legend with counts + percentages, pending-analysis count.
+  5. **Better unanalyzed asset cards**: "Pending analysis" amber overlay on thumbnail, italic helper text, quick "Analyze" button in hover actions.
+  6. **Polish**: hid Next.js dev "N" badge via CSS, added focus-visible rings, tabular-nums utility, tooltips (title attr) on truncated recent-activity items.
+- Created scripts/reanalyze-all.ts: robust reanalyzer that verifies each call actually succeeded (checks analyzedAt in response), waits 65s between calls, extra 90s on 429s.
+- Backend: bulk route at src/app/api/media/bulk/route.ts. Verified via direct curl: `{"action":"verify","processed":2,"failed":0}`.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: AnimatedCounter.tsx, GeoDistribution.tsx, ConfidenceDistribution.tsx, scripts/reanalyze-all.ts, src/app/api/media/bulk/route.ts.
+- Modified: OverviewTab.tsx (animated counters + 2 new widgets + media query), LibraryTab.tsx (bulk select mode + toolbar + assign dialog), MediaCard.tsx (selection + pending-analysis state + quick analyze), impact-hooks.ts (useBulkMediaAction), api.ts (bulkMediaAction), globals.css (hide dev badge + focus rings + tabular-nums).
+- VLM rated new Overview widgets 9/10. Bulk workflow verified end-to-end: select mode → checkboxes → sticky toolbar → assign dialog.
+- 2 parallel VLM analyze calls kicked off in background (women_coop, mangrove_restore) to continue expanding analyzed coverage.
+
+Unresolved / Next-phase priorities:
+- Continue reanalyzing remaining ~7 assets (rate-limited; cron will keep trying).
+- Add video asset support (VLM supports video_url).
+- Add map view (geographic pins) on Projects tab.
+- Add export-to-PDF for reports.
+- Add saved searches / search history.
+- Add user auth + multi-org.
+
+---
+Task ID: 8 (cron round 1)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA all tabs, fix bugs, add features + polish.
+
+Work Log:
+- Reviewed worklog: platform fully functional, 3/12 assets analyzed (rest pending due to VLM 429 rate-limits), 10 projects, 1 comparison, 1 report seeded.
+- QA via agent-browser across all 7 tabs: all render correctly, no runtime errors. VLM visual assessment of Overview = 9.2/10.
+- Identified issue: patient reanalyze script from prior round falsely reported "All assets analyzed" because it treated curl failures as "no unanalyzed assets found".
+- Built NEW features:
+  1. Bulk actions in Media Library (major scalability feature):
+     - New POST /api/media/bulk endpoint supporting actions: analyze, verify, unverify, delete, assign (with projectId). Cap 200 ids.
+     - LibraryTab: "Select" toggle button → enters selection mode (checkboxes on cards, filters disabled). Sticky bulk-action toolbar appears when ≥1 selected: Analyze all / Verify / Unverify / Assign to project / Delete / Select all visible / Clear / Exit. Assign opens a project-picker dialog.
+     - MediaCard: supports selectable/selected props; renders checkbox overlay; hides hover actions in select mode.
+  2. Animated KPI counters on Overview: new AnimatedCounter component (count-up with easeOut, respects prefers-reduced-motion). Applied to 5 numeric KPI cards.
+  3. Geographic reach widget on Overview: new GeoDistribution component groups projects by country (parsed from location field), ranked list with bar gauges + earthy palette.
+  4. Confidence distribution donut on Overview: new ConfidenceDistribution component with High/Medium/Low buckets, center avg %, legend with counts + percentages, pending-analysis count.
+  5. Better unanalyzed asset cards: "Pending analysis" amber overlay on thumbnail, italic helper text, quick "Analyze" button in hover actions.
+  6. Polish: hid Next.js dev "N" badge via CSS, added focus-visible rings, tabular-nums utility, tooltips (title attr) on truncated recent-activity items.
+- Created scripts/reanalyze-all.ts: robust reanalyzer that verifies each call actually succeeded (checks analyzedAt in response), waits 65s between calls, extra 90s on 429s.
+- Backend: bulk route at src/app/api/media/bulk/route.ts. Verified via direct curl: {"action":"verify","processed":2,"failed":0}.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: AnimatedCounter.tsx, GeoDistribution.tsx, ConfidenceDistribution.tsx, scripts/reanalyze-all.ts, src/app/api/media/bulk/route.ts.
+- Modified: OverviewTab.tsx (animated counters + 2 new widgets + media query), LibraryTab.tsx (bulk select mode + toolbar + assign dialog), MediaCard.tsx (selection + pending-analysis state + quick analyze), impact-hooks.ts (useBulkMediaAction), api.ts (bulkMediaAction), globals.css (hide dev badge + focus rings + tabular-nums).
+- VLM rated new Overview widgets 9/10. Bulk workflow verified end-to-end: select mode → checkboxes → sticky toolbar → assign dialog.
+
+Unresolved / Next-phase priorities:
+- Continue reanalyzing remaining ~7 assets (rate-limited; cron will keep trying).
+- Add video asset support (VLM supports video_url).
+- Add map view (geographic pins) on Projects tab.
+- Add export-to-PDF for reports.
+- Add saved searches / search history.
+- Add user auth + multi-org.
+
+---
+Task ID: 8 (cron round 1 — FINAL)
+Agent: lead
+Task: Complete asset reanalysis + final verification.
+
+Work Log:
+- Ran 9 sequential VLM analyze calls (3 batches of 3, ~12-15s each, no rate-limit hits this round).
+- All 12/12 assets now fully analyzed with AI captions, categories, signals, tags, confidence scores.
+- Final analytics: 12 assets, 12 analyzed (100%), 10 projects, 1 report, 1 comparison, 0 verified.
+- Recent activity feed now populated with "Analyzed: ..." entries for all 12 assets.
+
+Stage Summary:
+- Platform is now FULLY SEEDED + ANALYZED. Every feature has rich data to demonstrate.
+- New bulk-actions feature + animated KPIs + geographic reach + confidence distribution all verified working.
+- Lint: 0 errors. VLM visual score: 9/10 on new widgets.
+- Cron job (406433, every 15 min) will continue maintenance + add further features.
+
+Unresolved / Next-phase priorities (for future cron rounds):
+- Add video asset support (VLM supports video_url).
+- Add map view (geographic pins) on Projects tab.
+- Add export-to-PDF for reports.
+- Add saved searches / search history.
+- Add user auth + multi-org.
+- Verify some assets (currently 0 verified) to populate the Verified KPI meaningfully.

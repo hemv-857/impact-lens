@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import {
   analyzeMedia,
+  bulkMediaAction,
   createCampaign,
   createComparison,
   createMedia,
@@ -20,6 +21,7 @@ import {
   fetchProjects,
   fetchReports,
   type MediaQuery,
+  type BulkActionInput,
   semanticSearch,
   seedSampleData,
 } from "@/lib/api";
@@ -153,6 +155,18 @@ export function useSeedData() {
     mutationFn: seedSampleData,
     onSuccess: () => {
       qc.invalidateQueries();
+    },
+  });
+}
+
+export function useBulkMediaAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BulkActionInput) => bulkMediaAction(input),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["media"] });
+      qc.invalidateQueries({ queryKey: qk.analytics });
+      qc.invalidateQueries({ queryKey: qk.projects });
     },
   });
 }

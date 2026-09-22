@@ -81,6 +81,28 @@ export const analyzeMedia = (id: string) =>
 export const deleteMedia = (id: string) =>
   fetcher<{ ok: true }>(`/api/media/${id}`, { method: "DELETE" });
 
+// ----------------- Bulk actions -----------------
+export type BulkAction = "analyze" | "verify" | "unverify" | "delete" | "assign";
+
+export interface BulkActionInput {
+  ids: string[];
+  action: BulkAction;
+  projectId?: string;
+}
+
+export interface BulkActionResult {
+  action: string;
+  processed: number;
+  failed: number;
+  results?: { id: string; ok: boolean; error?: string }[];
+}
+
+export const bulkMediaAction = (body: BulkActionInput) =>
+  fetcher<BulkActionResult>("/api/media/bulk", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
 // ----------------- Projects -----------------
 export const fetchProjects = () => fetcher<Project[]>("/api/projects");
 

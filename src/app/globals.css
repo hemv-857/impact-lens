@@ -123,6 +123,13 @@
 
 /* ------------------- ImpactLens custom utilities ------------------- */
 
+/* Hide Next.js dev tools badge (the floating "N" indicator) for cleaner preview */
+nextjs-portal,
+[data-nextjs-toast-wrapper],
+[data-nextjs-route-announcer] {
+  display: none !important;
+}
+
 /* Thin emerald scrollbar on stone track — used in long lists, drawers, panels */
 .scrollbar-thin {
   scrollbar-width: thin;
@@ -159,6 +166,23 @@
   background:
     radial-gradient(1200px 400px at 10% 0%, oklch(0.78 0.13 152 / 0.35), transparent 60%),
     linear-gradient(135deg, #047857 0%, #0f766e 45%, #134e4a 100%);
+}
+
+/* Smooth focus ring for all interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid oklch(0.62 0.17 152);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Tabular numbers for stats / metrics */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Markdown rendered report body */

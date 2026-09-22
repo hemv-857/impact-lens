@@ -31,8 +31,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProjectCard } from "@/components/impactlens/ProjectCard";
 import { EmptyState } from "@/components/impactlens/EmptyState";
+import { AnimatedCounter } from "@/components/impactlens/AnimatedCounter";
+import { GeoDistribution } from "@/components/impactlens/GeoDistribution";
+import { ConfidenceDistribution } from "@/components/impactlens/ConfidenceDistribution";
 import {
   useAnalytics,
+  useMedia,
   useProjects,
   useSeedData,
 } from "@/components/impactlens/impact-hooks";
@@ -67,6 +71,7 @@ const ACTIVITY_ICON: Record<string, React.ReactNode> = {
 export function OverviewTab() {
   const analyticsQ = useAnalytics();
   const projectsQ = useProjects();
+  const mediaQ = useMedia({ limit: 200 });
   const setTab = useImpactStore((s) => s.setTab);
   const setUploadOpen = useImpactStore((s) => s.setUploadOpen);
   const { toast } = useToast();
@@ -195,30 +200,35 @@ export function OverviewTab() {
               label="Total assets"
               value={analytics.totalAssets}
               tint="emerald"
+              animate
             />
             <KpiCard
               icon={<Sparkles className="size-4" />}
               label="Analyzed"
               value={analytics.analyzedAssets}
               tint="teal"
+              animate
             />
             <KpiCard
               icon={<FolderKanban className="size-4" />}
               label="Active projects"
               value={analytics.activeProjects}
               tint="amber"
+              animate
             />
             <KpiCard
               icon={<FileText className="size-4" />}
               label="Reports"
               value={analytics.totalReports}
               tint="lime"
+              animate
             />
             <KpiCard
               icon={<BadgeCheck className="size-4" />}
               label="Verified"
               value={analytics.verifiedAssets}
               tint="green"
+              animate
             />
             <KpiCard
               icon={<TrendingUp className="size-4" />}
@@ -282,12 +292,13 @@ export function OverviewTab() {
                   <li
                     key={a.id}
                     className="flex items-start gap-3 rounded-md p-2 transition hover:bg-stone-50"
+                    title={a.label}
                   >
                     <span className="mt-0.5 flex size-7 items-center justify-center rounded-full bg-stone-100">
                       {ACTIVITY_ICON[a.kind] ?? ACTIVITY_ICON.default}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-stone-800">{a.label}</p>
+                      <p className="truncate text-sm text-stone-800" title={a.label}>{a.label}</p>
                       <p className="text-[11px] text-stone-400">
                         {timeAgo(a.at)} · {a.kind}
                       </p>
@@ -303,6 +314,12 @@ export function OverviewTab() {
             />
           )}
         </Card>
+      </section>
+
+      {/* Insights row: geographic + confidence distribution */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <GeoDistribution projects={projectsQ.data ?? []} />
+        <ConfidenceDistribution assets={mediaQ.data ?? []} />
       </section>
 
       {/* Active projects preview */}
@@ -500,27 +517,34 @@ function KpiCard({
   label,
   value,
   tint,
+  animate,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number | string;
   tint: keyof typeof TINTS;
+  animate?: boolean;
 }) {
   const t = TINTS[tint];
+  const isNumeric = typeof value === "number";
   return (
-    <Card className={cn("gap-0 p-4 ring-1", t.ring)}>
+    <Card className={cn("gap-0 p-4 ring-1 transition hover:shadow-md", t.ring)}>
       <div className="flex items-center justify-between">
         <span
           className={cn(
-            "flex size-8 items-center justify-center rounded-lg",
+            "flex size-8 items-center justify-center rounded-lg shadow-sm",
             t.icon
           )}
         >
           {icon}
         </span>
       </div>
-      <p className="mt-3 text-2xl font-bold tracking-tight text-stone-900">
-        {value}
+      <p className="mt-3 text-2xl font-bold tracking-tight text-stone-900 tabular-nums">
+        {isNumeric && animate ? (
+          <AnimatedCounter value={value} />
+        ) : (
+          value
+        )}
       </p>
       <p className="text-xs text-stone-500">{label}</p>
     </Card>
