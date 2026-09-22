@@ -23,6 +23,8 @@ model Project {
   endDate     DateTime?
   sdgGoals    String?  // comma-separated UN SDG numbers
   coverUrl    String?
+  lat         Float?   // map latitude
+  lng         Float?   // map longitude
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -107,4 +109,13 @@ model Comparison {
   changes      String? // JSON array of detected changes
   impactScore  Float?
   createdAt    DateTime @default(now())
+}
+
+model SavedSearch {
+  id          String   @id @default(cuid())
+  query       String
+  label       String?  // user-friendly name
+  hitCount    Int      @default(0)
+  results     String?  // JSON array of {assetId, score, reason}
+  createdAt   DateTime @default(now())
 }

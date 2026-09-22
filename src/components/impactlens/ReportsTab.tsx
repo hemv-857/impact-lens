@@ -13,6 +13,8 @@ import {
   FileDiff,
   ScrollText,
   Check,
+  Printer,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -37,6 +39,7 @@ import {
   useProjects,
   useReports,
 } from "@/components/impactlens/impact-hooks";
+import { reportPdfUrl } from "@/lib/api";
 import { useImpactStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateTime, timeAgo } from "@/lib/format";
@@ -498,7 +501,15 @@ function ReportView({
               <Copy className="size-3.5" /> Copy
             </Button>
             <Button variant="outline" size="sm" onClick={onDownload}>
-              <Download className="size-3.5" /> Download
+              <Download className="size-3.5" /> .md
+            </Button>
+            <Button
+              size="sm"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              onClick={() => window.open(reportPdfUrl(report.id), "_blank", "noopener,noreferrer")}
+              title="Open print-ready view — save as PDF from browser print dialog"
+            >
+              <Printer className="size-3.5" /> PDF
             </Button>
           </div>
         </div>

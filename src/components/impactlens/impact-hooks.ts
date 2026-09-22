@@ -14,14 +14,17 @@ import {
   createProject,
   createReport,
   deleteMedia,
+  deleteSavedSearch,
   fetchAnalytics,
   fetchComparisons,
   fetchMedia,
   fetchMediaById,
   fetchProjects,
   fetchReports,
+  fetchSavedSearches,
   type MediaQuery,
   type BulkActionInput,
+  saveSearch,
   semanticSearch,
   seedSampleData,
 } from "@/lib/api";
@@ -33,6 +36,7 @@ export const qk = {
   projects: ["projects"] as const,
   comparisons: ["comparisons"] as const,
   reports: ["reports"] as const,
+  searches: ["searches"] as const,
   search: (query: string) => ["search", query] as const,
 };
 
@@ -167,6 +171,31 @@ export function useBulkMediaAction() {
       qc.invalidateQueries({ queryKey: ["media"] });
       qc.invalidateQueries({ queryKey: qk.analytics });
       qc.invalidateQueries({ queryKey: qk.projects });
+    },
+  });
+}
+
+// ----- Saved searches -----
+export function useSavedSearches() {
+  return useQuery({ queryKey: qk.searches, queryFn: fetchSavedSearches });
+}
+
+export function useSaveSearch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: saveSearch,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.searches });
+    },
+  });
+}
+
+export function useDeleteSavedSearch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: deleteSavedSearch,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.searches });
     },
   });
 }

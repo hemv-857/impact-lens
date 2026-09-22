@@ -44,6 +44,8 @@ export async function PATCH(
       endDate,
       sdgGoals,
       coverUrl,
+      lat,
+      lng,
     } = body as Record<string, unknown>;
 
     const existing = await db.project.findUnique({ where: { id } });
@@ -62,6 +64,8 @@ export async function PATCH(
       data.endDate = endDate ? new Date(endDate as string) : null;
     if (sdgGoals !== undefined) data.sdgGoals = sdgGoals ?? null;
     if (coverUrl !== undefined) data.coverUrl = coverUrl ?? null;
+    if (typeof lat === "number" || lat === null) data.lat = lat ?? null;
+    if (typeof lng === "number" || lng === null) data.lng = lng ?? null;
 
     const updated = await db.project.update({
       where: { id },

@@ -252,3 +252,50 @@ Unresolved / Next-phase priorities (for future cron rounds):
 - Add saved searches / search history.
 - Add user auth + multi-org.
 - Verify some assets (currently 0 verified) to populate the Verified KPI meaningfully.
+
+---
+Task ID: 9 (cron round 2)
+Agent: lead (webDevReview cron)
+Task: Assess status, QA, add PDF export, saved searches, project map view, polish.
+
+Work Log:
+- Reviewed worklog: platform mature — 12/12 assets analyzed, bulk actions, geographic/confidence widgets, animated KPIs all in place. Next-phase priorities listed: PDF export, saved searches, map view.
+- QA via agent-browser: all 7 tabs render correctly, no regressions. Past reports show in sidebar. Search returns ranked results.
+- Built NEW features:
+  1. Project map view (Projects tab):
+     - New MapView.tsx: dependency-free stylized SVG world map (equirectangular projection) with continent silhouettes, lat/long grid, ocean gradient (teal, no blue).
+     - Project pins positioned by lat/lng, COLOR-CODED by category (11 categories → earthy palette), with glow + hover labels.
+     - Click pin → detail card appears below map with name, category, location, coordinates, status, SDG chips.
+     - Legend overlay shows all category colors.
+     - VLM rated 9/10: "pins color-coded by category, clear legend, distinct colors, earth-tone palette".
+  2. Saved searches / search history (Search tab):
+     - New SavedSearch Prisma model (query, label, hitCount, results JSON, createdAt).
+     - New /api/searches (GET list, POST create) + /api/searches/[id] (DELETE) routes.
+     - SearchTab rebuilt with 3/4 + 1/4 layout: results grid + sticky "Saved searches" sidebar.
+     - "Save search" button on results; saved items show query + hitCount + timeAgo + hover Remove button.
+     - Clicking a saved search re-runs it. Persisted in DB, verified: "solar energy installation progress | 5 hits".
+     - VLM rated 9/10.
+  3. PDF export for reports (Reports tab):
+     - New /api/report-pdf route: returns print-ready HTML page (brand bar, headline, summary, metrics grid, markdown narrative, CTA, footer) with auto window.print() + Ctrl+P hint.
+     - ReportsTab: added "PDF" button (emerald) alongside Copy + .md download. Opens in new tab.
+     - Verified: HTTP 200, 7644 bytes of styled HTML.
+  4. Project coordinates (lat/lng):
+     - Added lat/lng fields to Project schema + types + serializer.
+     - Updated seed route with real coordinates for all 10 sample projects (Kenya, India, Uganda, USA, Indonesia, Scotland, Nepal, Malawi, Bangladesh, Ghana).
+     - Backfilled existing 10 projects with coordinates via script (all 10 now have lat/lng).
+     - New-project dialog + PATCH route accept lat/lng.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: MapView.tsx, src/app/api/searches/route.ts, src/app/api/searches/[id]/route.ts, src/app/api/report-pdf/route.ts.
+- Modified: prisma/schema.prisma (SavedSearch model + Project.lat/lng), src/lib/types.ts (Project.lat/lng + SavedSearch), src/lib/serialize.ts (lat/lng), src/lib/api.ts (saved-search + report-pdf helpers), impact-hooks.ts (useSavedSearches/useSaveSearch/useDeleteSavedSearch), SearchTab.tsx (saved-searches sidebar + save button), ReportsTab.tsx (PDF button), ProjectsTab.tsx (MapView + lat/lng form fields), seed/route.ts (coordinates), projects routes (lat/lng).
+- All features verified end-to-end via agent-browser + VLM (9/10 across the board).
+- 10/10 projects now have map coordinates. Saved searches persist in DB. PDF route returns styled print-ready HTML.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Verify more assets (currently 2 verified) to enrich the Verified KPI.
+- Add dashboard date-range filtering.
+- Add multi-asset timeline view per project.
+- Consider real map tiles (Leaflet) if geographic precision becomes important.

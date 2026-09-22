@@ -23,6 +23,8 @@ interface SeedSpec {
     status: string;
     sdgGoals: string;
     region?: string;
+    lat?: number;
+    lng?: number;
   };
   pair?: { group: string; role: PairKey };
 }
@@ -38,6 +40,8 @@ const SPECS: SeedSpec[] = [
       region: "East Africa",
       status: "active",
       sdgGoals: "13,15",
+      lat: -0.6,
+      lng: 36.0,
     },
     pair: { group: "pair-reforest", role: "before" },
   },
@@ -51,6 +55,8 @@ const SPECS: SeedSpec[] = [
       region: "East Africa",
       status: "active",
       sdgGoals: "13,15",
+      lat: -0.6,
+      lng: 36.0,
     },
     pair: { group: "pair-reforest", role: "after" },
   },
@@ -64,6 +70,8 @@ const SPECS: SeedSpec[] = [
       region: "South Asia",
       status: "active",
       sdgGoals: "7,13",
+      lat: 27.0,
+      lng: 74.2,
     },
   },
   {
@@ -76,6 +84,8 @@ const SPECS: SeedSpec[] = [
       region: "East Africa",
       status: "active",
       sdgGoals: "6",
+      lat: 3.4,
+      lng: 32.3,
     },
   },
   {
@@ -88,6 +98,8 @@ const SPECS: SeedSpec[] = [
       region: "North America",
       status: "active",
       sdgGoals: "2,11",
+      lat: 42.3,
+      lng: -83.0,
     },
     pair: { group: "pair-garden", role: "before" },
   },
@@ -101,6 +113,8 @@ const SPECS: SeedSpec[] = [
       region: "North America",
       status: "active",
       sdgGoals: "2,11",
+      lat: 42.3,
+      lng: -83.0,
     },
     pair: { group: "pair-garden", role: "after" },
   },
@@ -114,6 +128,8 @@ const SPECS: SeedSpec[] = [
       region: "Southeast Asia",
       status: "completed",
       sdgGoals: "14",
+      lat: -8.4,
+      lng: 115.2,
     },
   },
   {
@@ -126,6 +142,8 @@ const SPECS: SeedSpec[] = [
       region: "Europe",
       status: "active",
       sdgGoals: "7,13",
+      lat: 57.3,
+      lng: -4.4,
     },
   },
   {
@@ -138,6 +156,8 @@ const SPECS: SeedSpec[] = [
       region: "South Asia",
       status: "active",
       sdgGoals: "4",
+      lat: 27.7,
+      lng: 85.3,
     },
   },
   {
@@ -150,6 +170,8 @@ const SPECS: SeedSpec[] = [
       region: "Southern Africa",
       status: "active",
       sdgGoals: "2,13",
+      lat: -13.2,
+      lng: 34.3,
     },
   },
   {
@@ -162,6 +184,8 @@ const SPECS: SeedSpec[] = [
       region: "South Asia",
       status: "active",
       sdgGoals: "14,15",
+      lat: 21.8,
+      lng: 89.0,
     },
   },
   {
@@ -174,6 +198,8 @@ const SPECS: SeedSpec[] = [
       region: "West Africa",
       status: "active",
       sdgGoals: "1,5,8",
+      lat: 7.9,
+      lng: -1.0,
     },
   },
 ];
@@ -239,6 +265,8 @@ export async function POST() {
               status: spec.project.status,
               sdgGoals: spec.project.sdgGoals,
               coverUrl: url,
+              lat: spec.project.lat ?? null,
+              lng: spec.project.lng ?? null,
             },
           });
           projectCache.set(spec.project.name, { id: created.id, created: true });

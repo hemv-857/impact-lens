@@ -74,6 +74,8 @@ type PrismaProject = {
   endDate: Date | null;
   sdgGoals: string | null;
   coverUrl: string | null;
+  lat: number | null;
+  lng: number | null;
   createdAt: Date;
   updatedAt: Date;
   assets?: unknown[];
@@ -199,6 +201,8 @@ export function serializeProject(p: PrismaProject): Project {
     endDate: iso(p.endDate),
     sdgGoals: p.sdgGoals,
     coverUrl: p.coverUrl,
+    lat: p.lat,
+    lng: p.lng,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
     assetCount,

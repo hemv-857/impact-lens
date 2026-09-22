@@ -45,6 +45,7 @@ import {
 import { ProjectCard, ProjectCardSkeleton } from "@/components/impactlens/ProjectCard";
 import { MediaCard, MediaCardSkeleton } from "@/components/impactlens/MediaCard";
 import { EmptyState } from "@/components/impactlens/EmptyState";
+import { MapView } from "@/components/impactlens/MapView";
 import {
   useCreateProject,
   useMedia,
@@ -132,18 +133,25 @@ export function ProjectsTab() {
           onAction={() => setDialogOpen(true)}
         />
       ) : (
-        <motion.div
-          layout
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {projectsQ.data.map((p) => (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              onClick={() => setDetailProject(p)}
-            />
-          ))}
-        </motion.div>
+        <>
+          {/* Project map view */}
+          <MapView
+            projects={projectsQ.data}
+            onSelect={(p) => setDetailProject(p)}
+          />
+          <motion.div
+            layout
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {projectsQ.data.map((p) => (
+              <ProjectCard
+                key={p.id}
+                project={p}
+                onClick={() => setDetailProject(p)}
+              />
+            ))}
+          </motion.div>
+        </>
       )}
 
       {/* New project dialog */}
@@ -192,6 +200,8 @@ interface NewProjectForm {
   endDate?: string;
   sdgGoals?: string;
   coverUrl?: string;
+  lat?: number;
+  lng?: number;
 }
 
 function NewProjectDialog({
@@ -347,6 +357,41 @@ function NewProjectDialog({
               onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="p-lat">Latitude (optional)</Label>
+            <Input
+              id="p-lat"
+              type="number"
+              step="0.0001"
+              placeholder="-0.6023"
+              value={form.lat ?? ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  lat: e.target.value === "" ? undefined : parseFloat(e.target.value),
+                })
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="p-lng">Longitude (optional)</Label>
+            <Input
+              id="p-lng"
+              type="number"
+              step="0.0001"
+              placeholder="36.0"
+              value={form.lng ?? ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  lng: e.target.value === "" ? undefined : parseFloat(e.target.value),
+                })
+              }
+            />
+          </div>
+          <p className="col-span-2 text-[11px] text-stone-400">
+            Coordinates enable map placement. Find them via Google Maps → right-click.
+          </p>
         </div>
 
         <DialogFooter>

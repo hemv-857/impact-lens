@@ -4,6 +4,7 @@ import type {
   MediaAsset,
   Project,
   Report,
+  SavedSearch,
 } from "@/lib/types";
 
 /** Generic fetcher that throws on non-OK responses. */
@@ -195,6 +196,26 @@ export const semanticSearch = (query: string, limit = 24) =>
     method: "POST",
     body: JSON.stringify({ query, limit }),
   });
+
+// ----------------- Saved Searches -----------------
+export const fetchSavedSearches = () =>
+  fetcher<SavedSearch[]>("/api/searches");
+
+export const saveSearch = (body: {
+  query: string;
+  label?: string;
+  results: { assetId: string; score: number; reason: string }[];
+}) =>
+  fetcher<SavedSearch>("/api/searches", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+export const deleteSavedSearch = (id: string) =>
+  fetcher<{ ok: true }>(`/api/searches/${id}`, { method: "DELETE" });
+
+// ----------------- Report PDF -----------------
+export const reportPdfUrl = (id: string) => `/api/report-pdf?id=${encodeURIComponent(id)}`;
 
 // ----------------- Seed -----------------
 export const seedSampleData = () =>

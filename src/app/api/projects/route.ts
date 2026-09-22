@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
       endDate,
       sdgGoals,
       coverUrl,
+      lat,
+      lng,
     } = body as {
       name: string;
       description?: string;
@@ -64,6 +66,8 @@ export async function POST(req: NextRequest) {
       endDate?: string;
       sdgGoals?: string;
       coverUrl?: string;
+      lat?: number;
+      lng?: number;
     };
 
     const slug = await ensureUniqueSlug(slugify(name));
@@ -81,6 +85,8 @@ export async function POST(req: NextRequest) {
         endDate: endDate ? new Date(endDate) : null,
         sdgGoals: sdgGoals || null,
         coverUrl: coverUrl || null,
+        lat: typeof lat === "number" ? lat : null,
+        lng: typeof lng === "number" ? lng : null,
       },
       include: { _count: { select: { assets: true } } },
     });

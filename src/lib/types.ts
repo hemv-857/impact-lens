@@ -80,9 +80,20 @@ export interface Project {
   endDate: string | null;
   sdgGoals: string | null;
   coverUrl: string | null;
+  lat: number | null;
+  lng: number | null;
   createdAt: string;
   updatedAt: string;
   assetCount?: number;
+}
+
+export interface SavedSearch {
+  id: string;
+  query: string;
+  label: string | null;
+  hitCount: number;
+  results: { assetId: string; score: number; reason: string }[];
+  createdAt: string;
 }
 
 export interface Report {
