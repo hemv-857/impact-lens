@@ -309,6 +309,41 @@ export interface LeaderboardEntry {
 export const fetchLeaderboard = (limit = 10) =>
   fetcher<LeaderboardEntry[]>(`/api/projects/leaderboard?limit=${limit}`);
 
+// ----------------- Asset Notes -----------------
+export interface AssetNote {
+  id: string;
+  assetId: string;
+  body: string;
+  author: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const fetchNotes = (assetId: string) =>
+  fetcher<AssetNote[]>(`/api/notes?assetId=${encodeURIComponent(assetId)}`);
+
+export const createNote = (body: { assetId: string; body: string; author?: string }) =>
+  fetcher<AssetNote>("/api/notes", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+export const updateNote = (id: string, body: string) =>
+  fetcher<AssetNote>(`/api/notes/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ body }),
+  });
+
+export const deleteNote = (id: string) =>
+  fetcher<{ ok: true }>(`/api/notes/${id}`, { method: "DELETE" });
+
+// ----------------- Report Clone -----------------
+export const cloneReport = (id: string) =>
+  fetcher<Report>("/api/report/clone", {
+    method: "POST",
+    body: JSON.stringify({ id }),
+  });
+
 // ----------------- Seed -----------------
 export const seedSampleData = () =>
   fetcher<{ ok: true; count: number }>("/api/seed", { method: "POST" });

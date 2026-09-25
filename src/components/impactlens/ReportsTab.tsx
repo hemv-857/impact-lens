@@ -6,6 +6,7 @@ import {
   Sparkles,
   Loader2,
   Copy,
+  CopyPlus,
   Download,
   History,
   Megaphone,
@@ -34,6 +35,7 @@ import {
 import { EmptyState } from "@/components/impactlens/EmptyState";
 import { MarkdownRenderer } from "@/components/impactlens/MarkdownRenderer";
 import {
+  useCloneReport,
   useCreateReport,
   useMedia,
   useProjects,
@@ -97,6 +99,7 @@ export function ReportsTab() {
   const reportsQ = useReports();
   const mediaQ = useMedia({ limit: 60, projectId: projectId !== "none" ? projectId : undefined });
   const create = useCreateReport();
+  const cloneMut = useCloneReport();
   const { toast } = useToast();
 
   // Apply preset project from store (e.g., when jumping from projects tab)
@@ -425,6 +428,20 @@ export function ReportsTab() {
                     setActiveReportId(r.id);
                     setResult(null);
                   }}
+                  onClone={async () => {
+                    try {
+                      const cloned = await cloneMut.mutateAsync(r.id);
+                      toast({ title: "Report cloned", description: cloned.title });
+                      setActiveReportId(cloned.id);
+                    } catch (e) {
+                      toast({
+                        title: "Clone failed",
+                        description: e instanceof Error ? e.message : "Unknown error",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  cloning={cloneMut.isPending}
                 />
               ))}
           </div>
@@ -573,10 +590,14 @@ function PastReportCard({
   report,
   active,
   onOpen,
+  onClone,
+  cloning,
 }: {
   report: Report;
   active: boolean;
   onOpen: () => void;
+  onClone?: () => void;
+  cloning?: boolean;
 }) {
   return (
     <Card
@@ -590,7 +611,7 @@ function PastReportCard({
         }
       }}
       className={cn(
-        "lift-on-hover cursor-pointer gap-0 p-4",
+        "lift-on-hover group cursor-pointer gap-0 p-4",
         active && "ring-2 ring-emerald-500"
       )}
     >
@@ -601,7 +622,27 @@ function PastReportCard({
         >
           {report.type}
         </Badge>
-        <span className="text-[11px] text-stone-400">{timeAgo(report.createdAt)}</span>
+        <div className="flex items-center gap-1">
+          {onClone && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClone();
+              }}
+              disabled={cloning}
+              className="rounded p-1 text-stone-400 opacity-0 transition hover:bg-stone-100 hover:text-emerald-700 group-hover:opacity-100 disabled:opacity-50"
+              title="Clone report"
+              aria-label="Clone report"
+            >
+              {cloning ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <CopyPlus className="size-3" />
+              )}
+            </button>
+          )}
+          <span className="text-[11px] text-stone-400">{timeAgo(report.createdAt)}</span>
+        </div>
       </div>
       <h4 className="mt-2 line-clamp-2 text-sm font-semibold text-stone-900">
         {report.title}

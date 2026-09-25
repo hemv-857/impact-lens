@@ -34,6 +34,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import { ConfidenceBar } from "@/components/impactlens/ConfidenceBar";
+import { AssetNotes } from "@/components/impactlens/AssetNotes";
 import { useImpactStore } from "@/lib/store";
 import { useAnalyzeMedia, useDeleteMedia, useMediaById } from "@/components/impactlens/impact-hooks";
 import { useToast } from "@/hooks/use-toast";
@@ -140,14 +141,24 @@ export function AssetDrawer() {
 
         {asset && (
           <div className="scrollbar-thin flex-1 overflow-y-auto bg-stone-50">
-            {/* Image */}
+            {/* Media display (image or video) */}
             <div className="relative aspect-video w-full bg-stone-200">
-              { }
-              <img
-                src={asset.thumbnailUrl || asset.url}
-                alt={asset.title || asset.aiCaption || "Field media asset"}
-                className="h-full w-full object-cover"
-              />
+              {asset.type === "video" ? (
+                <video
+                  src={asset.url}
+                  controls
+                  className="h-full w-full object-cover"
+                  poster={asset.thumbnailUrl || undefined}
+                >
+                  Your browser does not support video playback.
+                </video>
+              ) : (
+                <img
+                  src={asset.thumbnailUrl || asset.url}
+                  alt={asset.title || asset.aiCaption || "Field media asset"}
+                  className="h-full w-full object-cover"
+                />
+              )}
               <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
                 <CategoryBadge category={asset.category} />
                 {asset.verified && (
@@ -440,6 +451,11 @@ export function AssetDrawer() {
                   </ol>
                 </Section>
               )}
+
+              <Separator />
+
+              {/* Asset notes / annotations */}
+              <AssetNotes assetId={asset.id} />
 
               <Separator />
               <p className="text-[11px] text-stone-400">

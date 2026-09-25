@@ -650,3 +650,54 @@ Unresolved / Next-phase priorities:
 - Add scheduled report generation / email delivery.
 - Add a project leaderboard with trend indicators (up/down arrows vs last period).
 - Add an "Impact Highlights" carousel (auto-rotating featured stories).
+
+---
+Task ID: 18 (cron round 11 — e2e features)
+Agent: lead
+Task: Add asset notes/annotations, impact highlights carousel, report clone.
+
+Work Log:
+- Reviewed worklog: platform very mature — 8 tabs, 33 components, 24 API routes, all prior features in place.
+- QA via agent-browser: all 8 tabs render correctly, no runtime errors.
+- Built NEW e2e features:
+  1. Asset Notes / Annotations (collaboration feature):
+     - Schema: new AssetNote model (id, assetId, body, author, createdAt, updatedAt) with index on assetId. Pushed to DB.
+     - New /api/notes GET (list by assetId, newest first) + POST (create with body + optional author).
+     - New /api/notes/[id] DELETE + PATCH (update body).
+     - api.ts: added AssetNote type + fetchNotes + createNote + updateNote + deleteNote helpers.
+     - impact-hooks.ts: added useNotes + useCreateNote + useUpdateNote + useDeleteNote hooks + qk.notes query key.
+     - New AssetNotes.tsx component: collaborative notes panel with add form (textarea + author input + Send button), notes list (each with author badge, time-ago, edit/delete on hover), edit mode with save/cancel. AnimatePresence for smooth add/remove.
+     - AssetDrawer: integrated AssetNotes section between evidence chain and footer.
+     - Verified via API: created note ("This is a test annotation note" by "QA Tester"), listed 1 note, deleted.
+  2. Impact Highlights Carousel (Overview):
+     - New ImpactHighlights.tsx: auto-rotating carousel (6s rotation) with 5 featured stories (Global reach, 100% AI-analyzed, Impact reports, Before/after, Campaign Studio).
+     - Each slide: gradient background (earthy palette: emerald→teal, amber→orange, lime→emerald, orange→rose), emoji + "Featured" badge + title + description + metric card + "Explore" CTA.
+     - Controls: dot indicators (active = wider emerald bar), play/pause button, slide counter. Pauses on hover.
+     - OverviewTab: added ImpactHighlights section right after the hero.
+     - VLM confirmed: "Featured highlight with 🌍 emoji, 'Featured' tag, 'Global reach across 10 countries' title, large metric '10'".
+  3. Report Clone / Duplicate:
+     - New POST /api/report/clone route: duplicates an existing report with "(copy)" suffix on title, preserves all fields (type, projectId, headline, summary, narrative, metrics, mediaIds, callToAction, tone).
+     - api.ts: added cloneReport helper.
+     - impact-hooks.ts: added useCloneReport hook.
+     - ReportsTab: PastReportCard now has an onClone prop + CopyPlus icon button (appears on hover). Clone handler calls the API, shows toast, selects the cloned report.
+     - Verified via API: cloned "Empowering Artisans..." report → "(copy)" suffix added. Clone button visible in Reports tab.
+  4. Polish:
+     - ReportsTab: CopyPlus + Loader2 icon imports, cloneMut hook.
+     - OverviewTab: ImpactHighlights import + section.
+     - AssetDrawer: AssetNotes import + section.
+- Lint: 0 errors, 0 warnings.
+
+Stage Summary:
+- New files: src/app/api/notes/route.ts, src/app/api/notes/[id]/route.ts, src/app/api/report/clone/route.ts, src/components/impactlens/AssetNotes.tsx, src/components/impactlens/ImpactHighlights.tsx.
+- Modified: prisma/schema.prisma (AssetNote model), api.ts (notes + clone helpers), impact-hooks.ts (notes + clone hooks + qk.notes), AssetDrawer.tsx (AssetNotes section), OverviewTab.tsx (ImpactHighlights section), ReportsTab.tsx (clone button + CopyPlus + cloneMut).
+- All features verified end-to-end via API + browser + VLM.
+- Analytics: 13 assets, 13 analyzed, 10 projects, 9 reports (1 cloned), 2 comparisons, 12 verified.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM supports video_url).
+- Add user auth + multi-org projects.
+- Consider real map tiles (Leaflet) for geographic precision.
+- Add multi-variant report generation (not just campaigns).
+- Add scheduled report generation / email delivery.
+- Add asset similarity finder (find visually similar assets using AI).
+- Add a project activity feed (timeline of project events).

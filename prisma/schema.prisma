@@ -120,3 +120,14 @@ model SavedSearch {
   results     String?  // JSON array of {assetId, score, reason}
   createdAt   DateTime @default(now())
 }
+
+model AssetNote {
+  id          String   @id @default(cuid())
+  assetId     String
+  body        String
+  author      String?  // optional author name
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([assetId])
+}

@@ -40,6 +40,7 @@ import { TopTagsCloud } from "@/components/impactlens/TopTagsCloud";
 import { DateRangeFilter, type DateRangeValue } from "@/components/impactlens/DateRangeFilter";
 import { ProjectLeaderboard } from "@/components/impactlens/ProjectLeaderboard";
 import { FavoritesStrip } from "@/components/impactlens/FavoritesStrip";
+import { ImpactHighlights } from "@/components/impactlens/ImpactHighlights";
 import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import {
   useAnalytics,
@@ -195,6 +196,9 @@ export function OverviewTab() {
           aria-hidden
         />
       </motion.section>
+
+      {/* Impact highlights carousel */}
+      <ImpactHighlights />
 
       {/* Empty state CTA */}
       {isEmpty && !analyticsQ.isLoading && (

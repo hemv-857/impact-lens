@@ -2,7 +2,7 @@
 // append a TransformStep to the transformations JSON array.
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeImage } from "@/lib/zai";
+import { analyzeMedia } from "@/lib/zai";
 import { serializeAsset } from "@/lib/serialize";
 import type { TransformStep } from "@/lib/types";
 
@@ -18,9 +18,10 @@ export async function POST(
     });
     if (!asset) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    let analysis: Awaited<ReturnType<typeof analyzeImage>>;
+    let analysis: Awaited<ReturnType<typeof analyzeMedia>>;
     try {
-      analysis = await analyzeImage(asset.url);
+      const mediaType = (asset.type === "video" ? "video" : "image") as "image" | "video";
+      analysis = await analyzeMedia(asset.url, mediaType);
     } catch (e) {
       const message = e instanceof Error ? e.message : "VLM analysis failed";
       return NextResponse.json({ error: message }, { status: 500 });

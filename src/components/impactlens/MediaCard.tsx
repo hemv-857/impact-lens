@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Clock,
   Star,
+  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -122,6 +123,13 @@ export function MediaCard({
                 <Clock className="size-3" />
                 Pending analysis
               </span>
+            </div>
+          )}
+          {/* Video badge */}
+          {asset.type === "video" && (
+            <div className="absolute bottom-1 left-1 flex items-center gap-1 rounded-full bg-stone-900/80 px-2 py-0.5 text-[9px] font-medium text-white">
+              <Video className="size-2.5" />
+              VIDEO
             </div>
           )}
           {/* Top overlay: category + selection checkbox / verified */}

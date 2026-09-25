@@ -2,7 +2,7 @@
 // optionally auto-analyze with VLM, and return the created MediaAsset.
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeImage, generateImage, saveUpload } from "@/lib/zai";
+import { analyzeMedia, generateImage, saveUpload } from "@/lib/zai";
 import { serializeAsset } from "@/lib/serialize";
 import type { Prisma } from "@prisma/client";
 
@@ -10,7 +10,7 @@ function rand(len: number) {
   return Math.random().toString(36).slice(2, 2 + len);
 }
 
-function analysisToData(a: Awaited<ReturnType<typeof analyzeImage>>) {
+function analysisToData(a: Awaited<ReturnType<typeof analyzeMedia>>) {
   return {
     aiCaption: a.caption,
     aiSummary: a.summary,
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     // 4. Optional VLM analysis
     if (analyze) {
       try {
-        const analysis = await analyzeImage(saved.url);
+        const analysis = await analyzeMedia(saved.url);
         const updated = await db.mediaAsset.update({
           where: { id: asset.id },
           data: {

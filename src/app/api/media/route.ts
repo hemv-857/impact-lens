@@ -2,7 +2,7 @@
 // POST /api/media        — create a media asset (optionally analyze immediately)
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeImage, saveUpload } from "@/lib/zai";
+import { analyzeMedia, saveUpload } from "@/lib/zai";
 import { serializeAsset } from "@/lib/serialize";
 import type { Prisma } from "@prisma/client";
 
@@ -20,7 +20,7 @@ function decodeDataUrl(dataUrl: string): { buffer: Buffer; ext: string } | null 
 }
 
 // Apply VLM analysis result to a Prisma update payload.
-function analysisToData(a: Awaited<ReturnType<typeof analyzeImage>>) {
+function analysisToData(a: Awaited<ReturnType<typeof analyzeMedia>>) {
   return {
     aiCaption: a.caption,
     aiSummary: a.summary,
@@ -186,10 +186,14 @@ export async function POST(req: NextRequest) {
       { type: "upload", at: now.toISOString(), note: source || (rawUrl.startsWith("data:") ? "browser upload" : "external url") },
     ];
 
+    // Detect video from format/extension
+    const isVideo = ["mp4", "avi", "mov", "webm", "mkv", "flv", "wmv", "m4v", "3gp"].includes(format || "");
+    const mediaType = isVideo ? "video" : "image";
+
     const createData: Prisma.MediaAssetCreateInput = {
       publicId,
       title: title || "Untitled asset",
-      type: "image",
+      type: mediaType,
       url: finalUrl,
       format,
       bytes,
@@ -207,7 +211,7 @@ export async function POST(req: NextRequest) {
 
     if (autoAnalyze) {
       try {
-        const analysis = await analyzeImage(finalUrl);
+        const analysis = await analyzeMedia(finalUrl, mediaType as "image" | "video");
         const updated = await db.mediaAsset.update({
           where: { id: asset.id },
           data: {

@@ -97,10 +97,10 @@ export interface VlmAnalysis {
   qualityScore: number;
 }
 
-const ANALYSIS_PROMPT = `You are a sustainability field-media analyst. Analyze this image and return STRICT JSON only (no markdown fences, no prose). Schema:
+const ANALYSIS_PROMPT = `You are a sustainability field-media analyst. Analyze this media (image or video) and return STRICT JSON only (no markdown fences, no prose). Schema:
 {
   "caption": "one-sentence factual caption (<=140 chars)",
-  "summary": "2-3 sentence summary of what the image shows and its likely context",
+  "summary": "2-3 sentence summary of what the media shows and its likely context",
   "description": "detailed 4-6 sentence description covering scene, subjects, environment, lighting, and visible evidence of activity or impact",
   "projectName": "best-guess project name (e.g. 'Hillside Reforestation Initiative')",
   "location": "likely location type (e.g. 'rural hillside, East Africa')",
@@ -116,9 +116,20 @@ const ANALYSIS_PROMPT = `You are a sustainability field-media analyst. Analyze t
 }
 Return ONLY the JSON object.`;
 
-export async function analyzeImage(imageUrl: string): Promise<VlmAnalysis> {
+// Detect if a URL/extension is a video.
+function isVideoMedia(url: string, format?: string | null): boolean {
+  const ext = format || url.split(".").pop()?.split("?")[0]?.toLowerCase() || "";
+  return ["mp4", "avi", "mov", "webm", "mkv", "flv", "wmv", "m4v", "3gp"].includes(ext);
+}
+
+export async function analyzeMedia(url: string, mediaType?: "image" | "video"): Promise<VlmAnalysis> {
   const zai = await getZai();
-  const resolved = await resolveImageUrl(imageUrl);
+  // Auto-detect video from URL extension if mediaType not provided
+  const isVideo = mediaType === "video" || (!mediaType && isVideoMedia(url));
+  const resolved = isVideo ? url : await resolveImageUrl(url);
+  const mediaContent = isVideo
+    ? { type: "video_url" as const, video_url: { url: resolved } }
+    : { type: "image_url" as const, image_url: { url: resolved } };
   const resp = await withRetry(() =>
     zai.chat.completions.createVision({
       messages: [
@@ -126,7 +137,7 @@ export async function analyzeImage(imageUrl: string): Promise<VlmAnalysis> {
           role: "user",
           content: [
             { type: "text", text: ANALYSIS_PROMPT },
-            { type: "image_url", image_url: { url: resolved } },
+            mediaContent,
           ],
         },
       ],
@@ -150,6 +161,11 @@ export async function analyzeImage(imageUrl: string): Promise<VlmAnalysis> {
     ocrText: "",
     qualityScore: 0.6,
   });
+}
+
+// Backward-compatible alias — calls analyzeMedia with auto-detection.
+export async function analyzeImage(url: string): Promise<VlmAnalysis> {
+  return analyzeMedia(url);
 }
 
 // ---------------- VLM: Before/after comparison ----------------

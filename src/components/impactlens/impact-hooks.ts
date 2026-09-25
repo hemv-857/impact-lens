@@ -8,23 +8,28 @@ import {
 import {
   analyzeMedia,
   bulkMediaAction,
+  cloneReport,
   createCampaign,
   createComparison,
   createMedia,
+  createNote,
   createProject,
   createReport,
   deleteMedia,
+  deleteNote,
   deleteSavedSearch,
   fetchAnalytics,
   fetchComparisons,
   fetchLeaderboard,
   fetchMedia,
   fetchMediaById,
+  fetchNotes,
   fetchProjects,
   fetchReports,
   fetchSavedSearches,
   generateCampaignVariants,
   toggleFavorite,
+  updateNote,
   type MediaQuery,
   type BulkActionInput,
   saveSearch,
@@ -42,6 +47,7 @@ export const qk = {
   searches: ["searches"] as const,
   search: (query: string) => ["search", query] as const,
   leaderboard: ["leaderboard"] as const,
+  notes: (assetId: string) => ["notes", assetId] as const,
 };
 
 export function useAnalytics() {
@@ -226,4 +232,55 @@ export function useGenerateCampaignVariants() {
 // ----- Project leaderboard -----
 export function useLeaderboard(limit = 10) {
   return useQuery({ queryKey: qk.leaderboard, queryFn: () => fetchLeaderboard(limit) });
+}
+
+// ----- Asset Notes -----
+export function useNotes(assetId: string | null) {
+  return useQuery({
+    queryKey: qk.notes(assetId ?? ""),
+    queryFn: () => fetchNotes(assetId!),
+    enabled: !!assetId,
+  });
+}
+
+export function useCreateNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createNote,
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.notes(variables.assetId) });
+    },
+  });
+}
+
+export function useUpdateNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body, assetId }: { id: string; body: string; assetId: string }) =>
+      updateNote(id, body),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.notes(variables.assetId) });
+    },
+  });
+}
+
+export function useDeleteNote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, assetId }: { id: string; assetId: string }) => deleteNote(id),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: qk.notes(variables.assetId) });
+    },
+  });
+}
+
+// ----- Report Clone -----
+export function useCloneReport() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => cloneReport(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.reports });
+    },
+  });
 }

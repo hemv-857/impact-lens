@@ -2,7 +2,7 @@
 // Body: { ids: string[], action: "analyze"|"verify"|"unverify"|"delete"|"assign", projectId? }
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeImage } from "@/lib/zai";
+import { analyzeMedia } from "@/lib/zai";
 import { serializeAsset } from "@/lib/serialize";
 
 export async function POST(req: NextRequest) {
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
             failed++;
             continue;
           }
-          const analysis = await analyzeImage(asset.url);
+          const analysis = await analyzeMedia(asset.url, (asset.type === "video" ? "video" : "image") as "image" | "video");
           const transforms = Array.isArray(asset.transformations) ? asset.transformations : [];
           try { transforms.push({ type: "ai-analyze", at: new Date().toISOString(), note: "bulk VLM analysis" }); } catch { /* transformations may be JSON string */ }
           await db.mediaAsset.update({
