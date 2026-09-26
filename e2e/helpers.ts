@@ -6,8 +6,12 @@ export const OWNER = { email: "ada@example.org", password: "password123" };
 export const OTHER_OWNER = { email: "bob@example.org", password: "password123" };
 
 export function envLocal(key: string): string {
-  const text = readFileSync(path.join(process.cwd(), ".env.local"), "utf8");
-  return text.match(new RegExp(`^${key}=(.*)$`, "m"))?.[1]?.trim() ?? "";
+  try {
+    const text = readFileSync(path.join(process.cwd(), ".env.local"), "utf8");
+    return text.match(new RegExp(`^${key}=(.*)$`, "m"))?.[1]?.trim() ?? "";
+  } catch {
+    return ""; // no .env.local (CI) — every key reads as unset
+  }
 }
 
 export async function login(page: Page, who = OWNER) {

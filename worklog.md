@@ -1190,3 +1190,31 @@ Stage Summary:
   `e2e/audit-ux.spec.ts`, `worklog.md`.
 - Next: deferred items in AUDIT.md §8; capability tests re-run when the
   OpenRouter free budget renews.
+
+Task ID: 31
+
+Task: Remove the Z.ai tab logo; add GitHub Actions CI running the full gates.
+
+Work Log:
+- `public/logo.svg` rewritten as the ImpactLens mark (emerald→teal gradient
+  rounded square + white leaf, matching header/footer) — Z.ai branding gone;
+  filename/layout/middleware untouched.
+- `.github/workflows/ci.yml` (push to main + PRs, ubuntu-latest, 15m cap):
+  Node 20 + Bun → `npm ci` → `db:push` (Prisma generate, no-op on committed
+  DB) → lint → tsc → build → `bun scripts/ai-smoke.ts` → Playwright chromium
+  → start standalone server on :3001 (committed `.env` + `db/custom.db`,
+  curl retry ×30) → `npm run test:e2e` → server log uploaded on failure.
+  No secrets available in CI: live-AI tests skip, everything else runs.
+- `e2e/audit-capability.spec.ts`: `beforeEach` skip when `OPENROUTER_API_KEY`
+  is absent (7 LIVE tests).
+- `e2e/helpers.ts`: `envLocal()` now returns "" when `.env.local` is missing
+  (CI) instead of throwing — also un-skips the F2 Cloudinary guard correctly.
+- Gates (local): `npx tsc --noEmit` 0 · `npm run lint` clean · `npm run build`
+  ok · `npm run test:e2e` 46 passed / 6 skipped / 0 failed · `/logo.svg`
+  serves 200 image/svg+xml.
+
+Stage Summary:
+- New: `.github/workflows/ci.yml`.
+- Modified: `public/logo.svg`, `e2e/audit-capability.spec.ts`,
+  `e2e/helpers.ts`, `worklog.md`.
+- Next: confirm first CI run green on GitHub; deferred items AUDIT.md §8.

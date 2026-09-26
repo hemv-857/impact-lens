@@ -3,9 +3,15 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { apiLogin } from "./helpers";
+import { apiLogin, envLocal } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
+
+// Live-AI suite: without a key every test would 500 in CI — skip upfront.
+// (Free-budget exhaustion mid-run is still handled per-test by skipIfQuota.)
+test.beforeEach(() => {
+  test.skip(!envLocal("OPENROUTER_API_KEY"), "OPENROUTER_API_KEY not configured (CI)");
+});
 
 let browserCtx: BrowserContext;
 let req: APIRequestContext;
