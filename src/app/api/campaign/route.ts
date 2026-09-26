@@ -3,7 +3,7 @@
 // platform ∈ [instagram, twitter, linkedin, newsletter]
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { generateReport, type ReportInput } from "@/lib/zai";
+import { generateReport, type ReportInput } from "@/lib/ai";
 import { serializeReport } from "@/lib/serialize";
 
 const VALID_PLATFORMS = ["instagram", "twitter", "linkedin", "newsletter"] as const;

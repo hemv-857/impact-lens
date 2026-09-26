@@ -2,7 +2,7 @@
 // optionally auto-analyze with VLM, and return the created MediaAsset.
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeMedia, generateImage, saveUpload } from "@/lib/zai";
+import { analyzeMedia, generateImage, saveUpload } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import type { Prisma } from "@prisma/client";
 
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       size?: string;
     };
 
-    // 1. Generate the image via z-ai image-generation
+    // 1. Generate the image via the configured AI provider
     const genSize = size || "1344x768";
     let gen;
     try {

@@ -8,7 +8,7 @@ Core capabilities: ingest field media → AI-extract metadata (project, location
 ## Tech Stack
 - Next.js 16 (App Router) + TypeScript + Tailwind 4 + shadcn/ui
 - Prisma (SQLite) for media/project/report/comparison persistence
-- z-ai-web-dev-sdk (backend only): VLM for image analysis, LLM for reports/campaign/summaries, image-generation for sample field media
+- OpenAI-compatible AI client (`src/lib/ai.ts`, env-configured): VLM for image analysis, LLM for reports/campaign/summaries, image generation for sample field media
 - Earthy palette: emerald primary, amber accent, stone neutrals, deep teal — NO indigo/blue
 
 ## Task IDs
@@ -701,3 +701,57 @@ Unresolved / Next-phase priorities:
 - Add scheduled report generation / email delivery.
 - Add asset similarity finder (find visually similar assets using AI).
 - Add a project activity feed (timeline of project events).
+
+---
+Task ID: 19
+Agent: lead
+Task: Replace z-ai-web-dev-sdk with an env-configured OpenAI-compatible client; clean up Z.ai branding.
+
+Work Log:
+- Problem: `z-ai-web-dev-sdk` requires a `.z-ai-config` (baseUrl + apiKey) that does not exist
+  anywhere in this environment, so every AI call in the app threw "Configuration file not found".
+  The SDK is also just a thin fetch wrapper around a private non-standard endpoint
+  (`POST {baseUrl}/chat/completions/vision`), which locked the app to one provider.
+- Renamed `src/lib/zai.ts` → `src/lib/ai.ts` and rewrote the transport (no new dependencies):
+  - `cfg()` reads env lazily: `AI_BASE_URL` (default https://api.openai.com/v1), `AI_API_KEY`
+    (required, clear error if missing), `AI_TEXT_MODEL`, `AI_VISION_MODEL`, `AI_IMAGE_MODEL`.
+  - `aiFetch(path, body)` → POST + `Authorization: Bearer` + JSON, throws with status + body on !ok.
+  - `chat(messages, vision?)` → standard `POST /chat/completions`; vision=true selects the vision
+    model, content parts still carry `image_url` (and `video_url` — honored if the provider supports it).
+  - Z.ai-only `thinking: {type:"disabled"}` dropped; preamble messages switched from role
+    `assistant` → `system` for wider provider compatibility.
+  - `generateImage(prompt, size)` → `/images/generations` with a size fallback chain
+    (requested → `auto` → `1024x1024`) because Z.ai sizes like `1344x768` are not portable;
+    parses `b64_json` / `base64` / `url` (downloads URL responses).
+  - Unchanged exports/signatures: `analyzeMedia`, `analyzeImage`, `compareImages`,
+    `generateReport`, `semanticSearch`, `saveUpload`, `resolveImageUrl`, `parseJsonLenient`,
+    `withRetry` and all result types — so routes needed only import-path updates.
+- Updated all 10 route imports to `@/lib/ai`; `api/campaign/variants` now calls `chat()`
+  instead of `getZai().chat.completions.create()`.
+- Removed `z-ai-web-dev-sdk` from package.json (`bun install`: 817 packages, 1 removed).
+- `.env`: `DATABASE_URL` fixed from the container path `file:/home/z/my-project/db/custom.db`
+  to `file:../db/custom.db` (repo's real SQLite file) + `AI_*` defaults. Secret belongs in
+  `.env.local` (gitignored). Verified DB connects: 10 projects / 13 assets / 9 reports.
+- Branding: `Z.ai` metadata keyword → `OpenAI-compatible AI`, favicon `z-cdn.chatglm.cn/...`
+  → local `/logo.svg`, OpenGraph url `chat.z.ai` dropped, footer "Built with Z.ai" link →
+  provider-neutral text, `agent-ctx/*.md` references updated.
+- New `scripts/ai-smoke.ts`: stubs `fetch`, asserts endpoint/auth/model selection, multimodal
+  parts, size fallback on 400, URL-image download, and the missing-key error.
+
+Stage Summary:
+- New/renamed: `src/lib/ai.ts` (replaces `src/lib/zai.ts`), `scripts/ai-smoke.ts`.
+- Modified: 10 API route imports, `package.json`, `bun.lock`, `.env`, `layout.tsx`, `Footer.tsx`,
+  `agent-ctx/2-b-full-stack-developer.md`, `worklog.md`.
+- Checks: `bun scripts/ai-smoke.ts` pass · `npm run lint` 0 errors · `npx prisma generate` ok ·
+  `bun run build` ok · `npx tsc --noEmit` 6 errors, all pre-existing and untouched by this task
+  (2 × missing `socket.io` in `examples/`, `CompareTab` before/after props, `DateRangeFilter.today`,
+  `media/bulk` JSON `never`) — `next.config.ts` sets `ignoreBuildErrors: true`.
+- Not verified live: no AI key in this environment, so real analyze/report/image calls still
+  need `AI_API_KEY` in `.env.local`.
+
+Unresolved / Next-phase priorities:
+- Add video asset support (VLM accepts video_url but depends on provider support).
+- Drop or replace `scripts/fetch-field-media.ts` (depends on the retired `z-ai` CLI).
+- Fix the 6 pre-existing tsc errors above.
+- Add user auth + multi-org projects.
+- Add scheduled report generation / email delivery.

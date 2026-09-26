@@ -7,7 +7,7 @@ contract, using TanStack Query for server state and Zustand for client state.
 
 ## Work Log
 - Read prior worklog (`/home/z/my-project/worklog.md`), `src/lib/types.ts`
-  (exact data shapes) and `src/lib/zai.ts` (backend AI capabilities) so the
+  (exact data shapes) and `src/lib/ai.ts` (backend AI capabilities) so the
   UI consumes the real return types.
 - Inspected existing scaffold: shadcn/ui components in `src/components/ui/`,
   Geist fonts in `layout.tsx`, `useToast` hook, no QueryClient yet, no impact
@@ -58,7 +58,7 @@ contract, using TanStack Query for server state and Zustand for client state.
   `POST /api/media/generate` (see assumptions below).
 - Built `Header.tsx` (sticky, brand mark, desktop nav, mobile Sheet menu,
   primary "Analyze media" CTA) and `Footer.tsx` (mt-auto sticky footer with
-  platform info, "Built with Z.ai", sample-data disclaimer).
+  platform info, "Built with <provider>", sample-data disclaimer).
 - Built the seven tabs:
   - `OverviewTab.tsx`: hero gradient band + 2 CTAs, 6 KPI stat cards (Total,
     Analyzed, Active projects, Reports, Verified, Avg impact score), recharts
@@ -171,7 +171,7 @@ contract, using TanStack Query for server state and Zustand for client state.
   writing, the route does not exist (only `/api/media` and `/api/media/[id]`
   are present). The frontend handles a 404/500 gracefully with a toast, but
   implementing this endpoint will unlock the generate-from-prompt flow.
-  Suggested impl: call `generateImage(prompt)` from `src/lib/zai.ts`, save
+  Suggested impl: call `generateImage(prompt)` from `src/lib/ai.ts`, save
   via `saveUpload(buffer, "png")`, create the `MediaAsset`, optionally call
   `analyzeImage`, return serialized asset. The seed route already does
   something similar.

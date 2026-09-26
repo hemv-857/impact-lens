@@ -7,7 +7,7 @@
 // Re-running the endpoint is safe: assets already matching a URL are skipped.
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeImage } from "@/lib/zai";
+import { analyzeImage } from "@/lib/ai";
 import fs from "fs";
 import path from "path";
 

@@ -3,7 +3,7 @@
 // Returns: { variants: { headline, caption, hashtags[], callToAction, angle }[] }
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getZai, parseJsonLenient } from "@/lib/zai";
+import { chat, parseJsonLenient } from "@/lib/ai";
 
 const VALID_PLATFORMS = ["instagram", "twitter", "linkedin", "newsletter"] as const;
 const VALID_TONES = ["professional", "emotional", "data-driven"] as const;
@@ -100,15 +100,10 @@ Return STRICT JSON only (no markdown). Schema:
 }
 Return ONLY the JSON object.`;
 
-    const zai = await getZai();
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: "assistant", content: "You are a senior NGO campaign strategist." },
-        { role: "user", content: prompt },
-      ],
-      thinking: { type: "disabled" },
-    });
-    const raw = completion.choices[0]?.message?.content ?? "";
+    const raw = await chat([
+      { role: "system", content: "You are a senior NGO campaign strategist." },
+      { role: "user", content: prompt },
+    ]);
     const parsed = parseJsonLenient<{ variants: CampaignVariant[] }>(raw, {
       variants: [],
     });

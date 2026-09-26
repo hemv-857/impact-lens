@@ -2,7 +2,7 @@
 // POST /api/media        — create a media asset (optionally analyze immediately)
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeMedia, saveUpload } from "@/lib/zai";
+import { analyzeMedia, saveUpload } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import type { Prisma } from "@prisma/client";
 

@@ -1,14 +1,69 @@
-// Backend-only ZAI SDK wrapper for ImpactLens
+// Backend-only OpenAI-compatible AI client for ImpactLens
 // Provides: VLM image analysis, before/after comparison, LLM report/campaign generation, semantic search scoring
-import ZAI from "z-ai-web-dev-sdk";
+// Config (env): AI_BASE_URL, AI_API_KEY, AI_TEXT_MODEL, AI_VISION_MODEL, AI_IMAGE_MODEL
 import fs from "fs";
 import path from "path";
 
-let _zai: Awaited<ReturnType<typeof ZAI.create>> | null = null;
+const DEFAULTS = {
+  baseUrl: "https://api.openai.com/v1",
+  textModel: "gpt-4o-mini",
+  visionModel: "gpt-4o-mini",
+  imageModel: "gpt-image-1",
+};
 
-export async function getZai() {
-  if (!_zai) _zai = await ZAI.create();
-  return _zai;
+interface AiConfig {
+  baseUrl: string;
+  apiKey: string;
+  textModel: string;
+  visionModel: string;
+  imageModel: string;
+}
+
+// Read env lazily so .env.local overrides and tests work after import.
+function cfg(): AiConfig {
+  const apiKey = process.env.AI_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error(
+      "AI_API_KEY is not set. Add AI_API_KEY=<your key> to .env.local — any OpenAI-compatible provider works."
+    );
+  }
+  return {
+    baseUrl: (process.env.AI_BASE_URL?.trim() || DEFAULTS.baseUrl).replace(/\/+$/, ""),
+    apiKey,
+    textModel: process.env.AI_TEXT_MODEL?.trim() || DEFAULTS.textModel,
+    visionModel: process.env.AI_VISION_MODEL?.trim() || DEFAULTS.visionModel,
+    imageModel: process.env.AI_IMAGE_MODEL?.trim() || DEFAULTS.imageModel,
+  };
+}
+
+interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string | unknown;
+}
+
+// POST to {AI_BASE_URL}/chat/completions with bearer auth.
+// vision=true selects the vision model; content parts carry image_url/video_url.
+export async function chat(messages: ChatMessage[], vision = false): Promise<string> {
+  const c = cfg();
+  const resp = await aiFetch<{ choices?: { message?: { content?: string } }[] }>("/chat/completions", {
+    model: vision ? c.visionModel : c.textModel,
+    messages,
+  });
+  return resp.choices?.[0]?.message?.content ?? "";
+}
+
+async function aiFetch<T>(pathname: string, body: unknown): Promise<T> {
+  const { baseUrl, apiKey } = cfg();
+  const resp = await fetch(`${baseUrl}${pathname}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(body),
+  });
+  const text = await resp.text();
+  if (!resp.ok) {
+    throw new Error(`AI request failed ${resp.status} ${pathname}: ${text.slice(0, 400)}`);
+  }
+  return JSON.parse(text) as T;
 }
 
 // Resolve any image reference (relative /public path, absolute URL, or data URL)
@@ -123,16 +178,15 @@ function isVideoMedia(url: string, format?: string | null): boolean {
 }
 
 export async function analyzeMedia(url: string, mediaType?: "image" | "video"): Promise<VlmAnalysis> {
-  const zai = await getZai();
   // Auto-detect video from URL extension if mediaType not provided
   const isVideo = mediaType === "video" || (!mediaType && isVideoMedia(url));
   const resolved = isVideo ? url : await resolveImageUrl(url);
   const mediaContent = isVideo
     ? { type: "video_url" as const, video_url: { url: resolved } }
     : { type: "image_url" as const, image_url: { url: resolved } };
-  const resp = await withRetry(() =>
-    zai.chat.completions.createVision({
-      messages: [
+  const raw = await withRetry(() =>
+    chat(
+      [
         {
           role: "user",
           content: [
@@ -141,10 +195,9 @@ export async function analyzeMedia(url: string, mediaType?: "image" | "video"): 
           ],
         },
       ],
-      thinking: { type: "disabled" },
-    })
+      true
+    )
   );
-  const raw = resp.choices[0]?.message?.content ?? "";
   return parseJsonLenient<VlmAnalysis>(raw, {
     caption: "Field media asset",
     summary: "Analysis unavailable.",
@@ -187,7 +240,6 @@ export async function compareImages(
   afterUrl: string,
   context?: string
 ): Promise<ComparisonOutput> {
-  const zai = await getZai();
   const prompt = `You are comparing two field-media images from a sustainability project. The FIRST image is "before", the SECOND is "after".${context ? ` Context: ${context}` : ""}
 
 Return STRICT JSON only (no markdown). Schema:
@@ -204,9 +256,9 @@ Return ONLY the JSON.`;
     resolveImageUrl(beforeUrl),
     resolveImageUrl(afterUrl),
   ]);
-  const resp = await withRetry(() =>
-    zai.chat.completions.createVision({
-      messages: [
+  const raw = await withRetry(() =>
+    chat(
+      [
         {
           role: "user",
           content: [
@@ -216,10 +268,9 @@ Return ONLY the JSON.`;
           ],
         },
       ],
-      thinking: { type: "disabled" },
-    })
+      true
+    )
   );
-  const raw = resp.choices[0]?.message?.content ?? "";
   return parseJsonLenient<ComparisonOutput>(raw, {
     narrative: raw.slice(0, 600) || "Comparison unavailable.",
     changes: [],
@@ -249,7 +300,6 @@ export interface ReportOutput {
 }
 
 export async function generateReport(input: ReportInput): Promise<ReportOutput> {
-  const zai = await getZai();
   const assetsBlock = input.assets
     .map(
       (a, i) =>
@@ -295,14 +345,10 @@ Return STRICT JSON only (no markdown). Schema:
 }
 Return ONLY the JSON.`;
 
-  const resp = await zai.chat.completions.create({
-    messages: [
-      { role: "assistant", content: "You are a senior NGO impact strategist." },
-      { role: "user", content: prompt },
-    ],
-    thinking: { type: "disabled" },
-  });
-  const raw = resp.choices[0]?.message?.content ?? "";
+  const raw = await chat([
+    { role: "system", content: "You are a senior NGO impact strategist." },
+    { role: "user", content: prompt },
+  ]);
   return parseJsonLenient<ReportOutput>(raw, {
     title: `${input.projectName || "Project"} Report`,
     headline: "Impact report generated.",
@@ -326,7 +372,6 @@ export async function semanticSearch(
   assets: { id: string; caption: string; summary: string; tags: string[]; location?: string; activity?: string; category?: string }[]
 ): Promise<SearchHit[]> {
   if (assets.length === 0) return [];
-  const zai = await getZai();
   const catalog = assets
     .map(
       (a, i) =>
@@ -345,14 +390,10 @@ Return STRICT JSON only. Schema:
 {"hits":[{"assetId":"<id>","score":0.0-1.0,"reason":"short reason"}]}
 Return up to 20 hits, sorted by score descending. ONLY the JSON.`;
 
-  const resp = await zai.chat.completions.create({
-    messages: [
-      { role: "assistant", content: "You are a precise semantic search engine for field-media assets." },
-      { role: "user", content: prompt },
-    ],
-    thinking: { type: "disabled" },
-  });
-  const raw = resp.choices[0]?.message?.content ?? "";
+  const raw = await chat([
+    { role: "system", content: "You are a precise semantic search engine for field-media assets." },
+    { role: "user", content: prompt },
+  ]);
   const parsed = parseJsonLenient<{ hits: SearchHit[] }>(raw, { hits: [] });
   return parsed.hits.sort((a, b) => b.score - a.score);
 }
@@ -360,10 +401,32 @@ Return up to 20 hits, sorted by score descending. ONLY the JSON.`;
 // ---------------- Image generation (sample field media) ----------------
 
 export async function generateImage(prompt: string, size = "1344x768"): Promise<{ base64: string; buffer: Buffer }> {
-  const zai = await getZai();
-  const resp = await zai.images.generations.create({ prompt, size });
-  const base64 = resp.data[0].base64;
-  return { base64, buffer: Buffer.from(base64, "base64") };
+  const c = cfg();
+  // ponytail: size fallback chain — providers differ on supported sizes
+  const candidates = [size, "auto", "1024x1024"];
+  let lastErr: unknown;
+  for (const candidate of candidates) {
+    try {
+      const resp = await aiFetch<{ data?: { b64_json?: string; base64?: string; url?: string }[] }>(
+        "/images/generations",
+        { model: c.imageModel, prompt, size: candidate, n: 1 }
+      );
+      const item = resp.data?.[0];
+      const base64 = item?.b64_json || item?.base64;
+      if (base64) return { base64, buffer: Buffer.from(base64, "base64") };
+      if (item?.url) {
+        const r = await fetch(item.url);
+        if (!r.ok) throw new Error(`Image download failed ${r.status}`);
+        const buffer = Buffer.from(await r.arrayBuffer());
+        return { base64: buffer.toString("base64"), buffer };
+      }
+      throw new Error("Image generation returned no data");
+    } catch (err) {
+      lastErr = err;
+      if (!/size/i.test(err instanceof Error ? err.message : String(err))) throw err;
+    }
+  }
+  throw lastErr;
 }
 
 export function saveUpload(file: Buffer, ext: string): { path: string; url: string } {

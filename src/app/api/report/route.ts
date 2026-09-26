@@ -2,7 +2,7 @@
 // Body: { type, tone, projectId?, assetIds[], audience?, comparisonId? }
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { generateReport, type ReportInput } from "@/lib/zai";
+import { generateReport, type ReportInput } from "@/lib/ai";
 import { serializeReport } from "@/lib/serialize";
 
 const VALID_TYPES = ["impact", "summary", "campaign", "comparison"] as const;

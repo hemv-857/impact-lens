@@ -21,15 +21,8 @@ export function Footer() {
             campaigns.
           </span>
           <span className="inline-flex items-center gap-1">
-            Built with <Heart className="size-3 text-rose-400" /> using{" "}
-            <a
-              href="https://chat.z.ai"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-emerald-700 hover:underline"
-            >
-              Z.ai
-            </a>
+            Built with <Heart className="size-3 text-rose-400" /> using any
+            OpenAI-compatible AI provider
           </span>
         </div>
       </div>

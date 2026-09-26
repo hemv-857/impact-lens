@@ -3,7 +3,7 @@
 // Returns: { hits: [{ asset: MediaAsset, score, reason }, ...] }
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { semanticSearch } from "@/lib/zai";
+import { semanticSearch } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 
 export async function POST(req: NextRequest) {

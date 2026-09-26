@@ -2,7 +2,7 @@
 // Body: { ids: string[], action: "analyze"|"verify"|"unverify"|"delete"|"assign", projectId? }
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeMedia } from "@/lib/zai";
+import { analyzeMedia } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 
 export async function POST(req: NextRequest) {

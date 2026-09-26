@@ -2,7 +2,7 @@
 // append a TransformStep to the transformations JSON array.
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeMedia } from "@/lib/zai";
+import { analyzeMedia } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import type { TransformStep } from "@/lib/types";
 

@@ -3,7 +3,7 @@
 // Returns: { ...ComparisonResult, before: MediaAsset, after: MediaAsset }
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { compareImages } from "@/lib/zai";
+import { compareImages } from "@/lib/ai";
 import { serializeAsset, serializeComparison } from "@/lib/serialize";
 
 export async function POST(req: NextRequest) {
