@@ -1,7 +1,7 @@
 // POST /api/media/generate — AI-generate a sample field-media image, save it,
 // optionally auto-analyze with VLM, and return the created MediaAsset.
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, orgOwnsProject } from "@/lib/db";
 import { analyzeMedia, generateImage, saveUpload } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
@@ -59,6 +59,10 @@ export async function POST(req: NextRequest) {
       analyze?: boolean;
       size?: string;
     };
+
+    if (projectId && !(await orgOwnsProject(auth.orgId, projectId))) {
+      return NextResponse.json({ error: "Unknown project" }, { status: 400 });
+    }
 
     // 1. Generate the image via the configured AI provider
     const genSize = size || "1344x768";

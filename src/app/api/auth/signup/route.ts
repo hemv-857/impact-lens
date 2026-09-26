@@ -4,11 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
   adoptOrphanData,
+  generateInviteCode,
   hashPassword,
   isValidEmail,
   normalizeEmail,
   PASSWORD_MIN_LENGTH,
 } from "@/lib/auth";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 function slugify(input: string): string {
   return (
@@ -54,6 +56,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 30 valid signups/hour/IP — after validation so malformed requests get real 400s;
+    // protects the only branch that creates user + org rows
+    if (!rateLimit(`signup:${clientIp(req.headers)}`, 30, 60 * 60 * 1000)) {
+      return NextResponse.json({ error: "Too many signups — try again later" }, { status: 429 });
+    }
+
     const existing = await db.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
@@ -92,7 +100,9 @@ export async function POST(req: NextRequest) {
       });
     } else {
       const slug = await uniqueSlug(slugify(preferredOrgName));
-      org = await db.organization.create({ data: { name: preferredOrgName, slug } });
+      org = await db.organization.create({
+        data: { name: preferredOrgName, slug, inviteCode: generateInviteCode() },
+      });
       await db.membership.create({
         data: { userId: user.id, orgId: org.id, role: "owner" },
       });
@@ -104,6 +114,10 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (err) {
+    // duplicate email race → 409, never leak the Prisma message
+    if ((err as { code?: string })?.code === "P2002") {
+      return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
+    }
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
   }

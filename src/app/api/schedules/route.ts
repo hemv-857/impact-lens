@@ -1,7 +1,7 @@
 // GET  /api/schedules — list the org's report schedules
 // POST /api/schedules — create one { type?, tone?, projectId?, audience?, everyDays?, emailTo? }
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, orgOwnsProject } from "@/lib/db";
 import { getAuthContext, unauthorized } from "@/lib/auth";
 
 const VALID_TYPES = ["impact", "summary", "campaign", "comparison"] as const;
@@ -71,6 +71,9 @@ export async function POST(req: NextRequest) {
     }
     if (!VALID_TONES.includes(tone as (typeof VALID_TONES)[number])) {
       return NextResponse.json({ error: `Invalid tone: ${tone}` }, { status: 400 });
+    }
+    if (projectId && !(await orgOwnsProject(auth.orgId, projectId))) {
+      return NextResponse.json({ error: "Unknown project" }, { status: 400 });
     }
     const days = Math.max(1, Math.min(90, parseInt(String(everyDays), 10) || 7));
     if (emailTo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTo)) {

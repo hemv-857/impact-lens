@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 import { apiLogin, envLocal, OWNER, OTHER_OWNER } from "./helpers";
 
@@ -146,4 +148,34 @@ test("F9: non-owners cannot read the invite code", async ({ browser }) => {
   expect((await ctx.request.get("/api/org/invite")).status()).toBe(403);
   expect((await ctx.request.post("/api/org/invite")).status()).toBe(403);
   await ctx.close();
+});
+
+test("F2: data-URL upload lands on Cloudinary with a deliverable CDN URL", async ({ request }) => {
+  test.skip(!envLocal("CLOUDINARY_URL"), "CLOUDINARY_URL not configured");
+  await apiLogin(request);
+  const png =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+  const res = await request.post("/api/media", {
+    data: { url: `data:image/png;base64,${png}`, title: "F2 probe" },
+  });
+  expect(res.status()).toBe(201);
+  const asset = (await res.json()) as { id: string; url: string; publicId: string };
+  expect(asset.url).toMatch(/^https:\/\/res\.cloudinary\.com\/.+\/upload\/f_auto,q_auto\//);
+  expect(asset.publicId).toMatch(/^impactlens\//);
+  expect((await request.get(asset.url)).status()).toBe(200);
+  expect((await request.delete(`/api/media/${asset.id}`)).status()).toBe(200);
+});
+
+test("security: DELETE refuses path traversal outside public/ and leaves the file intact", async ({ request }) => {
+  await apiLogin(request);
+  const res = await request.post("/api/media", {
+    data: { url: "/uploads/../../.env.local", title: "traversal probe" },
+  });
+  expect(res.status()).toBe(201);
+  const asset = (await res.json()) as { id: string };
+  const del = await request.delete(`/api/media/${asset.id}`);
+  // the DB row is removed, but the escaped path must never be unlinked
+  expect(del.status(), JSON.stringify(await del.json())).toBe(200);
+  expect(existsSync(resolve(process.cwd(), ".env.local"))).toBe(true);
+  expect((await request.get(`/api/media/${asset.id}`)).status()).toBe(404);
 });

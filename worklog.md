@@ -1111,3 +1111,51 @@ Stage Summary:
   `src/app/auth/page.tsx`, `e2e/audit-backend.spec.ts`, `AUDIT.md`, `worklog.md`.
 - Next: Cloudinary `cloud_name` + `api_secret` (F2); live capability tests
   re-run when OpenRouter free budget renews.
+
+Task ID: 29
+
+Task: F2 Cloudinary wiring, custom 404, README, and full re-audit (security + code review) with CRITICAL/HIGH fixes.
+
+Work Log:
+- F2 Cloudinary (PS 02 mandate): `src/lib/cloudinary.ts` (`uploadToCloudinary`
+  → `f_auto,q_auto` CDN URLs, `destroyCloudinary`), wired into media POST
+  (data-URL branch uploads first, local fallback on failure) and media DELETE
+  (CDN object removed when URL is `res.cloudinary.com`). Feasibility test
+  flipped GAP → PASS; backend test asserts live CDN upload + 200 on the URL.
+- Video/frames bug surfaced by F2: CDN URLs aren't data: → `videoFramesAsParts`
+  made async; remote fetch with SSRF guard (private-host block, manual
+  redirects, 15s timeout, 50MB streaming cap — no unbounded arrayBuffer),
+  promisified `execFile` instead of `execFileSync`.
+- Custom 404: `src/app/not-found.tsx` (logo, copy, back-to-home button) +
+  ux test (ends with `page.goto("/")` so the serial journey keeps its shell);
+  console-error filter exempts document-404 noise for that probe.
+- README.md: stack, quickstart, demo accounts, env table, scripts, :3001 e2e
+  procedure, test inventory, layout, operational notes.
+- Audit fixes (rev. 2, see AUDIT.md §7): CRITICAL path-traversal file delete →
+  `publicFilePath()` containment (delete unlinks only inside `public/`, row
+  still removed; regression test in audit-backend); cross-tenant `projectId`
+  → `orgOwnsProject()` guards on media/generate/compare/schedules (400);
+  content-length 413 pre-check on media POST; SVG rejected + ext sanitized +
+  `nosniff` on /uploads; report-pdf metric values escaped; CSV formula
+  injection neutralized; prod Prisma logging `["error"]` only; signup
+  inviteCode at org creation; P2002 → 409; rate limit 30 valid signups/hour/IP
+  (after validation so bad input still gets real 400s); orgId indexes
+  (`db push`); dead `src/app/api/route.ts` deleted; `noImplicitAny: false`
+  removed (tsc still exits 0); stale `.next/dev` types cleaned.
+- AUDIT.md rev. 2: header/matrix (R1, R7 now COVERED), §7 full finding table,
+  §8 deferred follow-ups; Cloudinary api_secret scrubbed from the file —
+  **rotation still required** (it's in git history).
+- Gates: `npx tsc --noEmit` 0 · `npm run lint` clean · `bun scripts/ai-smoke.ts`
+  pass · `npm run build` ok · `npm run test:e2e` 45 passed / 6 skipped
+  (OpenRouter free budget dry) / 0 failed across 51 tests.
+
+Stage Summary:
+- New: `README.md`, `src/app/not-found.tsx`, `src/lib/cloudinary.ts`,
+  `src/lib/rate-limit.ts`, `package-lock.json`.
+- Modified: media/compare/schedules/report-pdf/signup/uploads/[name] routes,
+  `src/lib/{ai,db}.ts`, `prisma/schema.prisma`, `tsconfig.json`,
+  `e2e/audit-*.spec.ts`, `AUDIT.md`, `worklog.md`, `.env` (template only),
+  `package.json` (cloudinary dep), `db/custom.db`.
+- Deleted: `src/app/api/route.ts` (dead).
+- Next: rotate exposed Cloudinary api_secret; deferred list in AUDIT.md §8;
+  live capability tests re-run when free budget renews.

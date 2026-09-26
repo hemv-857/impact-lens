@@ -14,8 +14,10 @@ test.beforeAll(async ({ browser }) => {
   page.on("console", (m) => {
     if (m.type() !== "error") return;
     const url = m.location()?.url ?? "";
-    // Benign for this journey: the deliberate wrong-password attempt (401).
+    // Benign for this journey: the deliberate wrong-password attempt (401)
+    // and the deliberate unknown-route probe (document 404).
     if (m.text().includes("status of 401")) return;
+    if (url.includes("/definitely-not-a-page")) return;
     consoleErrors.push(`console: ${m.text()} @ ${url}`);
   });
 });
@@ -77,6 +79,13 @@ test("Analyze media dialog accepts images AND videos", async () => {
   await expect(page.getByText("Generate", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(file).toHaveCount(0);
+});
+
+test("custom 404 page renders for unknown routes while signed in", async () => {
+  await page.goto("/definitely-not-a-page");
+  await expect(page.getByRole("heading", { name: /404 — page not found/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to overview" })).toBeVisible();
+  await page.goto("/"); // subsequent serial tests expect the app shell
 });
 
 test("account menu exposes org actions and sign out", async () => {

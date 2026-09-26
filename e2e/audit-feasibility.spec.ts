@@ -21,9 +21,9 @@ function srcHits(term: string): string[] {
   );
 }
 
-test("GAP: Cloudinary mandated by PS 02 but not integrated anywhere", () => {
-  expect(Object.keys(deps).filter((d) => d.includes("cloudinary"))).toEqual([]);
-  expect(srcHits("cloudinary")).toEqual([]);
+test("PASS: Cloudinary integrated (PS 02 mandate) with local fallback", () => {
+  expect(Object.keys(deps).filter((d) => d.includes("cloudinary")).length).toBeGreaterThan(0);
+  expect(srcHits("cloudinary").length).toBeGreaterThan(0);
 });
 
 test("PASS: public/uploads is git-ignored (user media never committed)", () => {

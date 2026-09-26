@@ -9,7 +9,8 @@ import { getAuthContext, unauthorized } from "@/lib/auth";
 
 function csvEscape(v: unknown): string {
   if (v === null || v === undefined) return "";
-  const s = String(v);
+  // neutralize spreadsheet formulas (=,+,-,@,tab,CR) — CSV injection
+  const s = String(v).replace(/^[=+\-@\t\r]/, (m) => `'${m}`);
   // Quote if it contains comma, quote, newline, or leading/trailing space
   if (/[",\n\r]/.test(s) || /^\s|\s$/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;

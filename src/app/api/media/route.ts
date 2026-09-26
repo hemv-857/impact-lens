@@ -1,8 +1,9 @@
 // GET  /api/media        — list/filter media assets
 // POST /api/media        — create a media asset (optionally analyze immediately)
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, orgOwnsProject } from "@/lib/db";
 import { analyzeMedia, isVideoMedia, saveUpload } from "@/lib/ai";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 import { getAuthContext, unauthorized } from "@/lib/auth";
 import { serializeAsset } from "@/lib/serialize";
 import type { Prisma } from "@prisma/client";
@@ -25,7 +26,9 @@ function decodeDataUrl(dataUrl: string): { buffer: Buffer; ext: string } | null 
   const m = dataUrl.match(/^data:((?:image|video)\/([a-zA-Z0-9.+-]+));base64,(.+)$/);
   if (!m) return null;
   const mimeSub = m[2].toLowerCase();
-  const ext = MIME_EXT[mimeSub] || mimeSub;
+  // SECURITY: SVGs carry script — never accept them (served same-origin they'd be stored XSS)
+  if (mimeSub.includes("svg")) return null;
+  const ext = (MIME_EXT[mimeSub] || mimeSub).replace(/[^a-z0-9]/g, "").slice(0, 8) || "bin";
   return { buffer: Buffer.from(m[3], "base64"), ext };
 }
 
@@ -153,6 +156,11 @@ export async function POST(req: NextRequest) {
     const auth = await getAuthContext();
     if (!auth) return unauthorized();
 
+    // reject oversized payloads before buffering the body
+    const declared = Number(req.headers.get("content-length") ?? 0);
+    if (declared > 15_000_000) {
+      return NextResponse.json({ error: "File too large — maximum 10MB" }, { status: 413 });
+    }
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.url) {
       return NextResponse.json({ error: "Missing required field: url" }, { status: 400 });
@@ -177,9 +185,14 @@ export async function POST(req: NextRequest) {
       autoAnalyze?: boolean;
     };
 
+    if (projectId && !(await orgOwnsProject(auth.orgId, projectId))) {
+      return NextResponse.json({ error: "Unknown project" }, { status: 400 });
+    }
+
     let finalUrl = rawUrl;
     let bytes: number | null = null;
     let format: string | null = null;
+    let cloudPublicId: string | null = null;
 
     if (rawUrl.startsWith("data:")) {
       // ponytail: cap inline uploads at ~10MB binary (base64 ≈ 4/3 + prefix);
@@ -191,8 +204,14 @@ export async function POST(req: NextRequest) {
       if (!decoded) {
         return NextResponse.json({ error: "Invalid data URL" }, { status: 400 });
       }
-      const saved = saveUpload(decoded.buffer, decoded.ext);
-      finalUrl = saved.url;
+      // F2: Cloudinary first (f_auto,q_auto CDN URL); local public/uploads is the fallback.
+      const cdn = await uploadToCloudinary(decoded.buffer, decoded.ext);
+      if (cdn) {
+        finalUrl = cdn.url;
+        cloudPublicId = cdn.publicId;
+      } else {
+        finalUrl = saveUpload(decoded.buffer, decoded.ext).url;
+      }
       bytes = decoded.buffer.length;
       format = decoded.ext;
     } else {
@@ -201,7 +220,7 @@ export async function POST(req: NextRequest) {
       if (m) format = m[1].toLowerCase().replace("jpeg", "jpg");
     }
 
-    const publicId = `impactlens/${Date.now()}-${rand(6)}`;
+    const publicId = cloudPublicId ?? `impactlens/${Date.now()}-${rand(6)}`;
     const now = new Date();
 
     const transforms = [

@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const metricsRows = r.metrics
       ? Object.entries(r.metrics)
           .map(
-            ([k, v]) => `<div class="metric"><div class="v">${String(v)}</div><div class="k">${escapeHtml(k.replace(/[_-]/g, " "))}</div></div>`
+            ([k, v]) => `<div class="metric"><div class="v">${escapeHtml(String(v))}</div><div class="k">${escapeHtml(k.replace(/[_-]/g, " "))}</div></div>`
           )
           .join("")
       : "";

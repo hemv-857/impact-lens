@@ -32,6 +32,7 @@ model Project {
 
   assets      MediaAsset[]
   reports     Report[]
+  @@index([orgId])
 }
 
 model MediaAsset {
@@ -87,6 +88,7 @@ model MediaAsset {
   @@index([projectId])
   @@index([category])
   @@index([pairGroup])
+  @@index([orgId])
 }
 
 model Report {
@@ -105,6 +107,7 @@ model Report {
   callToAction String?
   tone        String? // professional, emotional, data-driven
   createdAt   DateTime @default(now())
+  @@index([orgId])
 }
 
 model Comparison {
@@ -118,6 +121,7 @@ model Comparison {
   changes      String? // JSON array of detected changes
   impactScore  Float?
   createdAt    DateTime @default(now())
+  @@index([orgId])
 }
 
 model SavedSearch {
@@ -129,6 +133,7 @@ model SavedSearch {
   hitCount    Int      @default(0)
   results     String?  // JSON array of {assetId, score, reason}
   createdAt   DateTime @default(now())
+  @@index([orgId])
 }
 
 model AssetNote {
@@ -142,6 +147,7 @@ model AssetNote {
   updatedAt   DateTime @updatedAt
 
   @@index([assetId])
+  @@index([orgId])
 }
 
 model Organization {

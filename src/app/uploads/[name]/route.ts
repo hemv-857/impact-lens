@@ -13,7 +13,7 @@ const MIME: Record<string, string> = {
   jpeg: "image/jpeg",
   webp: "image/webp",
   gif: "image/gif",
-  svg: "image/svg+xml",
+  // no svg: scripts in an SVG served same-origin would be stored XSS
   avif: "image/avif",
   bmp: "image/bmp",
 };
@@ -33,6 +33,7 @@ export async function GET(
   return new NextResponse(fs.readFileSync(file), {
     headers: {
       "Content-Type": MIME[ext] ?? "application/octet-stream",
+      "X-Content-Type-Options": "nosniff",
       "Cache-Control": "private, max-age=3600",
     },
   });

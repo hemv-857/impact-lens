@@ -2,7 +2,7 @@
 // Body: { beforeId, afterId, projectId? }
 // Returns: { ...ComparisonResult, before: MediaAsset, after: MediaAsset }
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, orgOwnsProject } from "@/lib/db";
 import { compareImages } from "@/lib/ai";
 import { serializeAsset, serializeComparison } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
         { error: "beforeId and afterId must differ" },
         { status: 400 }
       );
+    }
+    if (projectId && !(await orgOwnsProject(auth.orgId, projectId))) {
+      return NextResponse.json({ error: "Unknown project" }, { status: 400 });
     }
 
     const [before, after] = await Promise.all([

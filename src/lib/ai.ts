@@ -4,7 +4,10 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { execFileSync } from "child_process";
+import { execFile as execFileCb } from "child_process";
+import { promisify } from "util";
+
+const execFile = promisify(execFileCb);
 
 // Provider presets: AI_PROVIDER=<name> fills base URL + model IDs + key env alias.
 // Explicit AI_* vars always win over the preset.
@@ -134,6 +137,25 @@ async function aiFetch<T>(pathname: string, body: unknown): Promise<T> {
 // into a form the VLM API can consume. Relative "/field-media/x.jpg" or
 // "/uploads/y.png" paths are read from disk, normalized/resized via sharp, and
 // returned as base64 JPEG data URLs (keeps payload small for the VLM API).
+/** Map a root-relative URL to an absolute path, only if it stays inside public/. */
+export function publicFilePath(url: string): string | null {
+  const root = path.join(process.cwd(), "public");
+  const resolved = path.resolve(root, "." + path.posix.normalize(url));
+  return resolved.startsWith(root + path.sep) ? resolved : null;
+}
+
+/** True for hosts the server must never fetch (loopback/RFC1918/link-local/metadata). */
+function isPrivateHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  if (h.includes(":")) return true; // IPv6/bracketed literals — stored media URLs use hostnames
+  if (h === "localhost" || h.endsWith(".local") || h.endsWith(".internal")) return true;
+  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return false;
+  const a = Number(m[1]);
+  const b = Number(m[2]);
+  return a === 0 || a === 127 || a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254);
+}
+
 export async function resolveImageUrl(url: string): Promise<string> {
   if (!url) return url;
   if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -153,10 +175,10 @@ export async function resolveImageUrl(url: string): Promise<string> {
     }
     return url;
   }
-  // Relative path -> read from public/
+  // Relative path -> read from public/ (traversal-guarded)
   try {
-    const localPath = path.join(process.cwd(), "public", url.replace(/^\//, ""));
-    if (fs.existsSync(localPath)) {
+    const localPath = publicFilePath(url);
+    if (localPath && fs.existsSync(localPath)) {
       const buf = fs.readFileSync(localPath);
       const normalized = await normalizeImage(buf);
       return `data:image/jpeg;base64,${normalized.toString("base64")}`;
@@ -248,8 +270,8 @@ async function resolveVideoUrl(url: string): Promise<string> {
     return url;
   }
   try {
-    const localPath = path.join(process.cwd(), "public", url.replace(/^\//, ""));
-    if (fs.existsSync(localPath)) {
+    const localPath = publicFilePath(url);
+    if (localPath && fs.existsSync(localPath)) {
       const buf = fs.readFileSync(localPath);
       if (buf.length <= 8 * 1024 * 1024) {
         const ext = localPath.split(".").pop()?.toLowerCase() || "mp4";
@@ -273,7 +295,7 @@ export async function analyzeMedia(url: string, mediaType?: "image" | "video"): 
   // part when ffmpeg is unavailable or the file won't decode.
   // ponytail: frames lose audio/temporal continuity — Gemini native inline
   // video is the upgrade path when its quota/billing allows.
-  const frameParts = isVideo ? videoFramesAsParts(resolved) : null;
+  const frameParts = isVideo ? await videoFramesAsParts(resolved) : null;
   const mediaContent = frameParts
     ? null
     : isVideo
@@ -325,28 +347,60 @@ export async function analyzeImage(url: string): Promise<VlmAnalysis> {
 
 // Sample up to 6 frames evenly across the clip; returns multimodal content
 // parts, or null (ffmpeg missing / undecodable) so callers can fall back.
-function videoFramesAsParts(
-  dataUrl: string
-): Array<{ type: "text" | "image_url"; text?: string; image_url?: { url: string } }> | null {
-  if (!dataUrl.startsWith("data:")) return null;
+async function videoFramesAsParts(
+  videoUrl: string
+): Promise<Array<{ type: "text" | "image_url"; text?: string; image_url?: { url: string } }> | null> {
+  // accept data: URLs, local relative paths (via resolveVideoUrl above) and remote URLs
+  let bytes: Buffer | null = null;
+  if (videoUrl.startsWith("data:")) {
+    bytes = Buffer.from(videoUrl.slice(videoUrl.indexOf(",") + 1), "base64");
+  } else if (/^https?:\/\//.test(videoUrl)) {
+    try {
+      const u = new URL(videoUrl);
+      if (isPrivateHost(u.hostname)) return null; // SSRF: never fetch loopback/private ranges
+      const r = await fetch(videoUrl, { redirect: "manual", signal: AbortSignal.timeout(15_000) });
+      if (r.ok && r.body) {
+        // manual-mode responses may omit content-length — cap while streaming
+        const reader = r.body.getReader();
+        const chunks: Buffer[] = [];
+        let total = 0;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          total += value.byteLength;
+          if (total > 50 * 1024 * 1024) {
+            await reader.cancel();
+            return null;
+          }
+          chunks.push(Buffer.from(value));
+        }
+        bytes = Buffer.concat(chunks);
+      }
+    } catch {
+      // fall through — caller uses the raw video_url path
+    }
+  }
+  if (!bytes) return null;
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "il-video-"));
   try {
     const input = path.join(dir, "in.mp4");
-    fs.writeFileSync(input, Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64"));
+    fs.writeFileSync(input, bytes);
     let duration = 8;
     try {
       duration =
         parseFloat(
-          execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", input], {
-            timeout: 5_000,
-          }).toString()
+          (
+            await execFile("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", input], {
+              timeout: 5_000,
+            })
+          ).stdout
         ) || duration;
     } catch {
       // no ffprobe — fall back to a fixed sampling rate
     }
     const fps = Math.max(0.1, 6 / duration);
     const pattern = path.join(dir, "frame-%02d.jpg");
-    execFileSync(
+    await execFile(
       "ffmpeg",
       ["-loglevel", "error", "-i", input, "-vf", `fps=${fps},scale=640:-2`, "-frames:v", "6", pattern],
       { timeout: 30_000 }
