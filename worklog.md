@@ -1159,3 +1159,34 @@ Stage Summary:
 - Deleted: `src/app/api/route.ts` (dead).
 - Next: rotate exposed Cloudinary api_secret; deferred list in AUDIT.md §8;
   live capability tests re-run when free budget renews.
+
+Task ID: 30
+
+Task: Public landing page at "/" ahead of sign-in.
+
+Work Log:
+- Moved the dashboard from `src/app/page.tsx` to
+  `src/components/impactlens/Dashboard.tsx` (content unchanged).
+- New `src/app/page.tsx` (server): `getAuthContext()` → signed-in members get
+  the Dashboard, everyone else gets the new `Landing`.
+- New `src/components/impactlens/Landing.tsx`: hero ("Turn field media into
+  evidence of impact"), Get started / Sign in CTAs → `/auth`, 4 feature cards
+  (AI analysis, before/after, reports & campaigns, semantic search), reused
+  `Footer`. No session flash — decided server-side per request.
+- Middleware matcher `.*` → `.+` so only `/` is public; every other route
+  still redirects unauthed users to `/auth?callbackUrl=…` (API routes guard
+  themselves).
+- ux tests: split "unauthenticated /" into (1) landing renders on `/` with no
+  redirect + hero/CTA visible, (2) deep link `/reports` still redirects to
+  `/auth?callbackUrl=%2Freports`. Feasibility `/` timing test unaffected
+  (200 instead of 307, both accepted).
+- Gates: `npx tsc --noEmit` 0 · `npm run lint` clean · `npm run build` ok ·
+  `npm run test:e2e` 46 passed / 6 skipped / 0 failed.
+
+Stage Summary:
+- New: `src/components/impactlens/Landing.tsx`.
+- Renamed: `src/app/page.tsx` → `src/components/impactlens/Dashboard.tsx`.
+- Modified: `src/app/page.tsx` (new server entry), `src/middleware.ts`,
+  `e2e/audit-ux.spec.ts`, `worklog.md`.
+- Next: deferred items in AUDIT.md §8; capability tests re-run when the
+  OpenRouter free budget renews.

@@ -26,9 +26,16 @@ test.afterAll(async () => {
   await ctx.close();
 });
 
-test("unauthenticated / redirects to sign-in with callback preserved", async () => {
+test("unauthenticated / renders the public landing page", async () => {
   await page.goto("/");
-  await expect(page).toHaveURL(/\/auth\?callbackUrl=%2F/);
+  expect(new URL(page.url()).pathname).toBe("/");
+  await expect(page.getByRole("heading", { name: /evidence of impact/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Get started" })).toBeVisible();
+});
+
+test("unauthenticated deep link redirects to sign-in with callback preserved", async () => {
+  await page.goto("/reports");
+  await expect(page).toHaveURL(/\/auth\?callbackUrl=%2Freports/);
   await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   await expect(page.getByPlaceholder("you@organization.org")).toBeVisible();
 });
