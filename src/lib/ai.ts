@@ -42,6 +42,14 @@ const PROVIDERS: Record<string, ProviderPreset> = {
     imageApi: "openai",
     keyEnv: "GROQ_API_KEY",
   },
+  openrouter: {
+    baseUrl: "https://openrouter.ai/api/v1",
+    textModel: "openai/gpt-4o-mini",
+    visionModel: "google/gemini-2.5-flash", // video modality → accepts our video_url data URLs
+    imageModel: "", // chat-based image models only, no /images/generations
+    imageApi: "openai",
+    keyEnv: "OPENROUTER_API_KEY",
+  },
 };
 
 interface AiConfig extends ProviderPreset {

@@ -929,3 +929,38 @@ Stage Summary:
   (+ `.env.local`, gitignored — stores GEMINI_API_KEY).
 - Deploy note: set `GEMINI_API_KEY` (or `AI_API_KEY`) in the deploy environment; enable
   billing on the Gemini key if sample-media image generation is needed.
+
+---
+Task ID: 24
+Agent: lead
+Task: End-to-end audit of ImpactLens vs Problem Statement 02 (Cloudinary AI media platform) — Playwright across UI/UX/backend/feasibility/capability — plus video-capable base URL research and fix plan.
+Work Log:
+- Video base URL: verified OpenRouter (`https://openrouter.ai/api/v1`) supports base64
+  `video_url` parts and hosts `google/gemini-2.5-flash` with `video` input modality
+  (public models API); added `openrouter` preset to `src/lib/ai.ts`.
+- Fixed standalone-server DB open failure found while standing up the audit env:
+  `start` script now pins absolute `DATABASE_URL="file:$(pwd)/db/custom.db"`.
+- Playwright suite: 45 tests in 5 aspect files (audit-ui 11 / audit-ux 8 /
+  audit-backend 9 / audit-feasibility 11 / audit-capability 6) + `playwright.config.ts`
+  (baseURL :3001, workers 1, serial per file). Live-AI tests retry transient 503s and
+  self-skip on Gemini free-tier quota exhaustion; capability verified live earlier
+  in-session (search/report/compare/campaign + video & image-gen GAPs).
+- Suite result: 41 passed / 4 quota-skipped / 0 failed. Found & encoded as GAP
+  tests: verified=false default hides 12/13 library assets; no Cloudinary anywhere;
+  video analysis rejected by default provider; no upload size cap; uploads not
+  git-ignored; ignoreBuildErrors; sign-out port-hops to localhost:3000
+  (NEXTAUTH_URL default); open org join-by-name.
+- Deliverable: `AUDIT.md` — PS 02 requirement matrix (R1-R7, Cloudinary NOT MET),
+  13 severity-ranked findings with evidence, 3-phase fix plan, test inventory.
+- Checks: `bun scripts/ai-smoke.ts` pass · `npm run lint` clean ·
+  `npx tsc --noEmit` pre-existing 4 only · `npm run build` exit 0 ·
+  `npx playwright test` 41 passed / 4 skipped / 0 failed.
+
+Stage Summary:
+- Added: `e2e/` (helpers + 5 audit specs), `playwright.config.ts`, `AUDIT.md`,
+  `@playwright/test` devDep, `test:e2e` script.
+- Modified: `src/lib/ai.ts` (openrouter preset), `package.json` (start DB URL fix),
+  `.gitignore` (playwright artifacts), `db/custom.db` (audit-run report/comparison),
+  `worklog.md`.
+- Next: Phase 1 quick wins from AUDIT.md §4 (F1 verified=false one-liner, F7
+  gitignore uploads, F4 NEXTAUTH_URL, F6 size guard, F10 auth error sanitize).
