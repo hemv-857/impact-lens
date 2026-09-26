@@ -1,6 +1,6 @@
 // Backend-only OpenAI-compatible AI client for ImpactLens
 // Provides: VLM image analysis, before/after comparison, LLM report/campaign generation, semantic search scoring
-// Config (env): AI_BASE_URL, AI_API_KEY, AI_TEXT_MODEL, AI_VISION_MODEL, AI_IMAGE_MODEL
+// Config (env): AI_PROVIDER (optional preset) or AI_BASE_URL, AI_API_KEY, AI_TEXT_MODEL, AI_VISION_MODEL, AI_IMAGE_MODEL
 import fs from "fs";
 import path from "path";
 
@@ -10,6 +10,31 @@ const DEFAULTS = {
   visionModel: "gpt-4o-mini",
   imageModel: "gpt-image-1",
 };
+
+// Provider presets: AI_PROVIDER=<name> fills base URL + model IDs + key env alias.
+// Explicit AI_* vars always win over the preset.
+const PROVIDERS: Record<
+  string,
+  { baseUrl: string; textModel: string; visionModel: string; imageModel: string; keyEnv: string }
+> = {
+  groq: {
+    baseUrl: "https://api.groq.com/openai/v1",
+    textModel: "openai/gpt-oss-120b",
+    visionModel: "qwen/qwen3.6-27b",
+    imageModel: "", // Groq has no image-generation endpoint — set AI_IMAGE_MODEL to use another provider for images
+    keyEnv: "GROQ_API_KEY",
+  },
+};
+
+function providerPreset(): { name: string } & (typeof PROVIDERS)[string] | undefined {
+  const name = process.env.AI_PROVIDER?.trim().toLowerCase();
+  if (!name || name === "openai") return undefined;
+  const preset = PROVIDERS[name];
+  if (!preset) {
+    throw new Error(`Unknown AI_PROVIDER "${name}". Supported: openai (default), ${Object.keys(PROVIDERS).join(", ")}.`);
+  }
+  return { name, ...preset };
+}
 
 interface AiConfig {
   baseUrl: string;
@@ -21,18 +46,21 @@ interface AiConfig {
 
 // Read env lazily so .env.local overrides and tests work after import.
 function cfg(): AiConfig {
-  const apiKey = process.env.AI_API_KEY?.trim();
+  const preset = providerPreset();
+  const apiKey = process.env.AI_API_KEY?.trim() || (preset ? process.env[preset.keyEnv]?.trim() : undefined);
   if (!apiKey) {
     throw new Error(
-      "AI_API_KEY is not set. Add AI_API_KEY=<your key> to .env.local — any OpenAI-compatible provider works."
+      preset
+        ? `AI_API_KEY (or ${preset.keyEnv}) is not set. Add it to .env.local for AI_PROVIDER=${preset.name}.`
+        : "AI_API_KEY is not set. Add AI_API_KEY=<your key> to .env.local — any OpenAI-compatible provider works."
     );
   }
   return {
-    baseUrl: (process.env.AI_BASE_URL?.trim() || DEFAULTS.baseUrl).replace(/\/+$/, ""),
+    baseUrl: (process.env.AI_BASE_URL?.trim() || preset?.baseUrl || DEFAULTS.baseUrl).replace(/\/+$/, ""),
     apiKey,
-    textModel: process.env.AI_TEXT_MODEL?.trim() || DEFAULTS.textModel,
-    visionModel: process.env.AI_VISION_MODEL?.trim() || DEFAULTS.visionModel,
-    imageModel: process.env.AI_IMAGE_MODEL?.trim() || DEFAULTS.imageModel,
+    textModel: process.env.AI_TEXT_MODEL?.trim() || preset?.textModel || DEFAULTS.textModel,
+    visionModel: process.env.AI_VISION_MODEL?.trim() || preset?.visionModel || DEFAULTS.visionModel,
+    imageModel: process.env.AI_IMAGE_MODEL?.trim() || (preset ? preset.imageModel : DEFAULTS.imageModel),
   };
 }
 
@@ -427,6 +455,11 @@ Return up to 20 hits, sorted by score descending. ONLY the JSON.`;
 
 export async function generateImage(prompt: string, size = "1344x768"): Promise<{ base64: string; buffer: Buffer }> {
   const c = cfg();
+  if (!c.imageModel) {
+    throw new Error(
+      `AI_PROVIDER=${process.env.AI_PROVIDER?.trim().toLowerCase()} has no image generation. Set AI_IMAGE_MODEL (and AI_BASE_URL) for an image-capable provider.`
+    );
+  }
   // ponytail: size fallback chain — providers differ on supported sizes
   const candidates = [size, "auto", "1024x1024"];
   let lastErr: unknown;

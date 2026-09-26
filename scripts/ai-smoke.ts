@@ -95,6 +95,31 @@ async function main() {
   delete process.env.AI_API_KEY;
   await assert.rejects(() => chat([{ role: "user", content: "hi" }]), /AI_API_KEY is not set/);
 
+  // 6. AI_PROVIDER preset: base URL + models from preset, provider key alias, no-image error
+  calls.length = 0;
+  (globalThis as { fetch: unknown }).fetch = async (
+    url: string,
+    init: { headers: Record<string, string>; body: string }
+  ) => {
+    calls.push({ url, headers: init.headers, body: JSON.parse(init.body) });
+    return { ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: "groq" } }] }) };
+  };
+  delete process.env.AI_BASE_URL;
+  delete process.env.AI_TEXT_MODEL;
+  delete process.env.AI_VISION_MODEL;
+  delete process.env.AI_IMAGE_MODEL;
+  process.env.AI_PROVIDER = "groq";
+  process.env.GROQ_API_KEY = "gsk_test";
+  assert.equal(await chat([{ role: "user", content: "hi" }]), "groq");
+  assert.equal(calls[0].url, "https://api.groq.com/openai/v1/chat/completions");
+  assert.equal(calls[0].headers.Authorization, "Bearer gsk_test");
+  assert.equal(calls[0].body.model, "openai/gpt-oss-120b");
+  await assert.rejects(() => generateImage("x"), /has no image generation/);
+
+  // 7. unknown provider fails fast
+  process.env.AI_PROVIDER = "bogus";
+  await assert.rejects(() => chat([{ role: "user", content: "hi" }]), /Unknown AI_PROVIDER "bogus"/);
+
   console.log("ai-smoke: all assertions passed");
 }
 

@@ -862,3 +862,30 @@ Stage Summary:
   `.env`, `worklog.md`, `db/custom.db`.
 - Deploy note: point a scheduler (GitHub Actions cron / Vercel Cron / crontab) at
   `POST /api/cron/reports` with `x-cron-secret: $CRON_SECRET`.
+
+---
+Task ID: 22
+Agent: lead
+Task: Groq as an AI provider preset.
+
+Work Log:
+- `src/lib/ai.ts`: added a `PROVIDERS` preset map keyed by a new `AI_PROVIDER` env var.
+  `AI_PROVIDER=groq` fills base URL `https://api.groq.com/openai/v1`, text model
+  `openai/gpt-oss-120b`, vision model `qwen/qwen3.6-27b`, and accepts `GROQ_API_KEY` as
+  the key alias (`AI_API_KEY` still works; explicit `AI_*` vars always win over the preset).
+  Unknown provider names fail fast listing what's supported; preset `imageModel: ""`
+  (Groq has no image-generation endpoint) makes `generateImage()` throw a clear
+  "set AI_IMAGE_MODEL for an image-capable provider" error instead of a raw endpoint 404.
+- Docs: `.env` documents the preset; gitignored `.env.local` gained a commented
+  `AI_PROVIDER` / `GROQ_API_KEY` example. Model IDs verified against
+  console.groq.com/docs/{models,vision} as of Sep 2026.
+- Verified: `bun scripts/ai-smoke.ts` pass (new steps: preset base URL + model + key alias,
+  no-image error, unknown-provider error) · `npm run lint` clean · `npx tsc --noEmit`
+  4 pre-existing errors only. Not live-tested — no Groq key in this environment.
+
+Stage Summary:
+- Modified: `src/lib/ai.ts`, `scripts/ai-smoke.ts`, `.env`, `worklog.md`
+  (+ `.env.local`, gitignored).
+- Note: Groq vision takes image parts only — the client's `video_url` parts still need a
+  video-capable `AI_BASE_URL`. Any other OpenAI-compatible endpoint keeps working via the
+  plain `AI_BASE_URL` + `AI_API_KEY` path (unchanged).
