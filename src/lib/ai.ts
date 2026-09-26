@@ -3,6 +3,8 @@
 // Config (env): AI_PROVIDER preset (default: gemini) or manual AI_BASE_URL, AI_API_KEY, AI_TEXT_MODEL, AI_VISION_MODEL, AI_IMAGE_MODEL
 import fs from "fs";
 import path from "path";
+import os from "os";
+import { execFileSync } from "child_process";
 
 // Provider presets: AI_PROVIDER=<name> fills base URL + model IDs + key env alias.
 // Explicit AI_* vars always win over the preset.
@@ -11,7 +13,7 @@ interface ProviderPreset {
   textModel: string;
   visionModel: string;
   imageModel: string;
-  imageApi: "openai" | "gemini"; // openai: POST {base}/images/generations; gemini: native :generateContent
+  imageApi: "openai" | "gemini" | "chat"; // openai: POST {base}/images/generations; gemini: native :generateContent; chat: image model replies on /chat/completions (message.images[])
   keyEnv: string;
 }
 
@@ -46,8 +48,8 @@ const PROVIDERS: Record<string, ProviderPreset> = {
     baseUrl: "https://openrouter.ai/api/v1",
     textModel: "openai/gpt-4o-mini",
     visionModel: "google/gemini-2.5-flash", // video modality → accepts our video_url data URLs
-    imageModel: "", // chat-based image models only, no /images/generations
-    imageApi: "openai",
+    imageModel: "google/gemini-2.5-flash-image", // chat-based image output (message.images[]) — free-tier friendly
+    imageApi: "chat",
     keyEnv: "OPENROUTER_API_KEY",
   },
 };
@@ -100,16 +102,32 @@ export async function chat(messages: ChatMessage[], vision = false): Promise<str
 
 async function aiFetch<T>(pathname: string, body: unknown): Promise<T> {
   const { baseUrl, apiKey } = cfg();
-  const resp = await fetch(`${baseUrl}${pathname}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify(body),
-  });
-  const text = await resp.text();
-  if (!resp.ok) {
-    throw new Error(`AI request failed ${resp.status} ${pathname}: ${text.slice(0, 400)}`);
+  const post = async (payload: unknown) => {
+    const resp = await fetch(`${baseUrl}${pathname}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify(payload),
+    });
+    return { ok: resp.ok, status: resp.status, text: await resp.text() };
+  };
+  let out = await post(body);
+  // Free-tier keys carry a shrinking per-request token budget ("can only
+  // afford N") — shrink max_tokens to fit and retry once instead of failing.
+  if (!out.ok && out.status === 402 && /can only afford (\d+)/.test(out.text)) {
+    const budget = Number(RegExp.$1) - 100;
+    if (budget < 1500) {
+      // too small to produce a full analysis JSON — fail into the quota-skip
+      // path instead of returning a truncated, half-parsed response
+      throw new Error(`AI request failed 402 ${pathname}: free-tier budget too low (${budget} tokens) — ${out.text.slice(0, 200)}`);
+    }
+    if (typeof body === "object" && body !== null) {
+      out = await post({ ...(body as Record<string, unknown>), max_tokens: budget });
+    }
   }
-  return JSON.parse(text) as T;
+  if (!out.ok) {
+    throw new Error(`AI request failed ${out.status} ${pathname}: ${out.text.slice(0, 400)}`);
+  }
+  return JSON.parse(out.text) as T;
 }
 
 // Resolve any image reference (relative /public path, absolute URL, or data URL)
@@ -249,23 +267,39 @@ export async function analyzeMedia(url: string, mediaType?: "image" | "video"): 
   // Auto-detect video from URL extension if mediaType not provided
   const isVideo = mediaType === "video" || (!mediaType && isVideoMedia(url));
   const resolved = isVideo ? await resolveVideoUrl(url) : await resolveImageUrl(url);
-  const mediaContent = isVideo
-    ? { type: "video_url" as const, video_url: { url: resolved } }
-    : { type: "image_url" as const, image_url: { url: resolved } };
-  const raw = await withRetry(() =>
-    chat(
-      [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: ANALYSIS_PROMPT },
-            mediaContent,
-          ],
-        },
-      ],
-      true
-    )
-  );
+  // Video strategy: sample frames with ffmpeg and send them as images — every
+  // vision provider accepts images (OpenRouter gates raw video behind a $1
+  // balance and Gemini's free quota is 20/day). Falls back to a raw video_url
+  // part when ffmpeg is unavailable or the file won't decode.
+  // ponytail: frames lose audio/temporal continuity — Gemini native inline
+  // video is the upgrade path when its quota/billing allows.
+  const frameParts = isVideo ? videoFramesAsParts(resolved) : null;
+  const mediaContent = frameParts
+    ? null
+    : isVideo
+      ? { type: "video_url" as const, video_url: { url: resolved } }
+      : { type: "image_url" as const, image_url: { url: resolved } };
+  const content: unknown[] = [{ type: "text", text: ANALYSIS_PROMPT }];
+  if (frameParts) content.push(...frameParts);
+  else if (mediaContent) content.push(mediaContent);
+  let raw: string;
+  try {
+    raw = await withRetry(() =>
+      chat(
+        [
+          {
+            role: "user",
+            content,
+          },
+        ],
+        true
+      )
+    );
+  } catch (e) {
+    // let callers report the right stage: frames already ran vs raw fallback
+    if (frameParts && e instanceof Error) (e as Error & { framesUsed?: boolean }).framesUsed = true;
+    throw e;
+  }
   return parseJsonLenient<VlmAnalysis>(raw, {
     caption: "Field media asset",
     summary: "Analysis unavailable.",
@@ -287,6 +321,53 @@ export async function analyzeMedia(url: string, mediaType?: "image" | "video"): 
 // Backward-compatible alias — calls analyzeMedia with auto-detection.
 export async function analyzeImage(url: string): Promise<VlmAnalysis> {
   return analyzeMedia(url);
+}
+
+// Sample up to 6 frames evenly across the clip; returns multimodal content
+// parts, or null (ffmpeg missing / undecodable) so callers can fall back.
+function videoFramesAsParts(
+  dataUrl: string
+): Array<{ type: "text" | "image_url"; text?: string; image_url?: { url: string } }> | null {
+  if (!dataUrl.startsWith("data:")) return null;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "il-video-"));
+  try {
+    const input = path.join(dir, "in.mp4");
+    fs.writeFileSync(input, Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64"));
+    let duration = 8;
+    try {
+      duration =
+        parseFloat(
+          execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", input], {
+            timeout: 5_000,
+          }).toString()
+        ) || duration;
+    } catch {
+      // no ffprobe — fall back to a fixed sampling rate
+    }
+    const fps = Math.max(0.1, 6 / duration);
+    const pattern = path.join(dir, "frame-%02d.jpg");
+    execFileSync(
+      "ffmpeg",
+      ["-loglevel", "error", "-i", input, "-vf", `fps=${fps},scale=640:-2`, "-frames:v", "6", pattern],
+      { timeout: 30_000 }
+    );
+    const frames = fs.readdirSync(dir).filter((f) => /^frame-\d+\.jpg$/.test(f)).sort();
+    if (frames.length === 0) return null;
+    const parts: Array<{ type: "text" | "image_url"; text?: string; image_url?: { url: string } }> = [
+      { type: "text", text: `${frames.length} frames sampled evenly from the video, shown in temporal order.` },
+    ];
+    for (const f of frames) {
+      parts.push({
+        type: "image_url",
+        image_url: { url: `data:image/jpeg;base64,${fs.readFileSync(path.join(dir, f)).toString("base64")}` },
+      });
+    }
+    return parts;
+  } catch {
+    return null;
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 // ---------------- VLM: Before/after comparison ----------------
@@ -478,7 +559,29 @@ export async function generateImage(prompt: string, size = "1344x768"): Promise<
       `AI_PROVIDER=${process.env.AI_PROVIDER?.trim().toLowerCase() || DEFAULT_PROVIDER} has no image generation. Set AI_IMAGE_MODEL (and AI_BASE_URL) for an image-capable provider.`
     );
   }
-  return c.imageApi === "gemini" ? geminiImage(c, prompt, size) : openaiImage(c, prompt, size);
+  return c.imageApi === "gemini"
+    ? geminiImage(c, prompt, size)
+    : c.imageApi === "chat"
+      ? chatImage(c, prompt, size)
+      : openaiImage(c, prompt, size);
+}
+
+// Chat-based image model (OpenRouter): the image arrives in message.images[],
+// not in /images/generations. Free tier allows this route.
+async function chatImage(c: AiConfig, prompt: string, size: string) {
+  const resp = await aiFetch<{
+    choices?: { message?: { images?: { image_url?: { url?: string } }[] } }[];
+  }>("/chat/completions", {
+    model: c.imageModel,
+    messages: [
+      { role: "user", content: `${prompt}. Render it in ${aspectRatioFor(size)} aspect ratio, no text or watermark.` },
+    ],
+    max_tokens: 4096,
+  });
+  const url = resp.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+  const b64 = url?.startsWith("data:") ? url.slice(url.indexOf(",") + 1) : null;
+  if (!b64) throw new Error("Chat image model returned no image data");
+  return { base64: b64, buffer: Buffer.from(b64, "base64") };
 }
 
 // Native Gemini endpoint: {root}/models/{model}:generateContent with x-goog-api-key auth.

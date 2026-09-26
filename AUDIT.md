@@ -108,18 +108,18 @@ Live-AI tests retry transient 503s and self-skip when the Gemini free-tier quota
 | F10 | `authorize()` wraps DB access in try/catch → returns null, never leaks storage errors |
 | F11 | Command palette carries `role="dialog" aria-modal="true"` (header badge already renders ⌘ via the Command icon) |
 | F12 | `src/app/favicon.ico` added |
-| F3 (partial) | Video failures append an actionable hint; OpenRouter key verified live — text/vision/image analysis through the app work (`AI_PROVIDER=openrouter` in `.env.local`); video blocked on OpenRouter's ≥$1 balance gate for video (free-tier ZDR also excludes the free video models) |
+| F3 | **Solved free:** analyze extracts ≤6 even frames with ffmpeg (`videoFramesAsParts`), sends them as vision image parts to the current provider — live-verified (caption + confidence). Raw `video_url` fallback kept for no-ffmpeg hosts, with a stage-accurate error hint. True-temporal upgrades: ≥$1 OpenRouter credit (preset's `video_url`) or Gemini native inline video |
+| F5 | **Solved free:** OpenRouter chat-image model (`google/gemini-2.5-flash-image`, `imageApi: "chat"`) returns PNGs in `message.images[]` on the free tier — live-verified (879KB PNG) |
 
 **Fixed as a by-product of the suite:** runtime uploads 404'd until server
 restart (Next indexes `public/` only at boot) — added a streaming
 `GET /uploads/[name]` route with path-traversal guard.
 
 **Blocked on credentials / decision:**
-- F2 Cloudinary — needs account credentials (`CLOUDINARY_URL`)
-- F3 live video — key is in `.env.local` and verified (text/vision/image LIVE);
-  video needs ≥$1 OpenRouter balance (https://openrouter.ai/settings/credits) —
-  all free video models are also excluded by the account's ZDR setting
-  (https://openrouter.ai/settings/privacy)
-- F5 image generation — Gemini free tier 429 / openrouter preset has no image
-  endpoint; needs billing or an image-capable provider
+- F2 Cloudinary — only the API key was received (`bW1K2SJxBpGunvMkFvAaqbwk7vE`);
+  still needs `cloud_name` + `api_secret` (or the full `cloudinary://` URL)
 - F9 org join-by-name — product decision (invite tokens required)
+
+Free-tier note: live capability tests skip gracefully when OpenRouter's
+free budget/credit window is drained (`skipIfQuota`); they re-run green when
+the window refills.

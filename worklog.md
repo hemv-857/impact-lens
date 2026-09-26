@@ -1035,3 +1035,45 @@ Stage Summary:
   `worklog.md`. `.env.local` holds the key (not committed).
 - Next: add ≥$1 OpenRouter credit to unlock live video; F2 Cloudinary creds;
   F9 invite-token decision.
+
+---
+
+Task ID: 27
+Agent: lead
+Task: Close F3 (video) and F5 (image generation) for free on the OpenRouter key; harden free-tier budget handling.
+Work Log:
+- F3 video via frame sampling: `src/lib/ai.ts` gained `videoFramesAsParts()` —
+  ffprobe duration → ffmpeg extracts ≤6 even frames (`scale=640:-2`) into an
+  `os.tmpdir()` mkdtemp (cleaned in `finally`), sent as multimodal image parts
+  through `chat(vision=true)`. ffmpeg-missing/undecodable falls back to the
+  raw `video_url` path so behavior without ffmpeg is unchanged. Live-verified
+  in-process: caption "A colorful test pattern..." confidence 0.95.
+- Stage-accurate errors: `analyzeMedia` tags provider errors with `framesUsed`
+  when the frame path ran; the analyze route's video hint now says which
+  stage failed (frames→vision provider credits vs no-frames→raw ≥$1 balance).
+- F5 image gen via chat-image: openrouter preset points `imageModel` at
+  `google/gemini-2.5-flash-image` with `imageApi: "chat"`; new `chatImage()`
+  returns the PNG data URL from `message.images[0]`. Live-verified: 879KB PNG.
+- Free-tier budget hardening: `aiFetch` 402 auto-shrink (`can only afford N`)
+  now floors at 1500 tokens — below that it throws a quota-style error
+  instead of returning a truncated half-parsed analysis.
+- Tests (`e2e/audit-capability.spec.ts`): new LIVE video test (runtime ffmpeg
+  fixture, `test.skip` if ffmpeg absent); invalid-video test no longer
+  quota-skips (500+hint is the pass condition, budget-independent); F5 test
+  renamed to PASS via chat-image; `skipIfQuota` extended to
+  `Insufficient credits`/`never purchased credits`; fixed assertion to read
+  `aiCaption` (API field name, not `caption`) — the earlier line-120 failure.
+- AUDIT.md §6: F3 and F5 moved to Fixed (free paths); blocked list now only
+  F2 (needs cloud_name + api_secret) and F9 (invite-token decision).
+- Gates: `bun scripts/ai-smoke.ts` pass · `npm run lint` clean ·
+  `npx tsc --noEmit` exit 0 · `npm run build` exit 0 ·
+  `npm run test:e2e` 40 passed / 6 skipped (live free-budget windows dry) /
+  0 failed — skips are the designed graceful path, re-green on refill.
+
+Stage Summary:
+- Modified: `src/lib/ai.ts` (frame sampling, chatImage, budget floor,
+  framesUsed tag), `src/app/api/analyze/[id]/route.ts` (stage-accurate hint),
+  `e2e/audit-capability.spec.ts` (video LIVE test, quota patterns, aiCaption),
+  `AUDIT.md` §6, `worklog.md`.
+- Next: ask user for Cloudinary `cloud_name` + `api_secret`; decide F9
+  invite-token build; optional ≥$1 OpenRouter credit for true video_url.

@@ -28,7 +28,9 @@ export async function POST(
     } catch (e) {
       let message = e instanceof Error ? e.message : "VLM analysis failed";
       if (mediaType === "video") {
-        message += " — video analysis needs AI_PROVIDER=openrouter with OPENROUTER_API_KEY set (OpenRouter also requires ≥$1 account balance for video).";
+        message += (e as { framesUsed?: boolean }).framesUsed
+          ? " — frame-sampling ran; the vision provider rejected the request (check OPENROUTER_API_KEY credits/balance)."
+          : " — video could not be frame-sampled (ffmpeg missing or file unreadable); the raw video_url fallback needs AI_PROVIDER=openrouter with OPENROUTER_API_KEY and ≥$1 OpenRouter balance.";
       }
       return NextResponse.json({ error: message }, { status: 500 });
     }
