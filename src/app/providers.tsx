@@ -3,6 +3,7 @@
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
+import { ThemeProvider } from "next-themes";
 
 // Singleton QueryClient so HMR doesn't recreate clients on every render.
 let _client: QueryClient | null = null;
@@ -27,8 +28,10 @@ function getBrowserClient() {
 export function Providers({ children }: { children: React.ReactNode }) {
   const client = getBrowserClient();
   return (
-    <SessionProvider>
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
-    </SessionProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="impactlens-theme">
+      <SessionProvider>
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      </SessionProvider>
+    </ThemeProvider>
   );
 }

@@ -38,6 +38,8 @@ jobs:
 
       - name: AI client smoke (self-stubbed, no keys)
         run: bun scripts/ai-smoke.ts
+      - name: Notify smoke (email + Slack contracts, no network)
+        run: bun scripts/notify-smoke.ts
 
       - name: Playwright browsers
         run: npx playwright install --with-deps chromium

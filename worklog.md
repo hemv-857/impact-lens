@@ -20,6 +20,7 @@ Core capabilities: ingest field media → AI-extract metadata (project, location
 - 5 — wire frontend ↔ backend, polish (lead)
 - 6 — lint + agent-browser QA (lead)
 - 7 — cron webDevReview every 15 min (lead)
+- 33 — feature round: AI usage meter, share links, email contract smoke, dark mode, Slack notifications
 
 ---
 Task ID: 1
@@ -1249,3 +1250,25 @@ Stage Summary:
 - Commits: e511318, df877cb, f98d38d.
 - Next: optional — bump actions to node24-safe versions when convenient;
   deferred items in AUDIT.md §8.
+
+---
+Task ID: 33
+Agent: lead
+Task: Ship the five approved features — AI usage meter, shareable read-only report links, email delivery verification, dark mode, Slack cron notifications — with tests, then push.
+
+Work Log:
+- Recon first: email delivery already fully implemented (src/lib/email.ts `sendMail`/`renderReportEmail` + cron wiring) → verified by contract test only; dark mode had `.dark` vars + `@custom-variant` but no provider/toggle; ai.ts has a single chokepoint (`aiFetch`) for all OpenAI-compatible calls.
+- Schema: `Report.shareToken String? @unique` + new `AiUsageLog` (kind/model/provider/durationMs/ok/status/error, @@index(createdAt)) — one `npm run db:push`.
+- AI usage meter: `src/lib/ai-usage.ts` `logAiUsage` (fire-and-forget `.catch(()=>{})`, never throws) hooked into `aiFetch` success + failure paths; `GET /api/ai/usage` (401 unauth; last 50 items + summary {total, ok, failed, avgMs}); `AiUsagePanel` card on Overview. ponytail: native Gemini image path bypasses aiFetch — comment marks it as the upgrade path if that provider becomes the default.
+- Share links: POST/DELETE `/api/reports/[id]/share` (getAuthContext + org-scoped findFirst → 404 for foreign ids, randomBytes(16) hex token, POST rotates, DELETE revokes); public `src/app/share/[token]/page.tsx` (strict `^[0-9a-f]{32}$` + findUnique else notFound, read-only view: headline, summary, metric chips, markdown narrative); middleware negative lookahead now also excludes `share`; Share button on PastReportCard mints the link and copies the absolute URL to the clipboard via toast (stopPropagation so the card doesn't open).
+- Email: no code needed — `scripts/notify-smoke.ts` asserts the exact provider contract (POST {base}/emails, Bearer key, {from,to[],subject,text,html} envelope) and both skip-when-unset paths; wired into ci.yml next to ai-smoke.
+- Slack: `src/lib/slack.ts` `notifySlack` (skip with reason when SLACK_WEBHOOK_URL unset, never fails the caller); cron posts a one-line run summary fire-and-forget (`void notifySlack(...)`) so a Slack outage cannot fail the run; `.env` template line added.
+- Dark mode: ThemeProvider (next-themes, attribute="class", defaultTheme=system, storageKey impactlens-theme) in providers.tsx; Sun/Moon ThemeToggle in Header (mounted guard avoids hydration mismatch); one `.dark` utility-override block at the end of globals.css — two-class selectors (0,2,0) beat single-class utilities, so ~36 hardcoded light stone/white classes flip in one block instead of editing 40 files. Emerald/amber accents and mid-gray bars intentionally untouched; bg-stone-900 buttons remapped to #44403c so white text stays legible.
+- Tests: backend +2 (usage 401/shape; share mint → anonymous 200 read → bogus 404s → cross-org mint 404 → revoke → link dies), ui +1 (AI usage heading), ux +1 (toggle flips html.dark, persists across reload, restores original theme for the rest of the journey), notify-smoke + CI step.
+- Gates: lint clean · tsc 0 · build ok (`/share/[token]` in route table) · ai-smoke ✓ (now logs meter rows) · notify-smoke ✓ · e2e **50 passed / 6 skipped / 0 failed** (56 total; 6 skips = OpenRouter free budget) · curl spot-checks on :3001 — `/share/not-a-token` 404, `/api/ai/usage` 401.
+
+Stage Summary:
+- Added: `src/lib/ai-usage.ts`, `src/lib/slack.ts`, `src/app/api/ai/usage/route.ts`, `src/app/api/reports/[id]/share/route.ts`, `src/app/share/[token]/page.tsx`, `src/components/impactlens/AiUsagePanel.tsx`, `scripts/notify-smoke.ts`.
+- Modified: `prisma/schema.prisma`, `src/lib/ai.ts`, `src/middleware.ts`, `src/app/providers.tsx`, `src/components/impactlens/{Header,OverviewTab,ReportsTab}.tsx`, `src/app/globals.css`, `src/app/api/cron/reports/route.ts`, `.env`, `README.md`, `.github/workflows/ci.yml`, 3 e2e specs.
+- Suite: 56 tests (backend 15, ux 11, ui 12, feasibility 11, capability 7).
+- Next: push + watch CI; Cloudinary secret rotation still advised (old AUDIT.md history).

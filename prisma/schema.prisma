@@ -106,8 +106,22 @@ model Report {
   mediaIds    String? // JSON array of referenced asset ids
   callToAction String?
   tone        String? // professional, emotional, data-driven
+  shareToken  String? @unique // public read-only link /share/<token>
   createdAt   DateTime @default(now())
   @@index([orgId])
+}
+
+model AiUsageLog {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  kind       String // chat | vision | image | gemini-native
+  model      String?
+  provider   String?
+  durationMs Int
+  ok         Boolean
+  status     Int?
+  error      String?
+  @@index([createdAt])
 }
 
 model Comparison {

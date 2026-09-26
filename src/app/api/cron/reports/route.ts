@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateReportsForOrg, ReportGenError, type ReportRequest } from "@/lib/report-gen";
 import { isEmailConfigured, renderReportEmail, sendMail } from "@/lib/email";
+import { notifySlack } from "@/lib/slack";
 
 const DAY_MS = 86_400_000;
 
@@ -86,11 +87,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const ran = results.filter((r) => r.ok).length;
+    // Fire-and-forget: a Slack outage must not fail the cron run.
+    if (results.length > 0) {
+      void notifySlack(
+        `ImpactLens scheduled reports: ${ran}/${results.length} schedule(s) ran, ${results.length - ran} failed (${due.length} due)`
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       checked: schedules.length,
       due: due.length,
-      ran: results.filter((r) => r.ok).length,
+      ran,
       emailConfigured: isEmailConfigured(),
       results,
     });

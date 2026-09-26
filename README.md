@@ -36,6 +36,7 @@ A seeded demo database ships in `db/`:
 | `CLOUDINARY_URL` | `cloudinary://key:secret@cloud-name` — uploads go to the CDN; unset ⇒ local fallback |
 | `CRON_SECRET` | shared secret gating `POST /api/cron/reports` |
 | `EMAIL_*` | optional scheduled-report email delivery |
+| `SLACK_WEBHOOK_URL` | optional Slack incoming webhook for cron run summaries |
 
 `.env` carries non-secret defaults only; secrets never enter git.
 
@@ -48,6 +49,8 @@ npm start          # run the standalone build (defaults to :3000)
 npm run lint       # eslint
 npm run test:e2e   # Playwright suite — start the prod server on :3001 first
 npm run db:push    # sync schema to db/custom.db
+bun scripts/ai-smoke.ts      # self-stubbed AI client contract check (no keys)
+bun scripts/notify-smoke.ts  # email + Slack contract check (no network)
 ```
 
 The e2e suite expects the production server on **http://localhost:3001**:
@@ -60,7 +63,7 @@ npm run test:e2e
 
 ## Tests
 
-`e2e/audit-*.spec.ts` — ~50 checks across five files:
+`e2e/audit-*.spec.ts` — 56 checks across five files (incl. AI usage meter, share links, dark mode):
 
 - **ui** — library, compare, reports, search, campaign flows
 - **ux** — auth journey, dialogs, palette, custom 404, console-error watch

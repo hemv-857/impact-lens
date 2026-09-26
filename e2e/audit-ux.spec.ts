@@ -95,6 +95,18 @@ test("custom 404 page renders for unknown routes while signed in", async () => {
   await page.goto("/"); // subsequent serial tests expect the app shell
 });
 
+test("dark mode toggle applies and persists across reload", async () => {
+  const isDark = () => page.evaluate(() => document.documentElement.classList.contains("dark"));
+  const before = await isDark();
+  await page.getByRole("button", { name: "Toggle dark mode" }).click();
+  await expect.poll(isDark).toBe(!before);
+  await page.reload();
+  await expect.poll(isDark).toBe(!before); // persisted via storageKey
+  // restore the original theme for the rest of the journey
+  await page.getByRole("button", { name: "Toggle dark mode" }).click();
+  await expect.poll(isDark).toBe(before);
+});
+
 test("account menu exposes org actions and sign out", async () => {
   await page.locator("header").getByText("GreenShoots").click();
   await expect(page.getByText(/New organization/).first()).toBeVisible();

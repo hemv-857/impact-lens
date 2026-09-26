@@ -40,6 +40,7 @@ import { TopTagsCloud } from "@/components/impactlens/TopTagsCloud";
 import { DateRangeFilter, type DateRangeValue } from "@/components/impactlens/DateRangeFilter";
 import { ProjectLeaderboard } from "@/components/impactlens/ProjectLeaderboard";
 import { FavoritesStrip } from "@/components/impactlens/FavoritesStrip";
+import { AiUsagePanel } from "@/components/impactlens/AiUsagePanel";
 import { ImpactHighlights } from "@/components/impactlens/ImpactHighlights";
 import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import {
@@ -475,6 +476,9 @@ export function OverviewTab() {
       <section>
         <FavoritesStrip />
       </section>
+
+      {/* AI usage meter */}
+      <AiUsagePanel />
 
       {/* Active projects preview */}
       <section>

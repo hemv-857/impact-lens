@@ -6,6 +6,7 @@ import path from "path";
 import os from "os";
 import { execFile as execFileCb } from "child_process";
 import { promisify } from "util";
+import { logAiUsage } from "./ai-usage";
 
 const execFile = promisify(execFileCb);
 
@@ -105,6 +106,15 @@ export async function chat(messages: ChatMessage[], vision = false): Promise<str
 
 async function aiFetch<T>(pathname: string, body: unknown): Promise<T> {
   const { baseUrl, apiKey } = cfg();
+  const t0 = Date.now();
+  const kind = JSON.stringify(body).includes("image_url") ? "vision" : "chat";
+  const model =
+    typeof body === "object" && body && "model" in body
+      ? String((body as { model?: unknown }).model ?? "")
+      : null;
+  const provider = process.env.AI_PROVIDER?.trim().toLowerCase() || DEFAULT_PROVIDER;
+  const done = (ok: boolean, status?: number, error?: string) =>
+    logAiUsage({ kind, model, provider, durationMs: Date.now() - t0, ok, status, error });
   const post = async (payload: unknown) => {
     const resp = await fetch(`${baseUrl}${pathname}`, {
       method: "POST",
@@ -113,24 +123,31 @@ async function aiFetch<T>(pathname: string, body: unknown): Promise<T> {
     });
     return { ok: resp.ok, status: resp.status, text: await resp.text() };
   };
-  let out = await post(body);
-  // Free-tier keys carry a shrinking per-request token budget ("can only
-  // afford N") — shrink max_tokens to fit and retry once instead of failing.
-  if (!out.ok && out.status === 402 && /can only afford (\d+)/.test(out.text)) {
-    const budget = Number(RegExp.$1) - 100;
-    if (budget < 1500) {
-      // too small to produce a full analysis JSON — fail into the quota-skip
-      // path instead of returning a truncated, half-parsed response
-      throw new Error(`AI request failed 402 ${pathname}: free-tier budget too low (${budget} tokens) — ${out.text.slice(0, 200)}`);
+  try {
+    let out = await post(body);
+    // Free-tier keys carry a shrinking per-request token budget ("can only
+    // afford N") — shrink max_tokens to fit and retry once instead of failing.
+    if (!out.ok && out.status === 402 && /can only afford (\d+)/.test(out.text)) {
+      const budget = Number(RegExp.$1) - 100;
+      if (budget < 1500) {
+        // too small to produce a full analysis JSON — fail into the quota-skip
+        // path instead of returning a truncated, half-parsed response
+        throw new Error(`AI request failed 402 ${pathname}: free-tier budget too low (${budget} tokens) — ${out.text.slice(0, 200)}`);
+      }
+      if (typeof body === "object" && body !== null) {
+        out = await post({ ...(body as Record<string, unknown>), max_tokens: budget });
+      }
     }
-    if (typeof body === "object" && body !== null) {
-      out = await post({ ...(body as Record<string, unknown>), max_tokens: budget });
+    if (!out.ok) {
+      throw new Error(`AI request failed ${out.status} ${pathname}: ${out.text.slice(0, 400)}`);
     }
+    const parsed = JSON.parse(out.text) as T;
+    done(true, out.status);
+    return parsed;
+  } catch (err) {
+    done(false, undefined, err instanceof Error ? err.message : String(err));
+    throw err;
   }
-  if (!out.ok) {
-    throw new Error(`AI request failed ${out.status} ${pathname}: ${out.text.slice(0, 400)}`);
-  }
-  return JSON.parse(out.text) as T;
 }
 
 // Resolve any image reference (relative /public path, absolute URL, or data URL)

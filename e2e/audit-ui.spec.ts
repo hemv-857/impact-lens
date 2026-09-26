@@ -43,6 +43,12 @@ test("overview shows KPIs, charts and primary actions", async () => {
   await expect(page.getByRole("button", { name: "Generate report" }).first()).toBeVisible();
 });
 
+test("overview shows the AI usage meter", async () => {
+  await gotoTab(page, "Overview");
+  await expect(page.getByRole("heading", { name: "AI usage" })).toBeVisible();
+  await expect(page.getByTestId("ai-usage")).toBeVisible();
+});
+
 test("PASS: Media Library shows every asset by default (no verified filter)", async () => {
   // Reload to reset the in-memory query cache (staleTime 30s) so the Library
   // mount reflects the current query params.

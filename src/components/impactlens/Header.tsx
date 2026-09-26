@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Menu, Leaf, Sparkles, Command, Search, Clock } from "lucide-react";
+import { Menu, Leaf, Sparkles, Command, Search, Clock, Sun, Moon } from "lucide-react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -86,6 +87,7 @@ export function Header() {
 
         {/* Right side: Command palette trigger + CTA + mobile menu */}
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <AccountMenu />
           {/* Command palette trigger */}
           <button
@@ -164,5 +166,24 @@ export function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  if (!mounted) return <span className="size-8" aria-hidden="true" />;
+  const dark = resolvedTheme === "dark";
+  return (
+    <button
+      type="button"
+      aria-label="Toggle dark mode"
+      title="Toggle dark mode"
+      onClick={() => setTheme(dark ? "light" : "dark")}
+      className="rounded-lg border border-stone-200 bg-stone-50 p-2 text-stone-500 transition hover:bg-stone-100"
+    >
+      {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+    </button>
   );
 }

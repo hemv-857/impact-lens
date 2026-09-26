@@ -16,6 +16,7 @@ import {
   Check,
   Printer,
   ExternalLink,
+  Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -103,6 +104,25 @@ export function ReportsTab() {
   const create = useCreateReport();
   const cloneMut = useCloneReport();
   const { toast } = useToast();
+  const [sharingId, setSharingId] = React.useState<string | null>(null);
+  const shareReport = async (id: string) => {
+    setSharingId(id);
+    try {
+      const res = await fetch(`/api/reports/${id}/share`, { method: "POST" });
+      const body = (await res.json().catch(() => null)) as { url?: string; error?: string } | null;
+      if (!res.ok || !body?.url) throw new Error(body?.error ?? "Request failed");
+      await navigator.clipboard.writeText(`${window.location.origin}${body.url}`);
+      toast({ title: "Share link copied", description: "Anyone with the link can read this report." });
+    } catch (e) {
+      toast({
+        title: "Share failed",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setSharingId(null);
+    }
+  };
 
   // Apply preset project from store (e.g., when jumping from projects tab)
   React.useEffect(() => {
@@ -485,6 +505,8 @@ export function ReportsTab() {
                     }
                   }}
                   cloning={cloneMut.isPending}
+                  onShare={() => shareReport(r.id)}
+                  sharing={sharingId === r.id}
                 />
               ))}
           </div>
@@ -635,12 +657,16 @@ function PastReportCard({
   onOpen,
   onClone,
   cloning,
+  onShare,
+  sharing,
 }: {
   report: Report;
   active: boolean;
   onOpen: () => void;
   onClone?: () => void;
   cloning?: boolean;
+  onShare?: () => void;
+  sharing?: boolean;
 }) {
   return (
     <Card
@@ -666,6 +692,24 @@ function PastReportCard({
           {report.type}
         </Badge>
         <div className="flex items-center gap-1">
+          {onShare && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onShare();
+              }}
+              disabled={sharing}
+              className="rounded p-1 text-stone-400 opacity-0 transition hover:bg-stone-100 hover:text-emerald-700 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-50"
+              title="Copy read-only share link"
+              aria-label="Share report"
+            >
+              {sharing ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <Share2 className="size-3" />
+              )}
+            </button>
+          )}
           {onClone && (
             <button
               onClick={(e) => {

@@ -179,3 +179,61 @@ test("security: DELETE refuses path traversal outside public/ and leaves the fil
   expect(existsSync(resolve(process.cwd(), ".env.local"))).toBe(true);
   expect((await request.get(`/api/media/${asset.id}`)).status()).toBe(404);
 });
+
+test("AI usage meter: 401 unauthenticated, summary shape when authed", async ({ request }) => {
+  expect((await request.get("/api/ai/usage")).status()).toBe(401);
+  await apiLogin(request);
+  const res = await request.get("/api/ai/usage");
+  expect(res.status()).toBe(200);
+  const body = await res.json();
+  expect(Array.isArray(body.items)).toBe(true);
+  for (const k of ["total", "ok", "failed", "avgMs"]) {
+    expect(typeof body.summary[k], k).toBe("number");
+  }
+  if (body.items.length > 0) {
+    expect(typeof body.items[0].kind).toBe("string");
+    expect(typeof body.items[0].ok).toBe("boolean");
+    expect(typeof body.items[0].durationMs).toBe("number");
+  }
+});
+
+test("share links: mint, anonymous public read, revoke, cross-org 404", async ({ browser }) => {
+  const ownerCtx = await browser.newContext();
+  await apiLogin(ownerCtx.request);
+  const reports = await (await ownerCtx.request.get("/api/reports")).json();
+  expect(reports.length).toBeGreaterThan(0);
+  const id = reports[0].id as string;
+
+  const anonCtx = await browser.newContext(); // no session — a stranger with the link
+
+  // mint (or rotate) the token
+  const mint = await ownerCtx.request.post(`/api/reports/${id}/share`);
+  expect(mint.status(), JSON.stringify(await mint.json())).toBe(200);
+  const { token, url } = await mint.json();
+  expect(token).toMatch(/^[0-9a-f]{32}$/);
+  expect(url).toBe(`/share/${token}`);
+
+  // read WITHOUT any session — the public share view
+  const view = await anonCtx.request.get(url);
+  expect(view.status()).toBe(200);
+  const html = await view.text();
+  expect(html).toContain("Read-only");
+  expect(html).toContain("ImpactLens");
+
+  // unknown / malformed tokens → 404, not a redirect to sign-in
+  expect((await anonCtx.request.get("/share/00000000000000000000000000000000")).status()).toBe(404);
+  expect((await anonCtx.request.get("/share/not-a-token")).status()).toBe(404);
+
+  // another org's owner cannot mint a link for this report
+  const otherCtx = await browser.newContext();
+  await apiLogin(otherCtx.request, OTHER_OWNER);
+  expect((await otherCtx.request.post(`/api/reports/${id}/share`)).status()).toBe(404);
+
+  // revoke → the previously shared link dies immediately
+  expect((await ownerCtx.request.delete(`/api/reports/${id}/share`)).status()).toBe(200);
+  expect((await anonCtx.request.get(url)).status()).toBe(404);
+
+  await ownerCtx.close();
+  await anonCtx.close();
+  await otherCtx.close();
+});
