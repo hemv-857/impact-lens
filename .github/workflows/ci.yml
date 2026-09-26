@@ -43,15 +43,21 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       # NEXTAUTH_SECRET / CRON_SECRET live in gitignored .env.local — generate
-      # per-run so login + cron tests work without repo secrets. Also give the
-      # gitignored uploads/ dir a file (feasibility asserts live storage).
-      - name: Generate CI-only secrets and uploads dir
+      # per-run so login + cron tests work without repo secrets. public/uploads
+      # is also gitignored (F7): materialize whatever the committed DB references
+      # from committed field-media so seeded assets don't 404 in the journey.
+      - name: Generate CI-only env (secrets + seeded uploads)
         run: |
           {
             echo "NEXTAUTH_SECRET=$(openssl rand -hex 32)"
             echo "CRON_SECRET=$(openssl rand -hex 32)"
           } >> .env.local
           mkdir -p public/uploads
+          sqlite3 db/custom.db "SELECT url FROM MediaAsset WHERE url LIKE '/uploads/%'" | while IFS= read -r u; do
+            name=$(basename "${u%%\?*}")
+            [ -n "$name" ] && [ ! -f "public/uploads/$name" ] && \
+              cp "public/field-media/$(ls public/field-media | head -1)" "public/uploads/$name"
+          done
           [ -n "$(ls -A public/uploads 2>/dev/null)" ] || echo "ci placeholder" > public/uploads/ci-placeholder.txt
 
       - name: Start production server
