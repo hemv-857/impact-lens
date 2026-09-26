@@ -1218,3 +1218,34 @@ Stage Summary:
 - Modified: `public/logo.svg`, `e2e/audit-capability.spec.ts`,
   `e2e/helpers.ts`, `worklog.md`.
 - Next: confirm first CI run green on GitHub; deferred items AUDIT.md §8.
+
+Task ID: 32
+
+Task: Make the first CI run green (three fix iterations after Task 31's workflow).
+
+Work Log:
+- Run 1 (d552122): 7 e2e failures — root cause: `NEXTAUTH_SECRET` and
+  `CRON_SECRET` live in gitignored `.env.local`, absent in CI → every
+  auth/session path returned 500 (login, landing, app shell, unauth-401
+  assertions, 413). Fix: CI generates both per-run (openssl rand) into
+  `.env.local`; server start sources it too. Also seed `public/uploads` so
+  the feasibility storage assertion holds (dir is gitignored by design, F7).
+- Run 2 (e511318): 1 failure — ux console-error journey: committed DB
+  references `/uploads/upload_1790277023442_5zlk8n.jpg`, which is gitignored
+  → 404 in a fresh checkout. Fix attempt: bash/`sqlite3` materialization loop.
+- Run 3 (df877cb): still 1 failure — `sqlite3 | while read` silently produced
+  nothing on the runner (no pipefail → pipeline green regardless); replaced
+  with a python3 script (prints materialized files for observability) and
+  mirrored seeded files into `.next/standalone/public/uploads` (build copies
+  public/ before this step).
+- Run 4 (f98d38d): **CI green** — `completed / success`, 44 passed /
+  8 skipped (7 no-key LIVE + F2 no-CLOUDINARY_URL) / 0 failed; full gates
+  (lint, tsc, build, ai-smoke, e2e) all ✓. Node-20 deprecation annotation
+  noted upstream (actions/checkout@v4, setup-node@v4) — non-blocking.
+- Local gates unchanged: tsc 0 · lint clean · build ok · e2e 46/6/0.
+
+Stage Summary:
+- Modified: `.github/workflows/ci.yml`, `worklog.md`.
+- Commits: e511318, df877cb, f98d38d.
+- Next: optional — bump actions to node24-safe versions when convenient;
+  deferred items in AUDIT.md §8.
