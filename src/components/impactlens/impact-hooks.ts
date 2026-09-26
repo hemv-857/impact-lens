@@ -15,9 +15,11 @@ import {
   createNote,
   createProject,
   createReport,
+  createSchedule,
   deleteMedia,
   deleteNote,
   deleteSavedSearch,
+  deleteSchedule,
   fetchAnalytics,
   fetchComparisons,
   fetchLeaderboard,
@@ -26,6 +28,7 @@ import {
   fetchNotes,
   fetchProjects,
   fetchReports,
+  fetchSchedules,
   fetchSavedSearches,
   generateCampaignVariants,
   toggleFavorite,
@@ -35,6 +38,7 @@ import {
   saveSearch,
   semanticSearch,
   seedSampleData,
+  updateSchedule,
 } from "@/lib/api";
 
 export const qk = {
@@ -48,6 +52,7 @@ export const qk = {
   search: (query: string) => ["search", query] as const,
   leaderboard: ["leaderboard"] as const,
   notes: (assetId: string) => ["notes", assetId] as const,
+  schedules: ["schedules"] as const,
 };
 
 export function useAnalytics() {
@@ -282,5 +287,35 @@ export function useCloneReport() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.reports });
     },
+  });
+}
+
+// ----- Report schedules (recurring generation + email delivery) -----
+export function useSchedules() {
+  return useQuery({ queryKey: qk.schedules, queryFn: fetchSchedules });
+}
+
+export function useCreateSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: createSchedule,
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.schedules }),
+  });
+}
+
+export function useUpdateSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string } & Parameters<typeof updateSchedule>[1]) =>
+      updateSchedule(id, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.schedules }),
+  });
+}
+
+export function useDeleteSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteSchedule(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.schedules }),
   });
 }

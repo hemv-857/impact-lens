@@ -151,6 +151,7 @@ model Organization {
   createdAt   DateTime @default(now())
 
   users       Membership[]
+  schedules   ReportSchedule[]
   projects    Project[]
   assets      MediaAsset[]
   reports     Report[]
@@ -180,4 +181,24 @@ model Membership {
   org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@unique([userId, orgId])
+}
+
+model ReportSchedule {
+  id         String    @id @default(cuid())
+  orgId      String
+  org        Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name       String?
+  type       String    @default("impact") // impact | summary | campaign | comparison
+  tone       String    @default("professional")
+  projectId  String?
+  assetIds   String?    // JSON array of asset ids; null = latest org assets
+  audience   String?
+  everyDays  Int       @default(7)
+  emailTo    String?
+  active     Boolean   @default(true)
+  lastRunAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([orgId])
 }

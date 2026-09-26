@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/impactlens/EmptyState";
 import { MarkdownRenderer } from "@/components/impactlens/MarkdownRenderer";
+import { ReportSchedules } from "@/components/impactlens/ReportSchedules";
 import {
   useCloneReport,
   useCreateReport,
@@ -404,6 +405,13 @@ export function ReportsTab() {
               )}
               Generate report
             </Button>
+
+            <ReportSchedules
+              projectId={projectId !== "none" ? projectId : undefined}
+              type={type}
+              tone={tone}
+              audience={audience}
+            />
           </div>
         </Card>
 

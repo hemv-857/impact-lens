@@ -814,3 +814,51 @@ Stage Summary:
 Unresolved / Next-phase priorities:
 - Scheduled report generation + email delivery (env-configured HTTP mail API + `CRON_SECRET` cron route).
 - Fix the 4 pre-existing tsc errors above.
+
+---
+Task ID: 21
+Agent: lead
+Task: Scheduled report generation + email delivery.
+
+Work Log:
+- Prisma: `ReportSchedule` (orgId, type, tone, projectId, audience, everyDays, emailTo,
+  active, lastRunAt) + `Organization.schedules`; pushed without data loss.
+- Extracted report generation into `src/lib/report-gen.ts`:
+  `generateReportsForOrg(orgId, {type, tone, projectId?, assetIds?, audience?, ...})` now owns
+  asset/project/comparison resolution (empty `assetIds` falls back to the org's 20 newest
+  assets — that is what cron needs), the angle loop and persistence; throws `ReportGenError`
+  carrying the HTTP status. `POST /api/report` shrank to validation + response shaping, so the
+  API and the cron runner cannot drift apart.
+- `src/lib/email.ts`: `sendMail()` POSTs `{from,to,subject,text,html}` to
+  `POST {EMAIL_API_BASE_URL}/emails` with `Authorization: Bearer {EMAIL_API_KEY}`;
+  unconfigured → `{sent:false, reason}` instead of a throw, so reports still generate.
+  `renderReportEmail()` builds the subject + plain-text body (html derived by escaping).
+- Routes:
+  - `GET/POST /api/schedules`, `PATCH/DELETE /api/schedules/[id]` — org-scoped CRUD with
+    type/tone/email/everyDays (1-90) validation.
+  - `POST /api/cron/reports` — requires `CRON_SECRET` (503 if unset, 401 otherwise; accepts
+    `x-cron-secret` or `Authorization: Bearer`). Picks active schedules due by
+    `now - lastRunAt >= everyDays`, generates (1 report each), emails the recipient, then sets
+    `lastRunAt`; a failed run leaves `lastRunAt` alone so the next tick retries.
+- UI: `ReportSchedules` card in the Reports tab left column — interval select (daily/weekly/
+  monthly), optional recipient, "Schedule this report", plus an active switch + delete per row.
+  Wired through `useSchedules/useCreateSchedule/useUpdateSchedule/useDeleteSchedule`.
+- `.env` documents CRON_SECRET/EMAIL_* (commented); real values live in gitignored `.env.local`.
+- Verified live with a stub OpenAI-compatible server on :8090 (so no real key needed):
+  - `variantCount: 3` → 3 persisted reports whose titles carry the three different angles;
+    `variantCount: 1` → single report object.
+  - schedule created → cron without secret 401 / wrong secret 401 / right secret 200 with
+    `ran: 1` and a new report id; immediate re-run reports `due: 0` (interval respected).
+  - second run with EMAIL_* configured → `"email": "sent"` and the stub logged the full
+    `{from,to,subject,text,html}` payload; with EMAIL_* unset → `skipped: email not configured`.
+- Checks: `bun scripts/ai-smoke.ts` pass · `npm run lint` clean · `npx tsc --noEmit` 4 pre-existing
+  errors only · `npm run build` exit 0 (schedules + cron routes present).
+
+Stage Summary:
+- New: `src/lib/report-gen.ts`, `src/lib/email.ts`, `src/app/api/schedules/{route.ts,[id]/route.ts}`,
+  `src/app/api/cron/reports/route.ts`, `src/components/impactlens/ReportSchedules.tsx`.
+- Modified: `prisma/schema.prisma`, `src/app/api/report/route.ts`, `src/lib/api.ts`,
+  `src/components/impactlens/impact-hooks.ts`, `src/components/impactlens/ReportsTab.tsx`,
+  `.env`, `worklog.md`, `db/custom.db`.
+- Deploy note: point a scheduler (GitHub Actions cron / Vercel Cron / crontab) at
+  `POST /api/cron/reports` with `x-cron-secret: $CRON_SECRET`.

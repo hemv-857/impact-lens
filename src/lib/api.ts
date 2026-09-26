@@ -165,6 +165,50 @@ export const createComparison = (body: {
     body: JSON.stringify(body),
   });
 
+// ----------------- Report schedules -----------------
+export interface ReportSchedule {
+  id: string;
+  name: string | null;
+  type: string;
+  tone: string;
+  projectId: string | null;
+  audience: string | null;
+  everyDays: number;
+  emailTo: string | null;
+  active: boolean;
+  lastRunAt: string | null;
+  createdAt: string;
+}
+
+export interface CreateScheduleInput {
+  name?: string;
+  type?: string;
+  tone?: string;
+  projectId?: string;
+  audience?: string;
+  everyDays?: number;
+  emailTo?: string;
+}
+
+export const fetchSchedules = () => fetcher<ReportSchedule[]>("/api/schedules");
+
+export const createSchedule = (body: CreateScheduleInput) =>
+  fetcher<ReportSchedule>("/api/schedules", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+
+export const updateSchedule = (id: string, body: Partial<CreateScheduleInput> & { active?: boolean }) =>
+  fetcher<ReportSchedule>(`/api/schedules/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+
+export const deleteSchedule = (id: string) =>
+  fetcher<{ ok: boolean }>(`/api/schedules/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+
 // ----------------- Auth / orgs -----------------
 export interface OrgMembership {
   id: string;
