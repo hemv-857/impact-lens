@@ -53,12 +53,23 @@ jobs:
             echo "CRON_SECRET=$(openssl rand -hex 32)"
           } >> .env.local
           mkdir -p public/uploads
-          sqlite3 db/custom.db "SELECT url FROM MediaAsset WHERE url LIKE '/uploads/%'" | while IFS= read -r u; do
-            name=$(basename "${u%%\?*}")
-            [ -n "$name" ] && [ ! -f "public/uploads/$name" ] && \
-              cp "public/field-media/$(ls public/field-media | head -1)" "public/uploads/$name"
-          done
+          python3 - <<'EOF'
+          import os, shutil, sqlite3
+          srcs = sorted(os.listdir("public/field-media"))
+          con = sqlite3.connect("db/custom.db")
+          rows = con.execute("SELECT url FROM MediaAsset WHERE url LIKE '/uploads/%'").fetchall()
+          for (url,) in rows:
+              name = os.path.basename(url.split("?")[0])
+              dst = f"public/uploads/{name}"
+              if name and not os.path.exists(dst) and srcs:
+                  shutil.copy(f"public/field-media/{srcs[0]}", dst)
+                  print(f"materialized {dst} (seeded asset referenced {url})")
+          print(f"{len(rows)} DB-referenced upload(s)")
+          EOF
           [ -n "$(ls -A public/uploads 2>/dev/null)" ] || echo "ci placeholder" > public/uploads/ci-placeholder.txt
+          # build already copied public/ into standalone — mirror the seeded files there too
+          mkdir -p .next/standalone/public/uploads
+          cp public/uploads/* .next/standalone/public/uploads/
 
       - name: Start production server
         run: |
