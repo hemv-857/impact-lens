@@ -110,6 +110,7 @@ Live-AI tests retry transient 503s and self-skip when the Gemini free-tier quota
 | F12 | `src/app/favicon.ico` added |
 | F3 | **Solved free:** analyze extracts ≤6 even frames with ffmpeg (`videoFramesAsParts`), sends them as vision image parts to the current provider — live-verified (caption + confidence). Raw `video_url` fallback kept for no-ffmpeg hosts, with a stage-accurate error hint. True-temporal upgrades: ≥$1 OpenRouter credit (preset's `video_url`) or Gemini native inline video |
 | F5 | **Solved free:** OpenRouter chat-image model (`google/gemini-2.5-flash-image`, `imageApi: "chat"`) returns PNGs in `message.images[]` on the free tier — live-verified (879KB PNG) |
+| F9 | **Invite codes:** signup joining an existing org requires an 8-char invite code (403 otherwise); owners copy/regenerate it from the account menu (`GET`/`POST /api/org/invite`, owner-only); orgs get a code at creation, legacy orgs mint one on first access |
 
 **Fixed as a by-product of the suite:** runtime uploads 404'd until server
 restart (Next indexes `public/` only at boot) — added a streaming
@@ -118,7 +119,6 @@ restart (Next indexes `public/` only at boot) — added a streaming
 **Blocked on credentials / decision:**
 - F2 Cloudinary — only the API key was received (`bW1K2SJxBpGunvMkFvAaqbwk7vE`);
   still needs `cloud_name` + `api_secret` (or the full `cloudinary://` URL)
-- F9 org join-by-name — product decision (invite tokens required)
 
 Free-tier note: live capability tests skip gracefully when OpenRouter's
 free budget/credit window is drained (`skipIfQuota`); they re-run green when

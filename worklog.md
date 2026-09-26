@@ -1077,3 +1077,37 @@ Stage Summary:
   `AUDIT.md` §6, `worklog.md`.
 - Next: ask user for Cloudinary `cloud_name` + `api_secret`; decide F9
   invite-token build; optional ≥$1 OpenRouter credit for true video_url.
+
+---
+
+Task ID: 28
+Agent: lead
+Task: F9 — replace open org join-by-name with invite codes (production decision: invite required).
+Work Log:
+- Schema: `Organization.inviteCode String? @unique` (applied via `npm run db:push`).
+- `src/lib/auth.ts`: `generateInviteCode()` — 8 chars from an unambiguous
+  alphabet (no i/l/o/0/1), `randomInt` (no modulo bias).
+- Signup (`api/auth/signup`): joining an existing slug now requires a matching
+  code (trimmed/lowercased) — otherwise 403 before any user row is written;
+  new orgs still create as owner. Orgs get a code at creation (`POST /api/orgs`).
+- New `GET/POST /api/org/invite` — owner-only; GET mints on first access
+  (legacy orgs), POST rotates (revokes the old code). Members → 403.
+- AccountMenu (owner-only): "Copy invite code" (clipboard + toast) and
+  "Regenerate invite code" (confirm + rotate + copy).
+- Auth page: invite-code field on sign-up, copy updated to "existing name
+  joins with an invite code".
+- Tests (audit-backend): join requires valid code (403 missing → 403 wrong →
+  201 joined, rotation revokes old code, per-attempt unique emails so re-runs
+  don't 409); non-owner gets 403 on GET/POST invite.
+- Gates: `npx tsc --noEmit` exit 0 · `npm run lint` clean · `npm run build`
+  exit 0 · `bun scripts/ai-smoke.ts` pass · `npm run test:e2e`
+  42 passed / 6 skipped (live AI free-budget windows dry until refill) /
+  0 failed.
+
+Stage Summary:
+- Modified: `prisma/schema.prisma`, `src/lib/auth.ts`,
+  `src/app/api/auth/signup/route.ts`, `src/app/api/orgs/route.ts`,
+  `src/app/api/org/invite/route.ts` (new), `AccountMenu.tsx`,
+  `src/app/auth/page.tsx`, `e2e/audit-backend.spec.ts`, `AUDIT.md`, `worklog.md`.
+- Next: Cloudinary `cloud_name` + `api_secret` (F2); live capability tests
+  re-run when OpenRouter free budget renews.

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, Check, ChevronDown, LogOut } from "lucide-react";
+import { Building2, Check, ChevronDown, LogOut, RefreshCw, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,10 +14,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { fetchOrgs } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export function AccountMenu() {
   const { data: session, update } = useSession();
   const qc = useQueryClient();
+  const { toast } = useToast();
   const orgsQ = useQuery({
     queryKey: ["auth", "orgs"],
     queryFn: fetchOrgs,
@@ -53,6 +55,19 @@ export function AccountMenu() {
     }
     await update({ orgId: data.id });
     await qc.invalidateQueries();
+  };
+
+  // F9: owners hand out a copyable invite code; rotating it revokes the old one.
+  const shareInvite = async (regenerate: boolean) => {
+    if (regenerate && !window.confirm("Regenerate? The current invite code stops working.")) return;
+    const res = await fetch("/api/org/invite", { method: regenerate ? "POST" : "GET" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.code) {
+      toast({ title: "Invite code", description: data.error || "Could not fetch invite code", variant: "destructive" });
+      return;
+    }
+    await navigator.clipboard.writeText(data.code).catch(() => undefined);
+    toast({ title: regenerate ? "New invite code copied" : "Invite code copied", description: `Share “${data.code}” — people enter it on sign-up to join ${data.name}.` });
   };
 
   return (
@@ -99,6 +114,18 @@ export function AccountMenu() {
           <Building2 className="size-4 text-stone-400" />
           New organization…
         </DropdownMenuItem>
+        {active?.role === "owner" && (
+          <>
+            <DropdownMenuItem onSelect={() => void shareInvite(false)} className="gap-2">
+              <UserPlus className="size-4 text-stone-400" />
+              Copy invite code
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => void shareInvite(true)} className="gap-2">
+              <RefreshCw className="size-4 text-stone-400" />
+              Regenerate invite code
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={() => {

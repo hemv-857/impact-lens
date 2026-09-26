@@ -1,5 +1,5 @@
 // Email/password auth (scrypt, node:crypto — no extra dependency) + org scoping.
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { randomBytes, randomInt, scryptSync, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getServerSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -20,6 +20,16 @@ export function verifyPassword(password: string, stored: string): boolean {
 }
 
 export const PASSWORD_MIN_LENGTH = 8;
+
+/** F9: 8-char join code, ambiguous chars excluded so it survives being read aloud. */
+export function generateInviteCode(): string {
+  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
+  let code = "";
+  for (let i = 0; i < 8; i++) {
+    code += alphabet[randomInt(alphabet.length)];
+  }
+  return code;
+}
 
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();

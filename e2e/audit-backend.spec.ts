@@ -111,3 +111,39 @@ test("signup rejects weak passwords before any DB write", async ({ request }) =>
   });
   expect(res.status()).toBe(400);
 });
+
+test("F9: joining an existing org requires a valid invite code", async ({ request }) => {
+  await apiLogin(request);
+  const invite = await (await request.get("/api/org/invite")).json();
+  expect(invite.code).toMatch(/^[a-z0-9]{8}$/);
+
+  // fresh email per attempt — signup 409s once an address exists
+  let attempt = 0;
+  const join = (data: Record<string, unknown>) =>
+    request.post("/api/auth/signup", {
+      data: { email: `audit-joiner-${Date.now()}-${++attempt}@example.org`, password: "password123", orgName: "GreenShoots", ...data },
+    });
+
+  expect((await join({})).status()).toBe(403);
+  expect((await join({ inviteCode: "deadbeef" })).status()).toBe(403);
+
+  const ok = await join({ inviteCode: invite.code });
+  expect(ok.status()).toBe(201);
+  expect((await ok.json()).joined).toBe(true);
+
+  // rotating revokes the old code for future joins
+  const rotated = await (await request.post("/api/org/invite")).json();
+  expect(rotated.code).not.toBe(invite.code);
+  const reuse = await request.post("/api/auth/signup", {
+    data: { email: `audit-joiner2-${Date.now()}@example.org`, password: "password123", orgName: "GreenShoots", inviteCode: invite.code },
+  });
+  expect(reuse.status()).toBe(403);
+});
+
+test("F9: non-owners cannot read the invite code", async ({ browser }) => {
+  const ctx = await browser.newContext();
+  await apiLogin(ctx.request, { email: "cara@example.org", password: "password123" });
+  expect((await ctx.request.get("/api/org/invite")).status()).toBe(403);
+  expect((await ctx.request.post("/api/org/invite")).status()).toBe(403);
+  await ctx.close();
+});

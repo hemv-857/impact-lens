@@ -20,6 +20,7 @@ export default function AuthPage() {
   const [password, setPassword] = React.useState("");
   const [name, setName] = React.useState("");
   const [orgName, setOrgName] = React.useState("");
+  const [invite, setInvite] = React.useState("");
   const [pending, setPending] = React.useState(false);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -31,7 +32,7 @@ export default function AuthPage() {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, name, orgName }),
+          body: JSON.stringify({ email, password, name, orgName, inviteCode: invite }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || "Sign up failed");
@@ -122,7 +123,7 @@ export default function AuthPage() {
                 <Label htmlFor="org" className="text-xs text-stone-500">
                   Organization
                   <span className="ml-1.5 font-normal text-stone-400">
-                    new name creates one, existing name joins it
+                    new name creates one, existing name joins with an invite code
                   </span>
                 </Label>
                 <Input
@@ -130,6 +131,24 @@ export default function AuthPage() {
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
                   placeholder="GreenShoots Foundation"
+                />
+              </div>
+            )}
+
+            {mode === "signup" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="invite" className="text-xs text-stone-500">
+                  Invite code
+                  <span className="ml-1.5 font-normal text-stone-400">
+                    only needed to join an existing workspace
+                  </span>
+                </Label>
+                <Input
+                  id="invite"
+                  value={invite}
+                  onChange={(e) => setInvite(e.target.value)}
+                  placeholder="e.g. k3n7q2xm"
+                  autoComplete="off"
                 />
               </div>
             )}

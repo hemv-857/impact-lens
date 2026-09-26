@@ -148,6 +148,7 @@ model Organization {
   id          String   @id @default(cuid())
   name        String
   slug        String   @unique
+  inviteCode  String?  @unique // F9: join-by-invite; null until an owner fetches/regenerates it
   createdAt   DateTime @default(now())
 
   users       Membership[]

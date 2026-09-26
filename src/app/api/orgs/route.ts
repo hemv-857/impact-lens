@@ -1,7 +1,7 @@
 // POST /api/orgs — create a new organization for the signed-in user (owner).
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getAuthContext, unauthorized } from "@/lib/auth";
+import { generateInviteCode, getAuthContext, unauthorized } from "@/lib/auth";
 
 function slugify(input: string): string {
   return (
@@ -31,7 +31,9 @@ export async function POST(req: NextRequest) {
       slug = `${slugify(name)}-${suffix}`;
     }
 
-    const org = await db.organization.create({ data: { name, slug } });
+    const org = await db.organization.create({
+      data: { name, slug, inviteCode: generateInviteCode() },
+    });
     await db.membership.create({
       data: { userId: auth.userId, orgId: org.id, role: "owner" },
     });

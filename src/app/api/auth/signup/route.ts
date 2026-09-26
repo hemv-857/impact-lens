@@ -60,12 +60,20 @@ export async function POST(req: NextRequest) {
     }
 
     const preferredOrgName = (orgName || "").trim() || "My workspace";
-    // Organization field doubles as a join code: an existing slug joins that org
-    // as a member, otherwise a brand-new org is created.
-    // ponytail: open join-by-name; swap for invite tokens if this ships publicly.
+    // F9: an existing slug joins that org only with a valid invite code;
+    // otherwise a brand-new org is created (creator becomes owner).
+    const inviteCode = String((body as { inviteCode?: unknown }).inviteCode ?? "")
+      .trim()
+      .toLowerCase();
     const existingOrg = await db.organization.findUnique({
       where: { slug: slugify(preferredOrgName) },
     });
+    if (existingOrg && (!existingOrg.inviteCode || existingOrg.inviteCode !== inviteCode)) {
+      return NextResponse.json(
+        { error: "This workspace requires a valid invite code — ask an owner for one" },
+        { status: 403 }
+      );
+    }
 
     const user = await db.user.create({
       data: {
