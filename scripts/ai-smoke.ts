@@ -4,6 +4,7 @@
 import assert from "node:assert";
 import { chat, generateImage } from "../src/lib/ai";
 
+process.env.AI_PROVIDER = "openai"; // steps 1-4 exercise the OpenAI-style path; default (gemini) is step 8
 process.env.AI_BASE_URL = "https://example.test/v1/";
 process.env.AI_API_KEY = "test-key";
 process.env.AI_TEXT_MODEL = "text-model";
@@ -93,7 +94,7 @@ async function main() {
 
   // 5. clear error when no key
   delete process.env.AI_API_KEY;
-  await assert.rejects(() => chat([{ role: "user", content: "hi" }]), /AI_API_KEY is not set/);
+  await assert.rejects(() => chat([{ role: "user", content: "hi" }]), /AI_API_KEY \(or OPENAI_API_KEY\) is not set/);
 
   // 6. AI_PROVIDER preset: base URL + models from preset, provider key alias, no-image error
   calls.length = 0;
@@ -119,6 +120,51 @@ async function main() {
   // 7. unknown provider fails fast
   process.env.AI_PROVIDER = "bogus";
   await assert.rejects(() => chat([{ role: "user", content: "hi" }]), /Unknown AI_PROVIDER "bogus"/);
+
+  // 8. default provider is gemini: compat chat + native :generateContent image path
+  delete process.env.AI_PROVIDER;
+  delete process.env.GROQ_API_KEY;
+  process.env.GEMINI_API_KEY = "gm-test-key";
+  calls.length = 0;
+  let gimgCalls = 0;
+  (globalThis as { fetch: unknown }).fetch = async (
+    url: string,
+    init: { headers: Record<string, string>; body: string }
+  ) => {
+    calls.push({ url, headers: init.headers, body: JSON.parse(init.body) });
+    if (url.includes(":generateContent")) {
+      gimgCalls++;
+      if (gimgCalls === 2) {
+        return { ok: false, status: 400, text: async () => JSON.stringify({ error: { message: "Invalid image_config.aspect_ratio" } }) };
+      }
+      return {
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify({ candidates: [{ content: { parts: [{ text: "ok" }, { inlineData: { data: Buffer.from("gimg").toString("base64") } }] } }] }),
+      };
+    }
+    return { ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: "gemini-ok" } }] }) };
+  };
+  assert.equal(await chat([{ role: "user", content: "hi" }]), "gemini-ok");
+  assert.equal(calls[0].url, "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+  assert.equal(calls[0].headers.Authorization, "Bearer gm-test-key");
+  assert.equal(calls[0].body.model, "gemini-3.8-flash");
+
+  const g = await generateImage("a forest", "1344x768");
+  assert.equal(g.buffer.toString(), "gimg");
+  assert.equal(calls[1].url, "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent");
+  assert.equal(calls[1].headers["x-goog-api-key"], "gm-test-key");
+  assert.equal(calls[1].headers.Authorization, undefined); // native endpoint uses the goog key header, not bearer
+  const gcfg = calls[1].body.generationConfig as { responseModalities: string[]; imageConfig?: { aspectRatio: string } };
+  assert.deepEqual(gcfg.responseModalities, ["TEXT", "IMAGE"]);
+  assert.equal(gcfg.imageConfig?.aspectRatio, "16:9"); // nearest ratio for 1344x768
+
+  // 9. aspect rejection retries once without imageConfig
+  const g2 = await generateImage("a river", "1344x768"); // attempt 1 -> 400, retry -> success
+  assert.equal(g2.buffer.toString(), "gimg");
+  assert.equal((calls[3].body.generationConfig as { imageConfig?: unknown }).imageConfig, undefined);
+  assert.equal(calls.length, 4);
 
   console.log("ai-smoke: all assertions passed");
 }

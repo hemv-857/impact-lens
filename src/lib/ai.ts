@@ -1,66 +1,73 @@
 // Backend-only OpenAI-compatible AI client for ImpactLens
 // Provides: VLM image analysis, before/after comparison, LLM report/campaign generation, semantic search scoring
-// Config (env): AI_PROVIDER (optional preset) or AI_BASE_URL, AI_API_KEY, AI_TEXT_MODEL, AI_VISION_MODEL, AI_IMAGE_MODEL
+// Config (env): AI_PROVIDER preset (default: gemini) or manual AI_BASE_URL, AI_API_KEY, AI_TEXT_MODEL, AI_VISION_MODEL, AI_IMAGE_MODEL
 import fs from "fs";
 import path from "path";
 
-const DEFAULTS = {
-  baseUrl: "https://api.openai.com/v1",
-  textModel: "gpt-4o-mini",
-  visionModel: "gpt-4o-mini",
-  imageModel: "gpt-image-1",
-};
-
 // Provider presets: AI_PROVIDER=<name> fills base URL + model IDs + key env alias.
 // Explicit AI_* vars always win over the preset.
-const PROVIDERS: Record<
-  string,
-  { baseUrl: string; textModel: string; visionModel: string; imageModel: string; keyEnv: string }
-> = {
+interface ProviderPreset {
+  baseUrl: string;
+  textModel: string;
+  visionModel: string;
+  imageModel: string;
+  imageApi: "openai" | "gemini"; // openai: POST {base}/images/generations; gemini: native :generateContent
+  keyEnv: string;
+}
+
+const DEFAULT_PROVIDER = "gemini";
+
+const PROVIDERS: Record<string, ProviderPreset> = {
+  gemini: {
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+    textModel: "gemini-3.8-flash",
+    visionModel: "gemini-3.8-flash",
+    imageModel: "gemini-3.1-flash-image",
+    imageApi: "gemini",
+    keyEnv: "GEMINI_API_KEY",
+  },
+  openai: {
+    baseUrl: "https://api.openai.com/v1",
+    textModel: "gpt-4o-mini",
+    visionModel: "gpt-4o-mini",
+    imageModel: "gpt-image-1",
+    imageApi: "openai",
+    keyEnv: "OPENAI_API_KEY",
+  },
   groq: {
     baseUrl: "https://api.groq.com/openai/v1",
     textModel: "openai/gpt-oss-120b",
     visionModel: "qwen/qwen3.6-27b",
     imageModel: "", // Groq has no image-generation endpoint — set AI_IMAGE_MODEL to use another provider for images
+    imageApi: "openai",
     keyEnv: "GROQ_API_KEY",
   },
 };
 
-function providerPreset(): { name: string } & (typeof PROVIDERS)[string] | undefined {
-  const name = process.env.AI_PROVIDER?.trim().toLowerCase();
-  if (!name || name === "openai") return undefined;
-  const preset = PROVIDERS[name];
-  if (!preset) {
-    throw new Error(`Unknown AI_PROVIDER "${name}". Supported: openai (default), ${Object.keys(PROVIDERS).join(", ")}.`);
-  }
-  return { name, ...preset };
-}
-
-interface AiConfig {
-  baseUrl: string;
+interface AiConfig extends ProviderPreset {
   apiKey: string;
-  textModel: string;
-  visionModel: string;
-  imageModel: string;
 }
 
 // Read env lazily so .env.local overrides and tests work after import.
 function cfg(): AiConfig {
-  const preset = providerPreset();
-  const apiKey = process.env.AI_API_KEY?.trim() || (preset ? process.env[preset.keyEnv]?.trim() : undefined);
+  const name = process.env.AI_PROVIDER?.trim().toLowerCase() || DEFAULT_PROVIDER;
+  const preset = PROVIDERS[name];
+  if (!preset) {
+    throw new Error(`Unknown AI_PROVIDER "${name}". Supported: ${Object.keys(PROVIDERS).join(", ")}.`);
+  }
+  const apiKey = process.env.AI_API_KEY?.trim() || process.env[preset.keyEnv]?.trim();
   if (!apiKey) {
     throw new Error(
-      preset
-        ? `AI_API_KEY (or ${preset.keyEnv}) is not set. Add it to .env.local for AI_PROVIDER=${preset.name}.`
-        : "AI_API_KEY is not set. Add AI_API_KEY=<your key> to .env.local — any OpenAI-compatible provider works."
+      `AI_API_KEY (or ${preset.keyEnv}) is not set. Add it to .env.local — AI_PROVIDER=${name}.`
     );
   }
   return {
-    baseUrl: (process.env.AI_BASE_URL?.trim() || preset?.baseUrl || DEFAULTS.baseUrl).replace(/\/+$/, ""),
+    ...preset,
+    baseUrl: (process.env.AI_BASE_URL?.trim() || preset.baseUrl).replace(/\/+$/, ""),
     apiKey,
-    textModel: process.env.AI_TEXT_MODEL?.trim() || preset?.textModel || DEFAULTS.textModel,
-    visionModel: process.env.AI_VISION_MODEL?.trim() || preset?.visionModel || DEFAULTS.visionModel,
-    imageModel: process.env.AI_IMAGE_MODEL?.trim() || (preset ? preset.imageModel : DEFAULTS.imageModel),
+    textModel: process.env.AI_TEXT_MODEL?.trim() || preset.textModel,
+    visionModel: process.env.AI_VISION_MODEL?.trim() || preset.visionModel,
+    imageModel: process.env.AI_IMAGE_MODEL?.trim() || preset.imageModel,
   };
 }
 
@@ -457,9 +464,85 @@ export async function generateImage(prompt: string, size = "1344x768"): Promise<
   const c = cfg();
   if (!c.imageModel) {
     throw new Error(
-      `AI_PROVIDER=${process.env.AI_PROVIDER?.trim().toLowerCase()} has no image generation. Set AI_IMAGE_MODEL (and AI_BASE_URL) for an image-capable provider.`
+      `AI_PROVIDER=${process.env.AI_PROVIDER?.trim().toLowerCase() || DEFAULT_PROVIDER} has no image generation. Set AI_IMAGE_MODEL (and AI_BASE_URL) for an image-capable provider.`
     );
   }
+  return c.imageApi === "gemini" ? geminiImage(c, prompt, size) : openaiImage(c, prompt, size);
+}
+
+// Native Gemini endpoint: {root}/models/{model}:generateContent with x-goog-api-key auth.
+// The preset's OpenAI-compat base (…/openai) has no /images/generations — it 404s.
+interface GeminiImageResp {
+  error?: { message?: string };
+  candidates?: {
+    content?: {
+      parts?: { inlineData?: { data?: string } }[];
+    };
+  }[];
+}
+
+async function geminiImage(c: AiConfig, prompt: string, size: string) {
+  const root = c.baseUrl.replace(/\/openai\/?$/, "");
+  const call = (aspect?: string) =>
+    fetch(`${root}/models/${encodeURIComponent(c.imageModel)}:generateContent`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": c.apiKey },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+          ...(aspect ? { imageConfig: { aspectRatio: aspect } } : {}),
+        },
+      }),
+    });
+
+  const read = async (r: { ok: boolean; status: number; text: () => Promise<string> }) => {
+    const t = await r.text();
+    try {
+      return { ok: r.ok, status: r.status, data: JSON.parse(t) as GeminiImageResp, raw: "" };
+    } catch {
+      return { ok: r.ok, status: r.status, data: null, raw: t.slice(0, 200) };
+    }
+  };
+  const fail = (r: { status: number; data: GeminiImageResp | null; raw: string }) =>
+    new Error(r.data?.error?.message || `Gemini image generation failed (${r.status})${r.raw ? `: ${r.raw}` : ""}`);
+
+  let out = await read(await call(aspectRatioFor(size)));
+  if (!out.ok) {
+    if (!/aspect|image_?config/i.test(out.data?.error?.message || "")) throw fail(out);
+    // ponytail: some image models reject imageConfig — retry once without it
+    out = await read(await call());
+    if (!out.ok) throw fail(out);
+  }
+  const b64 = out.data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData?.data;
+  if (!b64) throw new Error("Gemini image generation returned no image data");
+  return { base64: b64, buffer: Buffer.from(b64, "base64") };
+}
+
+const ASPECT_RATIOS: [string, number][] = [
+  ["1:1", 1],
+  ["4:5", 0.8],
+  ["5:4", 1.25],
+  ["3:4", 0.75],
+  ["4:3", 4 / 3],
+  ["2:3", 2 / 3],
+  ["3:2", 1.5],
+  ["9:16", 9 / 16],
+  ["16:9", 16 / 9],
+  ["21:9", 21 / 9],
+];
+
+// Gemini takes an aspect ratio, not WxH — map to the nearest supported ratio.
+function aspectRatioFor(size: string): string {
+  const m = /^(\d+)x(\d+)$/.exec(size.trim());
+  if (!m) return "16:9";
+  const r = Number(m[1]) / Number(m[2]);
+  let best = ASPECT_RATIOS[0];
+  for (const a of ASPECT_RATIOS) if (Math.abs(a[1] - r) < Math.abs(best[1] - r)) best = a;
+  return best[0];
+}
+
+async function openaiImage(c: AiConfig, prompt: string, size: string) {
   // ponytail: size fallback chain — providers differ on supported sizes
   const candidates = [size, "auto", "1024x1024"];
   let lastErr: unknown;

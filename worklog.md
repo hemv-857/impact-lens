@@ -889,3 +889,43 @@ Stage Summary:
 - Note: Groq vision takes image parts only — the client's `video_url` parts still need a
   video-capable `AI_BASE_URL`. Any other OpenAI-compatible endpoint keeps working via the
   plain `AI_BASE_URL` + `AI_API_KEY` path (unchanged).
+
+---
+Task ID: 23
+Agent: lead
+Task: Gemini provider preset, made the default, with a native image-generation adapter.
+
+Work Log:
+- `src/lib/ai.ts`: presets now cover `gemini` (default), `openai`, `groq`. `AI_PROVIDER`
+  unset → gemini. Each preset carries `baseUrl`, text/vision/image model IDs, `keyEnv`
+  alias (`GEMINI_API_KEY` / `OPENAI_API_KEY` / `GROQ_API_KEY`) and `imageApi` style
+  (`openai` = POST {base}/images/generations, `gemini` = native :generateContent).
+  Gemini preset: compat base `…/v1beta/openai`, text+vision `gemini-3.8-flash`,
+  image `gemini-3.1-flash-image`. Explicit `AI_*` env vars still win.
+- Image adapter `geminiImage()`: posts to `{root}/models/{model}:generateContent` with
+  `x-goog-api-key` (the compat base has no /images/generations — 404s), reads
+  `inlineData` from candidates, maps the app's WxH size to the nearest supported
+  aspectRatio (`1344x768 → 16:9`) and retries once without `imageConfig` if the model
+  rejects it; Google error messages (e.g. quota) are surfaced verbatim. `openaiImage()`
+  is the previous size-fallback path, unchanged.
+- `.env`: now `AI_PROVIDER=gemini` with switch/manual-override docs. `.env.local`
+  (gitignored) holds the user's `GEMINI_API_KEY`.
+- Verified live with the real key (no stub):
+  - text `chat()` → "OK"; vision with an image part → "Coral" (one transient upstream
+    503 on first try, succeeded on retry — Google-side load, not ours).
+  - `generateImage()` → reaches the native endpoint and throws Google's
+    "You exceeded your current quota…" verbatim: this key's free tier has no image
+    quota, so sample-image generation needs billing enabled. Behavior once billed:
+    expected to just work (same request shape the docs specify).
+  - Gemini's compat endpoint rejects `video_url` parts (400 "Invalid content part
+    type") — pre-existing limitation (OpenAI's real API also has no video parts);
+    documented in `.env`, video analysis needs a video-capable `AI_BASE_URL`.
+- Checks: `bun scripts/ai-smoke.ts` pass (steps 8-9 added: default-gemini chat URL/model/
+  key header, native image URL + aspect mapping + imageConfig retry) · `npm run lint`
+  clean · `npx tsc --noEmit` 4 pre-existing errors only · `npm run build` exit 0.
+
+Stage Summary:
+- Modified: `src/lib/ai.ts`, `scripts/ai-smoke.ts`, `.env`, `worklog.md`
+  (+ `.env.local`, gitignored — stores GEMINI_API_KEY).
+- Deploy note: set `GEMINI_API_KEY` (or `AI_API_KEY`) in the deploy environment; enable
+  billing on the Gemini key if sample-media image generation is needed.
