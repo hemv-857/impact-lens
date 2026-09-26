@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { analyzeMedia } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
+import type { TransformStep } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   try {
@@ -78,8 +79,20 @@ export async function POST(req: NextRequest) {
             continue;
           }
           const analysis = await analyzeMedia(asset.url, (asset.type === "video" ? "video" : "image") as "image" | "video");
-          const transforms = Array.isArray(asset.transformations) ? asset.transformations : [];
-          try { transforms.push({ type: "ai-analyze", at: new Date().toISOString(), note: "bulk VLM analysis" }); } catch { /* transformations may be JSON string */ }
+          // transformations is a JSON string column — parse existing steps (same as single analyze).
+          let existingSteps: TransformStep[] = [];
+          if (asset.transformations) {
+            try {
+              const v = JSON.parse(asset.transformations);
+              if (Array.isArray(v)) existingSteps = v as TransformStep[];
+            } catch {
+              existingSteps = [];
+            }
+          }
+          const transformations = JSON.stringify([
+            ...existingSteps,
+            { type: "ai-analyze", at: new Date().toISOString(), note: "bulk VLM analysis" },
+          ] satisfies TransformStep[]);
           await db.mediaAsset.update({
             where: { id },
             data: {
@@ -98,6 +111,7 @@ export async function POST(req: NextRequest) {
               ocrText: analysis.ocrText || null,
               qualityScore: analysis.qualityScore,
               analyzedAt: new Date(),
+              transformations,
             },
           });
           results.push({ id, ok: true });

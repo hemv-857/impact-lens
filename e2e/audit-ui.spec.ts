@@ -43,35 +43,29 @@ test("overview shows KPIs, charts and primary actions", async () => {
   await expect(page.getByRole("button", { name: "Generate report" }).first()).toBeVisible();
 });
 
-test("GAP: Media Library hides verified assets by default (pins verified=false)", async () => {
-  // Reload to reset the in-memory query cache (staleTime 30s) so the next
-  // Library mount actually hits the network and we can inspect the query.
+test("PASS: Media Library shows every asset by default (no verified filter)", async () => {
+  // Reload to reset the in-memory query cache (staleTime 30s) so the Library
+  // mount reflects the current query params.
   await page.reload();
   await expect(page.getByText("Turn field media into measurable impact.")).toBeVisible();
-  const reqP = page.waitForRequest((r) => r.url().includes("verified=false"));
   await gotoTab(page, "Media Library");
-  const mediaReq = await reqP;
-  expect(mediaReq.url(), "default library query must not filter verified=false").toContain(
-    "verified=false"
-  );
 
   const all = await (await page.request.get("/api/media?limit=100")).json();
-  const cards = await page
+  const cards = page
     .locator("main")
-    .getByRole("button", { name: "Compare", exact: true })
-    .count();
+    .getByRole("button", { name: "Compare", exact: true });
   expect(all.length).toBeGreaterThanOrEqual(13);
-  expect(cards, "grid shows fewer assets than the org owns").toBeLessThan(all.length);
-  await expect(page.getByText(/\d+ asset match/)).toBeVisible();
+  await expect(cards, "grid must show every asset the org owns").toHaveCount(all.length);
+  await expect(page.getByText(/\d+ assets? match/)).toBeVisible();
 });
 
 test("library exposes filters, export and bulk-select tools", async () => {
   await gotoTab(page, "Media Library");
-  await expect(page.getByText(/\d+ asset match/)).toBeVisible();
+  await expect(page.getByText(/\d+ assets? match/)).toBeVisible();
   const exportLink = page.getByRole("link", { name: "Export CSV" });
   await expect(exportLink).toBeVisible();
-  // Export honors the same default filters — same GAP as the grid query.
-  await expect(exportLink).toHaveAttribute("href", /verified=false/);
+  // Export honors the same defaults — no verified filter either.
+  await expect(exportLink).not.toHaveAttribute("href", /verified=false/);
   await expect(page.getByRole("button", { name: "Select", exact: true })).toBeVisible();
   const category = page.getByRole("combobox").first();
   await expect(category).toBeVisible();

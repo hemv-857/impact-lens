@@ -101,7 +101,13 @@ export function AccountMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onSelect={() => void signOut({ callbackUrl: "/auth" })}
+          onSelect={() => {
+            // Navigate relatively: signOut()'s server-provided URL uses the
+            // NEXTAUTH_URL default (localhost:3000) when that env is unset.
+            void signOut({ redirect: false }).then(() => {
+              window.location.href = "/auth";
+            });
+          }}
           className="gap-2 text-red-600 focus:text-red-600"
         >
           <LogOut className="size-4" />

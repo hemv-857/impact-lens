@@ -22,11 +22,14 @@ export async function POST(
     if (!asset) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     let analysis: Awaited<ReturnType<typeof analyzeMedia>>;
+    const mediaType = (asset.type === "video" ? "video" : "image") as "image" | "video";
     try {
-      const mediaType = (asset.type === "video" ? "video" : "image") as "image" | "video";
       analysis = await analyzeMedia(asset.url, mediaType);
     } catch (e) {
-      const message = e instanceof Error ? e.message : "VLM analysis failed";
+      let message = e instanceof Error ? e.message : "VLM analysis failed";
+      if (mediaType === "video") {
+        message += " — video analysis requires the `openrouter` provider (OPENROUTER_API_KEY set in .env); set the key and retry.";
+      }
       return NextResponse.json({ error: message }, { status: 500 });
     }
 

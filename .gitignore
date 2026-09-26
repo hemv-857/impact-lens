@@ -52,6 +52,10 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# user-uploaded media (never commit)
+public/uploads/
+
 # playwright artifacts
 test-results/
 playwright-report/

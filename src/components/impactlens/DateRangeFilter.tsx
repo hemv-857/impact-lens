@@ -57,7 +57,7 @@ export function DateRangeFilter({
       const expected = (() => {
         const end = new Date();
         const start = new Date();
-        if (p.today) start.setHours(0, 0, 0, 0);
+        if ("today" in p) start.setHours(0, 0, 0, 0);
         else if (p.days === 0) return null;
         else start.setDate(start.getDate() - p.days);
         return start.toISOString().slice(0, 10) === value.from;

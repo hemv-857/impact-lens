@@ -44,16 +44,21 @@ export const authOptions: NextAuthOptions = {
         const password = credentials?.password ?? "";
         if (!email || !password) return null;
 
-        const user = await db.user.findUnique({ where: { email } });
-        if (!user || !verifyPassword(password, user.passwordHash)) return null;
+        try {
+          const user = await db.user.findUnique({ where: { email } });
+          if (!user || !verifyPassword(password, user.passwordHash)) return null;
 
-        const membership = await db.membership.findFirst({ where: { userId: user.id } });
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name ?? undefined,
-          orgId: membership?.orgId ?? "",
-        };
+          const membership = await db.membership.findFirst({ where: { userId: user.id } });
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name ?? undefined,
+            orgId: membership?.orgId ?? "",
+          };
+        } catch {
+          // Never surface storage/driver errors to the client — generic failure only.
+          return null;
+        }
       },
     }),
   ],

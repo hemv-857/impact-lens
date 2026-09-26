@@ -182,6 +182,11 @@ export async function POST(req: NextRequest) {
     let format: string | null = null;
 
     if (rawUrl.startsWith("data:")) {
+      // ponytail: cap inline uploads at ~10MB binary (base64 ≈ 4/3 + prefix);
+      // remote URLs are not size-checked here.
+      if (rawUrl.length > 14_000_000) {
+        return NextResponse.json({ error: "File too large — maximum 10MB" }, { status: 413 });
+      }
       const decoded = decodeDataUrl(rawUrl);
       if (!decoded) {
         return NextResponse.json({ error: "Invalid data URL" }, { status: 400 });

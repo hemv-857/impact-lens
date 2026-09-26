@@ -964,3 +964,43 @@ Stage Summary:
   `worklog.md`.
 - Next: Phase 1 quick wins from AUDIT.md §4 (F1 verified=false one-liner, F7
   gitignore uploads, F4 NEXTAUTH_URL, F6 size guard, F10 auth error sanitize).
+---
+Task ID: 25
+Agent: lead
+Task: Apply all code-side AUDIT.md fixes (F1/F4/F6/F7/F8/F10/F11/F12 + F3 hint), flip the matching GAP tests, and fix runtime upload serving.
+Work Log:
+- F1: `LibraryTab` query params now send `verified`/`favorite` only when toggled —
+  default Library + CSV export show every asset.
+- F4: sign-out is origin-safe — `signOut({ redirect: false })` then relative
+  `/auth` navigation (no dependency on NEXTAUTH_URL for the local port).
+- F6: `POST /api/media` rejects data-URLs over ~10MB binary (14M base64 chars) with 413.
+- F7: `public/uploads/` git-ignored; the previously tracked test upload untracked.
+- F8: tsc now exits 0 — tsconfig excludes `examples` (socket.io demo files),
+  `ComparisonResult.before/after?: MediaAsset | null` embedded-asset typing,
+  `"today" in p` narrowing in DateRangeFilter, bulk-analyze transformations
+  parse+persist (JSON string column, previously dead code that also dropped the
+  evidence-chain step); `typescript.ignoreBuildErrors: false`.
+- F10: `authorize()` try/catch → generic null, storage errors never reach the client.
+- F11: CommandPalette `role="dialog" aria-modal="true"` (header badge already ⌘).
+- F12: `src/app/favicon.ico` added.
+- F3 (partial): video-analysis failures append an actionable OPENROUTER_API_KEY hint.
+- Root-cause find from the flipped suite: standalone `server.js` chdirs to
+  `.next/standalone` and Next indexes `public/` only at boot — uploads saved at
+  runtime 404'd until restart. Added streaming `GET /uploads/[name]` route
+  (plain-filename guard, MIME map, private cache); boot-time files keep the
+  static fast path. Also cleaned two orphaned "Audit oversize probe" rows/files.
+- Tests flipped to assert fixed behavior: default library shows all assets,
+  uploads git-ignored, 413 oversize, ignoreBuildErrors false, sign-out stays on
+  :3001, palette via role=dialog; console filter reduced to the intentional 401.
+- Checks: `bun scripts/ai-smoke.ts` pass · `npm run lint` clean ·
+  `npx tsc --noEmit` exit 0 · `npm run build` exit 0 (strict types) ·
+  `npx playwright test` 41 passed / 4 quota-skipped / 0 failed.
+
+Stage Summary:
+- Added: `src/app/favicon.ico`, `src/app/uploads/[name]/route.ts`.
+- Modified: LibraryTab, AccountMenu, media POST/bulk/analyze routes, auth,
+  CommandPalette, DateRangeFilter, CompareTab+types, tsconfig, next.config,
+  .gitignore, 3 audit spec files, AUDIT.md (§6 resolution status), worklog.md.
+- Blocked: F2 needs Cloudinary credentials, F3 live video needs
+  OPENROUTER_API_KEY, F5 needs Gemini billing / image provider, F9 needs an
+  invite-token product decision.

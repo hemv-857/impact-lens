@@ -14,11 +14,8 @@ test.beforeAll(async ({ browser }) => {
   page.on("console", (m) => {
     if (m.type() !== "error") return;
     const url = m.location()?.url ?? "";
-    // Benign for this journey: the deliberate wrong-password attempt (401),
-    // the missing favicon, and the sign-out port-hop to localhost:3000
-    // (NEXTAUTH_URL default — a GAP asserted in the sign-out test above).
-    if (m.text().includes("status of 401") || url.includes("favicon") || url.includes(":3000"))
-      return;
+    // Benign for this journey: the deliberate wrong-password attempt (401).
+    if (m.text().includes("status of 401")) return;
     consoleErrors.push(`console: ${m.text()} @ ${url}`);
   });
 });
@@ -64,7 +61,8 @@ test("login lands on overview with signed-in org context", async () => {
 
 test("Quick actions opens the command palette via ⌘K", async () => {
   await page.keyboard.press("Meta+k");
-  // Palette is a bare motion.div (no role=dialog) — assert via its input.
+  // Palette carries role=dialog (a11y) — assert via accessible role + input.
+  await expect(page.getByRole("dialog", { name: "Command palette" })).toBeVisible();
   await expect(page.getByPlaceholder("Search commands or jump to a tab…")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByPlaceholder("Search commands or jump to a tab…")).toHaveCount(0);
@@ -86,9 +84,9 @@ test("account menu exposes org actions and sign out", async () => {
   await expect(page.getByText(/New organization/).first()).toBeVisible();
   await expect(page.getByText("Sign out").first()).toBeVisible();
   await page.getByText("Sign out").click();
-  // GAP: sign-out resolves NEXTAUTH_URL default (localhost:3000) instead of
-  // the current origin — lands on a foreign server when the app runs elsewhere.
-  await expect(page).toHaveURL("http://localhost:3000/auth");
+  // Sign-out must resolve on the current origin (localhost:3001), not the
+  // NEXTAUTH_URL default of :3000 — enforced by redirect:false + relative nav.
+  await expect(page).toHaveURL("http://localhost:3001/auth");
 });
 
 test("no console or page errors across the whole journey", async () => {

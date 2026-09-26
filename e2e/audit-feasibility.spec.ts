@@ -26,8 +26,8 @@ test("GAP: Cloudinary mandated by PS 02 but not integrated anywhere", () => {
   expect(srcHits("cloudinary")).toEqual([]);
 });
 
-test("GAP: public/uploads not git-ignored — user media would be committed", () => {
-  expect(read(".gitignore")).not.toMatch(/public\/uploads/);
+test("PASS: public/uploads is git-ignored (user media never committed)", () => {
+  expect(read(".gitignore")).toMatch(/public\/uploads/);
 });
 
 test("PASS: .env files are git-ignored (secrets stay local)", () => {
@@ -45,8 +45,8 @@ test("GAP: repo ships no video fixtures — video path never exercised by seed",
   expect(files.filter((f) => /\.(mp4|webm|mov|mkv)$/i.test(f))).toEqual([]);
 });
 
-test("GAP: type errors ignored at build (next.config ignoreBuildErrors)", () => {
-  expect(read("next.config.ts")).toContain("ignoreBuildErrors");
+test("PASS: build fails on type errors (typescript.ignoreBuildErrors disabled)", () => {
+  expect(read("next.config.ts")).toMatch(/ignoreBuildErrors:\s*false/);
 });
 
 test("PASS: start script pins absolute DATABASE_URL for standalone build", () => {
@@ -73,14 +73,12 @@ test("app shell responds within 3s (local hosting feasibility)", async ({ reques
   }
 });
 
-test("GAP: no server-side upload size cap — 10MB data URL accepted", async ({ request }) => {
+test("PASS: server rejects >10MB inline uploads with 413", async ({ request }) => {
   await apiLogin(request);
-  const payload = "data:image/png;base64," + "A".repeat(10 * 1024 * 1024);
+  // >14,000,000 base64 chars ≈ 10MB binary — past the server's cap.
+  const payload = "data:image/png;base64," + "A".repeat(14 * 1024 * 1024);
   const res = await request.post("/api/media", {
     data: { url: payload, title: "Audit oversize probe" },
   });
-  expect([200, 201], `status ${res.status()} body: ${await res.text()}`).toContain(res.status());
-  const asset = await res.json();
-  const del = await request.delete(`/api/media/${asset.id}`);
-  expect([200, 204]).toContain(del.status());
+  expect(res.status(), `body: ${await res.text()}`).toBe(413);
 });

@@ -121,6 +121,9 @@ export interface ComparisonResult {
   changes: ChangeItem[];
   impactScore: number | null;
   createdAt: string;
+  /** Embedded assets returned by POST /api/compare (not present when loading by id). */
+  before?: MediaAsset | null;
+  after?: MediaAsset | null;
 }
 
 export interface ChangeItem {

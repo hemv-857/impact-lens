@@ -93,3 +93,29 @@ No `cloudinary` dependency, no source usage, no config. Media lives on local dis
 | Capability (live AI) | `e2e/audit-capability.spec.ts` | 6 |
 
 Live-AI tests retry transient 503s and self-skip when the Gemini free-tier quota is exhausted (capability evidence preserved in this document).
+
+## 6. Resolution status
+
+**Fixed — code + tests flipped, suite green:**
+
+| Finding | Fix |
+|---|---|
+| F1 | Library + export default query drop `verified`/`favorite` params — grid shows every asset |
+| F4 | Sign-out uses `signOut({ redirect: false })` + relative `/auth` navigation (origin-safe without NEXTAUTH_URL) |
+| F6 | `POST /api/media` rejects data-URLs past the ~10MB binary cap with 413 |
+| F7 | `public/uploads/` git-ignored; previously tracked upload untracked |
+| F8 | All 4 type errors fixed (tsconfig excludes `examples`; CompareTab/DateRange/bulk types), `ignoreBuildErrors: false` — `tsc --noEmit` exits 0 and gates the build |
+| F10 | `authorize()` wraps DB access in try/catch → returns null, never leaks storage errors |
+| F11 | Command palette carries `role="dialog" aria-modal="true"` (header badge already renders ⌘ via the Command icon) |
+| F12 | `src/app/favicon.ico` added |
+| F3 (partial) | Video failures now append an actionable `OPENROUTER_API_KEY` hint; live run still requires the key |
+
+**Fixed as a by-product of the suite:** runtime uploads 404'd until server
+restart (Next indexes `public/` only at boot) — added a streaming
+`GET /uploads/[name]` route with path-traversal guard.
+
+**Blocked on credentials / decision:**
+- F2 Cloudinary — needs account credentials (`CLOUDINARY_URL`)
+- F3 live video verification — needs `OPENROUTER_API_KEY` in `.env.local`
+- F5 image generation — Gemini free tier 429; needs billing or a different image provider
+- F9 org join-by-name — product decision (invite tokens required)
