@@ -91,6 +91,9 @@ export async function chat(messages: ChatMessage[], vision = false): Promise<str
   const resp = await aiFetch<{ choices?: { message?: { content?: string } }[] }>("/chat/completions", {
     model: vision ? c.visionModel : c.textModel,
     messages,
+    // Cap output tokens: OpenRouter's default (65535) exceeds what free-tier
+    // keys can afford (15999) and gets every request rejected with a 402.
+    max_tokens: Number(process.env.AI_MAX_TOKENS) || 8192,
   });
   return resp.choices?.[0]?.message?.content ?? "";
 }

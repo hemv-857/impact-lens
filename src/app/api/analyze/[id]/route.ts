@@ -28,7 +28,7 @@ export async function POST(
     } catch (e) {
       let message = e instanceof Error ? e.message : "VLM analysis failed";
       if (mediaType === "video") {
-        message += " — video analysis requires the `openrouter` provider (OPENROUTER_API_KEY set in .env); set the key and retry.";
+        message += " — video analysis needs AI_PROVIDER=openrouter with OPENROUTER_API_KEY set (OpenRouter also requires ≥$1 account balance for video).";
       }
       return NextResponse.json({ error: message }, { status: 500 });
     }

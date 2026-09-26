@@ -1004,3 +1004,34 @@ Stage Summary:
 - Blocked: F2 needs Cloudinary credentials, F3 live video needs
   OPENROUTER_API_KEY, F5 needs Gemini billing / image provider, F9 needs an
   invite-token product decision.
+---
+Task ID: 26
+Agent: lead
+Task: Verify the provided OpenRouter key end-to-end (F3) and wire it as the local AI provider.
+Work Log:
+- Key check: `/api/v1/key` valid (free tier, $0 usage); preset models
+  `openai/gpt-4o-mini` + `google/gemini-2.5-flash` both respond.
+- Free-tier gate found: the app omitted `max_tokens`, so OpenRouter requested
+  the provider default 65535 → 402 (free keys afford ≤15999). `chat()` now sends
+  `max_tokens: AI_MAX_TOKENS || 8192`.
+- App-level verification with `AI_PROVIDER=openrouter`: real image analyzed
+  through `analyzeMedia` (caption/category/confidence returned) ✓.
+- Video: blocked account-side — OpenRouter requires ≥$1 balance for video
+  (402 even on `:free` models), and ZDR account settings exclude the free video
+  endpoints (404, configure at /settings/privacy). Analyze-video error hint
+  updated to state both requirements.
+- Wired locally: `OPENROUTER_API_KEY` + `AI_PROVIDER=openrouter` in
+  `.env.local` (gitignored); `.env` keeps gemini as the committed default.
+  F5 test now accepts either provider's image-gen error message.
+- Suite: **45 passed / 0 skipped / 0 failed** — all four previously
+  quota-skipped capability tests ran live with the new key.
+- Checks: `bun scripts/ai-smoke.ts` pass · `npm run lint` clean ·
+  `npx tsc --noEmit` exit 0 · `npm run build` exit 0 ·
+  `npx playwright test` 45 passed / 0 skipped.
+
+Stage Summary:
+- Modified: `src/lib/ai.ts` (max_tokens cap), analyze route (F3 hint),
+  `e2e/audit-capability.spec.ts` (F5 provider-agnostic), `AUDIT.md` (§6),
+  `worklog.md`. `.env.local` holds the key (not committed).
+- Next: add ≥$1 OpenRouter credit to unlock live video; F2 Cloudinary creds;
+  F9 invite-token decision.

@@ -108,7 +108,7 @@ Live-AI tests retry transient 503s and self-skip when the Gemini free-tier quota
 | F10 | `authorize()` wraps DB access in try/catch → returns null, never leaks storage errors |
 | F11 | Command palette carries `role="dialog" aria-modal="true"` (header badge already renders ⌘ via the Command icon) |
 | F12 | `src/app/favicon.ico` added |
-| F3 (partial) | Video failures now append an actionable `OPENROUTER_API_KEY` hint; live run still requires the key |
+| F3 (partial) | Video failures append an actionable hint; OpenRouter key verified live — text/vision/image analysis through the app work (`AI_PROVIDER=openrouter` in `.env.local`); video blocked on OpenRouter's ≥$1 balance gate for video (free-tier ZDR also excludes the free video models) |
 
 **Fixed as a by-product of the suite:** runtime uploads 404'd until server
 restart (Next indexes `public/` only at boot) — added a streaming
@@ -116,6 +116,10 @@ restart (Next indexes `public/` only at boot) — added a streaming
 
 **Blocked on credentials / decision:**
 - F2 Cloudinary — needs account credentials (`CLOUDINARY_URL`)
-- F3 live video verification — needs `OPENROUTER_API_KEY` in `.env.local`
-- F5 image generation — Gemini free tier 429; needs billing or a different image provider
+- F3 live video — key is in `.env.local` and verified (text/vision/image LIVE);
+  video needs ≥$1 OpenRouter balance (https://openrouter.ai/settings/credits) —
+  all free video models are also excluded by the account's ZDR setting
+  (https://openrouter.ai/settings/privacy)
+- F5 image generation — Gemini free tier 429 / openrouter preset has no image
+  endpoint; needs billing or an image-capable provider
 - F9 org join-by-name — product decision (invite tokens required)

@@ -107,7 +107,8 @@ test("GAP: image generation blocked by free-tier quota (billing needed)", async 
     return;
   }
   expect(r.status, r.body).toBe(502);
-  expect(r.body).toMatch(/quota|RESOURCE_EXHAUSTED|billing|429/i);
+  // gemini free tier → quota; openrouter preset → no image endpoint (imageModel "")
+  expect(r.body).toMatch(/no image generation|quota|RESOURCE_EXHAUSTED|billing|429/i);
 });
 
 test("campaign content generation for a platform (LIVE)", async () => {
