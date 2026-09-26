@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SessionProvider } from "next-auth/react";
 
 // Singleton QueryClient so HMR doesn't recreate clients on every render.
 let _client: QueryClient | null = null;
@@ -25,5 +26,9 @@ function getBrowserClient() {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const client = getBrowserClient();
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return (
+    <SessionProvider>
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    </SessionProvider>
+  );
 }

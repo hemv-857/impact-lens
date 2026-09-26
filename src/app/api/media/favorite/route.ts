@@ -3,15 +3,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializeAsset } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.id) {
       return NextResponse.json({ error: "id required" }, { status: 400 });
     }
     const id: string = body.id;
-    const existing = await db.mediaAsset.findUnique({ where: { id }, include: { project: true } });
+    const existing = await db.mediaAsset.findFirst({
+      where: { id, orgId: auth.orgId },
+      include: { project: true },
+    });
     if (!existing) {
       return NextResponse.json({ error: "Asset not found" }, { status: 404 });
     }

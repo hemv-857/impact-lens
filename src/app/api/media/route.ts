@@ -2,7 +2,8 @@
 // POST /api/media        — create a media asset (optionally analyze immediately)
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { analyzeMedia, saveUpload } from "@/lib/ai";
+import { analyzeMedia, isVideoMedia, saveUpload } from "@/lib/ai";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 import { serializeAsset } from "@/lib/serialize";
 import type { Prisma } from "@prisma/client";
 
@@ -10,14 +11,24 @@ function rand(len: number) {
   return Math.random().toString(36).slice(2, 2 + len);
 }
 
-// Decode a data: URL into a buffer + extension.
+// Decode a data: URL into a buffer + extension (images and videos).
+const MIME_EXT: Record<string, string> = {
+  jpeg: "jpg",
+  "svg+xml": "svg",
+  quicktime: "mov",
+  "x-matroska": "mkv",
+  "3gpp": "3gp",
+  "x-msvideo": "avi",
+  "mp2t": "mpg",
+};
 function decodeDataUrl(dataUrl: string): { buffer: Buffer; ext: string } | null {
-  const m = dataUrl.match(/^data:(image\/([a-zA-Z0-9.+-]+));base64,(.+)$/);
+  const m = dataUrl.match(/^data:((?:image|video)\/([a-zA-Z0-9.+-]+));base64,(.+)$/);
   if (!m) return null;
   const mimeSub = m[2].toLowerCase();
-  const ext = mimeSub === "jpeg" ? "jpg" : mimeSub === "svg+xml" ? "svg" : mimeSub;
+  const ext = MIME_EXT[mimeSub] || mimeSub;
   return { buffer: Buffer.from(m[3], "base64"), ext };
 }
+
 
 // Apply VLM analysis result to a Prisma update payload.
 function analysisToData(a: Awaited<ReturnType<typeof analyzeMedia>>) {
@@ -42,6 +53,9 @@ function analysisToData(a: Awaited<ReturnType<typeof analyzeMedia>>) {
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const sp = req.nextUrl.searchParams;
     const projectId = sp.get("projectId") || undefined;
     const category = sp.get("category") || undefined;
@@ -56,7 +70,7 @@ export async function GET(req: NextRequest) {
     const dateFrom = sp.get("dateFrom") || undefined;
     const dateTo = sp.get("dateTo") || undefined;
 
-    const where: Prisma.MediaAssetWhereInput = {};
+    const where: Prisma.MediaAssetWhereInput = { orgId: auth.orgId };
     if (projectId) where.projectId = projectId;
     if (category) where.category = category;
     if (source) where.source = source;
@@ -136,6 +150,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.url) {
       return NextResponse.json({ error: "Missing required field: url" }, { status: 400 });
@@ -174,8 +191,8 @@ export async function POST(req: NextRequest) {
       bytes = decoded.buffer.length;
       format = decoded.ext;
     } else {
-      // Try to derive format from URL
-      const m = rawUrl.match(/\.(png|jpe?g|webp|gif|svg|bmp|avif)(?:\?|$)/i);
+      // Try to derive format from URL (images and videos)
+      const m = rawUrl.match(/\.(png|jpe?g|webp|gif|svg|bmp|avif|mp4|webm|mov|m4v|mkv|avi|3gp|mpg)(?:\?|$)/i);
       if (m) format = m[1].toLowerCase().replace("jpeg", "jpg");
     }
 
@@ -187,7 +204,7 @@ export async function POST(req: NextRequest) {
     ];
 
     // Detect video from format/extension
-    const isVideo = ["mp4", "avi", "mov", "webm", "mkv", "flv", "wmv", "m4v", "3gp"].includes(format || "");
+    const isVideo = isVideoMedia(finalUrl, format);
     const mediaType = isVideo ? "video" : "image";
 
     const createData: Prisma.MediaAssetCreateInput = {
@@ -205,6 +222,7 @@ export async function POST(req: NextRequest) {
       pairGroup: pairGroup || null,
       pairRole: pairRole || null,
       project: projectId ? { connect: { id: projectId } } : undefined,
+      org: { connect: { id: auth.orgId } },
     };
 
     let asset = await db.mediaAsset.create({ data: createData, include: { project: true } });

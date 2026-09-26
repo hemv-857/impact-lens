@@ -3,9 +3,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { Analytics } from "@/lib/types";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+    const where = { orgId: auth.orgId };
+
     const [
       totalAssets,
       analyzedAssets,
@@ -19,25 +24,28 @@ export async function GET() {
       recentReports,
       recentComparisons,
     ] = await Promise.all([
-      db.mediaAsset.count(),
-      db.mediaAsset.count({ where: { analyzedAt: { not: null } } }),
-      db.project.count(),
-      db.project.count({ where: { status: "active" } }),
-      db.report.count(),
-      db.comparison.count(),
-      db.mediaAsset.count({ where: { verified: true } }),
-      db.mediaAsset.findMany({ select: { category: true, source: true } }),
+      db.mediaAsset.count({ where }),
+      db.mediaAsset.count({ where: { ...where, analyzedAt: { not: null } } }),
+      db.project.count({ where }),
+      db.project.count({ where: { ...where, status: "active" } }),
+      db.report.count({ where }),
+      db.comparison.count({ where }),
+      db.mediaAsset.count({ where: { ...where, verified: true } }),
+      db.mediaAsset.findMany({ where, select: { category: true, source: true } }),
       db.mediaAsset.findMany({
+        where,
         orderBy: { createdAt: "desc" },
         take: 10,
         select: { id: true, title: true, createdAt: true, analyzedAt: true },
       }),
       db.report.findMany({
+        where,
         orderBy: { createdAt: "desc" },
         take: 10,
         select: { id: true, title: true, type: true, createdAt: true },
       }),
       db.comparison.findMany({
+        where,
         orderBy: { createdAt: "desc" },
         take: 10,
         select: { id: true, createdAt: true },

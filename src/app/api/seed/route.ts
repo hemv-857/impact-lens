@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { analyzeImage } from "@/lib/ai";
 import fs from "fs";
 import path from "path";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 type PairKey = "before" | "after";
 
@@ -213,6 +214,9 @@ function slugify(name: string): string {
 }
 
 export async function POST() {
+  const auth = await getAuthContext();
+  if (!auth) return unauthorized();
+
   const projectsCreated: string[] = [];
   const assetsCreated: string[] = [];
   const analyzed: string[] = [];
@@ -232,7 +236,9 @@ export async function POST() {
       const url = `/field-media/${spec.file}`;
 
       // Skip if an asset already exists for this URL.
-      const existing = await db.mediaAsset.findFirst({ where: { url } });
+      const existing = await db.mediaAsset.findFirst({
+        where: { url, orgId: auth.orgId },
+      });
       if (existing) {
         skipped.push(spec.file);
         continue;
@@ -242,7 +248,7 @@ export async function POST() {
       let projectId: string | null = null;
       if (!projectCache.has(spec.project.name)) {
         const existingProject = await db.project.findFirst({
-          where: { name: spec.project.name },
+          where: { name: spec.project.name, orgId: auth.orgId },
         });
         if (existingProject) {
           projectCache.set(spec.project.name, { id: existingProject.id, created: false });
@@ -267,6 +273,7 @@ export async function POST() {
               coverUrl: url,
               lat: spec.project.lat ?? null,
               lng: spec.project.lng ?? null,
+              orgId: auth.orgId,
             },
           });
           projectCache.set(spec.project.name, { id: created.id, created: true });
@@ -298,6 +305,7 @@ export async function POST() {
           pairRole: spec.pair?.role || null,
           projectId,
           transformations: JSON.stringify(transforms),
+          orgId: auth.orgId,
         },
       });
       assetsCreated.push(asset.id);

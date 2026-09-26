@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { SavedSearch } from "@/lib/types";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 function serializeSavedSearch(row: {
   id: string;
@@ -33,7 +34,11 @@ function serializeSavedSearch(row: {
 
 export async function GET() {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const rows = await db.savedSearch.findMany({
+      where: { orgId: auth.orgId },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -46,6 +51,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.query || typeof body.query !== "string") {
       return NextResponse.json({ error: "Missing required field: query" }, { status: 400 });
@@ -62,6 +70,7 @@ export async function POST(req: NextRequest) {
         label: label ? String(label).slice(0, 100) : null,
         hitCount,
         results: Array.isArray(results) ? JSON.stringify(results.slice(0, 50)) : null,
+        orgId: auth.orgId,
       },
     });
     return NextResponse.json(serializeSavedSearch(row), { status: 201 });

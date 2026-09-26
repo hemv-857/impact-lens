@@ -89,6 +89,7 @@ export function ReportsTab() {
   >("professional");
   const [projectId, setProjectId] = React.useState<string>("none");
   const [audience, setAudience] = React.useState("");
+  const [variantCount, setVariantCount] = React.useState(1);
   const [selectedAssetIds, setSelectedAssetIds] = React.useState<string[]>([]);
   const [result, setResult] = React.useState<Report | null>(null);
   const [activeReportId, setActiveReportId] = React.useState<string | null>(
@@ -133,17 +134,28 @@ export function ReportsTab() {
       return;
     }
     try {
-      const r = await create.mutateAsync({
+      const res = await create.mutateAsync({
         type,
         tone,
         projectId: projectId !== "none" ? projectId : undefined,
         assetIds: selectedAssetIds,
         audience: audience.trim() || undefined,
         comparisonId: reportsComparisonId ?? undefined,
+        variantCount,
       });
-      setResult(r);
-      setActiveReportId(r.id);
-      toast({ title: "Report generated", description: r.title });
+      const isMulti = typeof res === "object" && res !== null && "reports" in res;
+      const first = isMulti ? res.reports[0] : res;
+      if (!first) throw new Error("No report returned");
+      setResult(first);
+      setActiveReportId(first.id);
+      if (isMulti) {
+        toast({
+          title: `${res.reports.length} report variants generated`,
+          description: res.warning ? `Partial: ${res.warning}` : first.title,
+        });
+      } else {
+        toast({ title: "Report generated", description: first.title });
+      }
     } catch (e) {
       toast({
         title: "Generation failed",
@@ -280,6 +292,29 @@ export function ReportsTab() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs text-stone-500">
+                Report variants
+                <span className="ml-1.5 font-normal text-stone-400">
+                  each gets a different angle
+                </span>
+              </Label>
+              <Select
+                value={String(variantCount)}
+                onValueChange={(v) => setVariantCount(parseInt(v, 10) || 1)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 report (single draft)</SelectItem>
+                  <SelectItem value="2">2 variants (evidence + story)</SelectItem>
+                  <SelectItem value="3">3 variants (+ data-first)</SelectItem>
+                  <SelectItem value="4">4 variants (+ urgency)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">

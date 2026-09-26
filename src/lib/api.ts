@@ -16,6 +16,10 @@ export async function fetcher<T>(url: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
   });
+  if (res.status === 401 && typeof window !== "undefined") {
+    window.location.href = "/auth";
+    throw new Error("401 Unauthorized");
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(
@@ -161,6 +165,17 @@ export const createComparison = (body: {
     body: JSON.stringify(body),
   });
 
+// ----------------- Auth / orgs -----------------
+export interface OrgMembership {
+  id: string;
+  name: string;
+  slug: string;
+  role: string;
+  active: boolean;
+}
+
+export const fetchOrgs = () => fetcher<OrgMembership[]>("/api/auth/orgs");
+
 // ----------------- Reports -----------------
 export const fetchReports = () => fetcher<Report[]>("/api/reports");
 
@@ -171,10 +186,18 @@ export interface CreateReportInput {
   assetIds: string[];
   audience?: string;
   comparisonId?: string;
+  /** 1-4 drafts, each with a distinct angle. 1 (default) returns a single Report. */
+  variantCount?: number;
+  angles?: string[];
+}
+
+export interface MultiReportResponse {
+  reports: Report[];
+  warning?: string;
 }
 
 export const createReport = (body: CreateReportInput) =>
-  fetcher<Report>("/api/report", {
+  fetcher<Report | MultiReportResponse>("/api/report", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -289,6 +312,14 @@ export const compareProjects = (body: { projectIdA: string; projectIdB: string }
   });
 
 // ----------------- Project Leaderboard -----------------
+export interface LeaderboardTrend {
+  direction: "up" | "down" | "flat";
+  delta: number;
+  current: number;
+  previous: number;
+  periodDays: number;
+}
+
 export interface LeaderboardEntry {
   project: Project;
   rank: number;
@@ -304,6 +335,7 @@ export interface LeaderboardEntry {
   analyzedCount: number;
   verifiedCount: number;
   sdgCount: number;
+  trend: LeaderboardTrend;
 }
 
 export const fetchLeaderboard = (limit = 10) =>

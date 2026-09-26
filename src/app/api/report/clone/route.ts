@@ -3,15 +3,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializeReport } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.id) {
       return NextResponse.json({ error: "id required" }, { status: 400 });
     }
     const id: string = body.id;
-    const existing = await db.report.findUnique({ where: { id } });
+    const existing = await db.report.findFirst({ where: { id, orgId: auth.orgId } });
     if (!existing) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
@@ -28,6 +32,7 @@ export async function POST(req: NextRequest) {
         mediaIds: existing.mediaIds,
         callToAction: existing.callToAction,
         tone: existing.tone,
+        orgId: auth.orgId,
       },
     });
 

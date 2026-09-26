@@ -2,6 +2,7 @@
 // POST /api/notes — create a note { assetId, body, author? }
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 function serialize(row: {
   id: string;
@@ -23,12 +24,15 @@ function serialize(row: {
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const assetId = req.nextUrl.searchParams.get("assetId");
     if (!assetId) {
       return NextResponse.json({ error: "assetId required" }, { status: 400 });
     }
     const notes = await db.assetNote.findMany({
-      where: { assetId },
+      where: { assetId, orgId: auth.orgId },
       orderBy: { createdAt: "desc" },
       take: 100,
     });
@@ -41,6 +45,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.assetId || !body.body) {
       return NextResponse.json({ error: "assetId and body required" }, { status: 400 });
@@ -50,7 +57,9 @@ export async function POST(req: NextRequest) {
     const author: string | undefined = body.author ? String(body.author).slice(0, 100) : undefined;
 
     // Verify asset exists
-    const asset = await db.mediaAsset.findUnique({ where: { id: assetId } });
+    const asset = await db.mediaAsset.findFirst({
+      where: { id: assetId, orgId: auth.orgId },
+    });
     if (!asset) {
       return NextResponse.json({ error: "Asset not found" }, { status: 404 });
     }
@@ -60,6 +69,7 @@ export async function POST(req: NextRequest) {
         assetId,
         body: noteBody,
         author: author || null,
+        orgId: auth.orgId,
       },
     });
     return NextResponse.json(serialize(note), { status: 201 });

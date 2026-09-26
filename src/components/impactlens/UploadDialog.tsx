@@ -103,7 +103,7 @@ export function UploadDialog() {
       };
     } else if (mode === "url") {
       if (!url.trim()) {
-        toast({ title: "Paste an image URL", variant: "destructive" });
+        toast({ title: "Paste an image or video URL", variant: "destructive" });
         return;
       }
       body = {
@@ -226,29 +226,36 @@ export function UploadDialog() {
         <div className="space-y-3">
           {mode === "upload" && (
             <div className="space-y-2">
-              <Label>Image file</Label>
+              <Label>Image or video file</Label>
               <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-stone-300 bg-stone-50 p-6 text-center transition hover:border-emerald-400 hover:bg-emerald-50/50">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/mp4,video/webm,video/quicktime,video/x-matroska"
                   className="hidden"
                   onChange={onFileChange}
                 />
                 {filePreview ? (
-                   
-                  <img
-                    src={filePreview}
-                    alt="Selected file preview"
-                    className="max-h-40 rounded-md object-contain"
-                  />
+                  file?.type.startsWith("video/") ? (
+                    <video
+                      src={filePreview}
+                      controls
+                      className="max-h-40 rounded-md"
+                    />
+                  ) : (
+                    <img
+                      src={filePreview}
+                      alt="Selected file preview"
+                      className="max-h-40 rounded-md object-contain"
+                    />
+                  )
                 ) : (
                   <>
                     <ImageIcon className="mb-2 size-8 text-stone-400" />
                     <span className="text-sm font-medium text-stone-700">
-                      Click to choose an image
+                      Click to choose an image or video
                     </span>
                     <span className="text-xs text-stone-400">
-                      PNG, JPG, WebP up to ~10MB
+                      PNG, JPG, WebP, MP4, WebM, MOV up to ~10MB
                     </span>
                   </>
                 )}

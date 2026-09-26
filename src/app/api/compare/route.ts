@@ -5,9 +5,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { compareImages } from "@/lib/ai";
 import { serializeAsset, serializeComparison } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -31,8 +35,14 @@ export async function POST(req: NextRequest) {
     }
 
     const [before, after] = await Promise.all([
-      db.mediaAsset.findUnique({ where: { id: beforeId }, include: { project: true } }),
-      db.mediaAsset.findUnique({ where: { id: afterId }, include: { project: true } }),
+      db.mediaAsset.findFirst({
+        where: { id: beforeId, orgId: auth.orgId },
+        include: { project: true },
+      }),
+      db.mediaAsset.findFirst({
+        where: { id: afterId, orgId: auth.orgId },
+        include: { project: true },
+      }),
     ]);
     if (!before) return NextResponse.json({ error: `before asset ${beforeId} not found` }, { status: 404 });
     if (!after) return NextResponse.json({ error: `after asset ${afterId} not found` }, { status: 404 });
@@ -56,6 +66,7 @@ export async function POST(req: NextRequest) {
         narrative: result.narrative,
         changes: JSON.stringify(result.changes),
         impactScore: result.impactScore,
+        orgId: auth.orgId,
       },
     });
 

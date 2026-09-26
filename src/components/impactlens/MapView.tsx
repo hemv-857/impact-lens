@@ -2,6 +2,9 @@
 
 import * as React from "react";
 import { MapPin, Globe2 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
@@ -24,13 +27,37 @@ const CATEGORY_PIN_COLORS: Record<string, { fill: string; glow: string }> = {
   default: { fill: "#f59e0b", glow: "rgba(245,158,11,0.6)" },
 };
 
+// Leaflet's default marker icons 404 under bundlers — build dots as divIcons instead.
+function esc(s: string) {
+  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string);
+}
+function pinIcon(fill: string, size: number, ring: string, label?: string) {
+  const tag = label
+    ? `<span style="position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:5px;white-space:nowrap;background:#1c1917;color:#fff;padding:2px 6px;border-radius:4px;font:500 10px/1.4 system-ui,sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.35)">${esc(
+        label
+      )}</span>`
+    : "";
+  return L.divIcon({
+    className: "",
+    html: `<div style="position:relative;width:${size}px;height:${size}px"><span style="position:absolute;inset:0;border-radius:9999px;border:2px solid ${ring};background:${fill};box-shadow:0 2px 6px rgba(0,0,0,.35);box-sizing:border-box"></span>${tag}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
+/** Fits the viewport to every mapped project once mounted. */
+function FitBounds({ positions }: { positions: [number, number][] }) {
+  const map = useMap();
+  React.useEffect(() => {
+    if (positions.length > 0) map.fitBounds(L.latLngBounds(positions), { padding: [40, 40], maxZoom: 6 });
+  }, [map, positions]);
+  return null;
+}
+
 /**
- * MapView — a lightweight, dependency-free world map visualization.
- * Projects with lat/lng are placed on a simplified equirectangular projection
- * (lon -180..180 → 0..100% x; lat 90..-90 → 0..100% y).
+ * MapView — real slippy map (Leaflet + OpenStreetMap tiles) with category pins.
+ * Projects with lat/lng are placed at their true geographic position.
  * Clicking a pin selects it and shows a detail card.
- *
- * Uses an inline SVG world map silhouette (low-poly) so no external assets.
  */
 export function MapView({
   projects,
@@ -41,16 +68,18 @@ export function MapView({
 }) {
   const [selected, setSelected] = React.useState<Project | null>(null);
   const [hover, setHover] = React.useState<string | null>(null);
+  // Leaflet touches `window` — mount-gate so SSR/build stay clean.
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
 
-  const mapped = projects.filter(
-    (p) => typeof p.lat === "number" && typeof p.lng === "number"
+  const mapped = React.useMemo(
+    () => projects.filter((p) => typeof p.lat === "number" && typeof p.lng === "number"),
+    [projects]
   );
-
-  // Equirectangular projection: x = (lng+180)/360, y = (90-lat)/180
-  const projectXY = (p: Project) => ({
-    x: ((p.lng! + 180) / 360) * 100,
-    y: ((90 - p.lat!) / 180) * 100,
-  });
+  const positions = React.useMemo(
+    () => mapped.map((p) => [p.lat as number, p.lng as number] as [number, number]),
+    [mapped]
+  );
 
   if (mapped.length === 0) {
     return (
@@ -88,130 +117,65 @@ export function MapView({
         )}
       </div>
       <div className="relative aspect-[2/1] w-full overflow-hidden bg-teal-950">
-        {/* Stylized world map silhouette (simplified continents as SVG paths) */}
-        <svg
-          viewBox="0 0 1000 500"
-          className="absolute inset-0 h-full w-full"
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden
-        >
-          <defs>
-            <linearGradient id="ocean" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0f766e" />
-              <stop offset="100%" stopColor="#134e4a" />
-            </linearGradient>
-            <radialGradient id="pinGlow" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#fbbf24" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          <rect width="1000" height="500" fill="url(#ocean)" />
-          {/* Latitude/longitude grid */}
-          {Array.from({ length: 9 }).map((_, i) => (
-            <line
-              key={`h${i}`}
-              x1="0"
-              y1={i * 62.5}
-              x2="1000"
-              y2={i * 62.5}
-              stroke="#0d9488"
-              strokeOpacity="0.18"
-              strokeWidth="0.5"
+        {mounted && (
+          <MapContainer
+            center={[20, 0]}
+            zoom={2}
+            minZoom={2}
+            worldCopyJump
+            className="h-full w-full"
+            style={{ background: "#134e4a" }}
+          >
+            <TileLayer
+              url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              maxZoom={18}
             />
-          ))}
-          {Array.from({ length: 13 }).map((_, i) => (
-            <line
-              key={`v${i}`}
-              x1={i * 83.3}
-              y1="0"
-              x2={i * 83.3}
-              y2="500"
-              stroke="#0d9488"
-              strokeOpacity="0.18"
-              strokeWidth="0.5"
-            />
-          ))}
-          {/* Simplified continent silhouettes (rough paths) */}
-          <g fill="#0c3b34" fillOpacity="0.85" stroke="#0f766e" strokeWidth="0.8">
-            {/* North America */}
-            <path d="M 80 110 Q 120 90 180 100 L 230 95 Q 270 100 285 130 L 290 175 Q 270 210 240 230 L 200 250 Q 160 245 140 220 L 110 190 Q 85 160 80 110 Z" />
-            {/* South America */}
-            <path d="M 240 270 Q 270 260 290 280 L 295 320 Q 285 370 270 410 L 250 440 Q 230 420 225 380 L 230 320 Z" />
-            {/* Europe */}
-            <path d="M 470 110 Q 500 95 530 100 L 555 115 Q 560 140 540 160 L 510 165 Q 480 155 470 135 Z" />
-            {/* Africa */}
-            <path d="M 490 190 Q 520 180 555 190 L 575 230 Q 570 290 550 340 L 525 370 Q 500 350 490 310 L 485 250 Z" />
-            {/* Asia */}
-            <path d="M 560 95 Q 620 85 700 95 L 780 110 Q 830 120 860 150 L 870 190 Q 840 220 790 225 L 700 215 Q 630 205 580 180 L 555 150 Z" />
-            {/* Southeast Asia / Indonesia */}
-            <path d="M 770 250 Q 800 245 830 255 L 845 270 Q 835 285 810 285 L 780 275 Z" />
-            {/* Australia */}
-            <path d="M 820 310 Q 855 300 885 315 L 895 340 Q 880 360 850 360 L 825 350 Q 815 330 820 310 Z" />
-          </g>
-        </svg>
-
-        {/* Project pins (HTML positioned over SVG) */}
-        {mapped.map((p) => {
-          const { x, y } = projectXY(p);
-          const isSelected = selected?.id === p.id;
-          const isHover = hover === p.id;
-          const catColor = CATEGORY_PIN_COLORS[p.category ?? ""] ?? CATEGORY_PIN_COLORS.default;
-          return (
-            <button
-              key={p.id}
-              className="group absolute -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${x}%`, top: `${y}%` }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelected(p);
-                onSelect?.(p);
-              }}
-              onMouseEnter={() => setHover(p.id)}
-              onMouseLeave={() => setHover(null)}
-              aria-label={`${p.name} — ${p.location}`}
-            >
-              {/* Glow */}
-              <span
-                className="absolute left-1/2 top-1/2 -z-10 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-60 transition-all"
-                style={{
-                  background: `radial-gradient(circle, ${catColor.glow} 0%, transparent 70%)`,
-                  transform: isSelected || isHover ? "scale(1.6)" : "scale(1)",
-                }}
-              />
-              {/* Pin */}
-              <span
-                className={`block rounded-full border-2 shadow-lg transition-all ${
-                  isSelected
-                    ? "size-4 border-white"
-                    : isHover
-                      ? "size-3.5 border-white/80"
-                      : "size-3 border-white/70"
-                }`}
-                style={{ background: catColor.fill }}
-              />
-              {/* Label on hover/select */}
-              {(isHover || isSelected) && (
-                <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-stone-900 px-2 py-1 text-[10px] font-medium text-white shadow-lg">
-                  {p.name}
-                </span>
-              )}
-            </button>
-          );
-        })}
+            <FitBounds positions={positions} />
+            {mapped.map((p) => {
+              const isSelected = selected?.id === p.id;
+              const isHover = hover === p.id;
+              const catColor =
+                CATEGORY_PIN_COLORS[p.category ?? ""] ?? CATEGORY_PIN_COLORS.default;
+              return (
+                <Marker
+                  key={p.id}
+                  position={[p.lat as number, p.lng as number]}
+                  icon={pinIcon(
+                    catColor.fill,
+                    isSelected || isHover ? 18 : 14,
+                    isSelected ? "#fbbf24" : "#ffffff",
+                    isHover || isSelected ? p.name : undefined
+                  )}
+                  eventHandlers={{
+                    click: () => {
+                      setSelected(p);
+                      onSelect?.(p);
+                    },
+                    mouseover: () => setHover(p.id),
+                    mouseout: () => setHover(null),
+                  }}
+                />
+              );
+            })}
+          </MapContainer>
+        )}
 
         {/* Legend */}
-        <div className="absolute bottom-2 left-2 flex flex-col gap-1 rounded-md bg-stone-900/80 px-2.5 py-1.5 text-[10px] text-emerald-50 backdrop-blur">
+        <div className="pointer-events-none absolute bottom-2 left-2 z-[500] flex flex-col gap-1 rounded-md bg-stone-900/80 px-2.5 py-1.5 text-[10px] text-emerald-50 backdrop-blur">
           <div className="flex items-center gap-1.5">
             <MapPin className="size-3 text-amber-400" />
             <span>{mapped.length} project sites</span>
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            {Object.entries(CATEGORY_PIN_COLORS).filter(([k]) => k !== "default").map(([cat, c]) => (
-              <span key={cat} className="flex items-center gap-1">
-                <span className="size-1.5 rounded-full" style={{ background: c.fill }} />
-                {cat}
-              </span>
-            ))}
+            {Object.entries(CATEGORY_PIN_COLORS)
+              .filter(([k]) => k !== "default")
+              .map(([cat, c]) => (
+                <span key={cat} className="flex items-center gap-1">
+                  <span className="size-1.5 rounded-full" style={{ background: c.fill }} />
+                  {cat}
+                </span>
+              ))}
           </div>
         </div>
       </div>
@@ -258,8 +222,13 @@ export function MapView({
             <span>{selected.assetCount ?? 0} assets</span>
             {selected.sdgGoals && (
               <span className="flex items-center gap-1">
-                SDG: {selected.sdgGoals.split(",").map((g) => (
-                  <Badge key={g} variant="secondary" className="bg-teal-50 text-teal-700 px-1.5 py-0 text-[10px]">
+                SDG:{" "}
+                {selected.sdgGoals.split(",").map((g) => (
+                  <Badge
+                    key={g}
+                    variant="secondary"
+                    className="bg-teal-50 text-teal-700 px-1.5 py-0 text-[10px]"
+                  >
                     {g.trim()}
                   </Badge>
                 ))}

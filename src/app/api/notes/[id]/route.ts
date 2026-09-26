@@ -2,14 +2,17 @@
 // PATCH /api/notes/[id] — update a note's body
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
     const { id } = await params;
-    const existing = await db.assetNote.findUnique({ where: { id } });
+    const existing = await db.assetNote.findFirst({ where: { id, orgId: auth.orgId } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
     await db.assetNote.delete({ where: { id } });
     return NextResponse.json({ ok: true });
@@ -24,12 +27,14 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
     const { id } = await params;
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.body) {
       return NextResponse.json({ error: "body required" }, { status: 400 });
     }
-    const existing = await db.assetNote.findUnique({ where: { id } });
+    const existing = await db.assetNote.findFirst({ where: { id, orgId: auth.orgId } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
     const updated = await db.assetNote.update({
       where: { id },

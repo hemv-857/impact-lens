@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Trophy, Medal, Images, Sparkles, BadgeCheck, Target } from "lucide-react";
+import { Trophy, Medal, Images, Sparkles, BadgeCheck, Target, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import { EmptyState } from "@/components/impactlens/EmptyState";
 import { useLeaderboard } from "@/components/impactlens/impact-hooks";
 import { useImpactStore } from "@/lib/store";
+import type { LeaderboardTrend } from "@/lib/api";
 
 /**
  * ProjectLeaderboard — ranks all projects by a composite health score.
@@ -143,6 +144,9 @@ export function ProjectLeaderboard({ limit = 5 }: { limit?: number }) {
                 </div>
               </div>
 
+              {/* Trend vs previous period */}
+              <TrendChip trend={entry.trend} />
+
               {/* Score gauge */}
               <div className="flex shrink-0 items-center gap-2">
                 <div className="text-right">
@@ -176,5 +180,33 @@ export function ProjectLeaderboard({ limit = 5 }: { limit?: number }) {
         ))}
       </ol>
     </Card>
+  );
+}
+
+/** Up/down/flat chip comparing this period's asset activity to the prior one. */
+function TrendChip({ trend }: { trend: LeaderboardTrend }) {
+  const Icon =
+    trend.direction === "up" ? TrendingUp : trend.direction === "down" ? TrendingDown : Minus;
+  const tone =
+    trend.direction === "up"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : trend.direction === "down"
+        ? "border-rose-200 bg-rose-50 text-rose-600"
+        : "border-stone-200 bg-stone-50 text-stone-500";
+  const label =
+    trend.direction === "flat" ? "0" : `${trend.delta > 0 ? "+" : ""}${trend.delta}`;
+  return (
+    <span
+      title={`${trend.current} asset${trend.current === 1 ? "" : "s"} in the last ${
+        trend.periodDays
+      }d vs ${trend.previous} in the prior ${trend.periodDays}d`}
+      className={cn(
+        "flex shrink-0 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+        tone
+      )}
+    >
+      <Icon className="size-3" />
+      {label}
+    </span>
   );
 }

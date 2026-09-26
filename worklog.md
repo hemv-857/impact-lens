@@ -755,3 +755,62 @@ Unresolved / Next-phase priorities:
 - Fix the 6 pre-existing tsc errors above.
 - Add user auth + multi-org projects.
 - Add scheduled report generation / email delivery.
+
+---
+Task ID: 20
+Agent: lead
+Task: Backlog round — leaderboard trends, video uploads, real map tiles, multi-variant reports, auth + multi-org.
+
+Work Log:
+- Feature 1 (leaderboard trends): `GET /api/projects/leaderboard?days=N` (default 30, clamped 1-365)
+  now buckets assets created in the current vs. the equally long prior window and returns
+  `trend: {direction, delta, current, previous, periodDays}` per entry; `ProjectLeaderboard` renders a
+  TrendUp/TrendDown/Flat chip before the score gauge.
+- Feature 2 (video uploads): `decodeDataUrl` in `api/media` accepts `video/*` (mp4/webm/mov/mkv/avi/3gp/mpg),
+  URL-extension detection widened, `isVideoMedia` exported from `src/lib/ai.ts`; `resolveVideoUrl()` inlines
+  local videos <=8MB as data URLs so the VLM sees them; `UploadDialog` accepts video files, previews with
+  `<video>` and labels uploads as photos/videos. MediaCard/AssetDrawer already rendered video.
+- Feature 3 (real map): installed `leaflet@1.9.4` + `react-leaflet@5` + `@types/leaflet` (3 deps, no other map
+  code). `MapView` rewritten with `MapContainer`/OSM `TileLayer`/`FitBounds`/`divIcon` pins, keeping the legend
+  and detail card. Leaflet reads `window` at import time, which broke `next build` prerender of `/`, so
+  `ProjectsTab` loads `MapView` through `next/dynamic(..., { ssr: false })`.
+- Feature 4 (multi-variant reports): `ReportInput.angle` slants the prompt; `POST /api/report` takes
+  `variantCount` (1-4) + optional `angles[]` (defaults: evidence-led, story-driven, data-first, urgency),
+  generates sequentially, persists each draft, returns a single report for 1 and `{reports, warning?}` for
+  more (partial success if a later draft fails). `ReportsTab` got a "Report variants" select.
+- Feature 5 (auth + multi-org):
+  - Prisma: `Organization`, `User` (scrypt-hashed password), `Membership` (role owner|member, unique
+    user+org), and `orgId` on Project/MediaAsset/Report/Comparison/SavedSearch/AssetNote (nullable so
+    `db push` would not rewrite existing SQLite rows; backfilled on first signup).
+  - `src/lib/auth.ts`: `hashPassword`/`verifyPassword` (node:crypto scrypt, timing-safe), `authOptions`
+    (credentials, JWT session), `getAuthContext()` (session → verified membership, else null),
+    `unauthorized()`, `adoptOrphanData()` (first account inherits pre-auth rows).
+  - Routes: `/api/auth/[...nextauth]`, `/api/auth/signup` (create user + org, or JOIN an existing org when
+    the org name matches its slug), `/api/auth/orgs` (list memberships), `/api/orgs` (create org). Every
+    other API route now calls `getAuthContext()` first (401 otherwise) and filters/creates by `orgId`;
+    by-id lookups switched from `findUnique` to `findFirst({id, orgId})` so cross-org IDs 404.
+  - UI: `/auth` page (sign in / sign up toggle), `middleware` (`withAuth`) redirects pages to `/auth`,
+    `SessionProvider` in `providers.tsx`, `AccountMenu` in the header (org switcher + "New organization…"
+    + sign out; switching revalidates the whole react-query cache), `fetcher` redirects to `/auth` on 401.
+  - `NEXTAUTH_SECRET` generated into gitignored `.env.local`; tracked `.env` only documents it.
+- Verified live against the dev server: unauth API → 401, unauth page → 307 `/auth`, signup adopts 36
+  orphan rows, org A sees 10 projects/13 assets, org B sees 0/0, B reading A's project id → 404, joining
+  "GreenShoots" by name gives a member 10 projects, switching session org re-scopes to 0/10, and a forged
+  `orgId` in a session update is rejected by the membership check.
+- Checks: `npx tsc --noEmit` 4 errors, all pre-existing · `npm run lint` clean · `npm run build` exit 0.
+
+Stage Summary:
+- New: `src/lib/auth.ts`, `src/middleware.ts`, `src/types/next-auth.d.ts`, `src/app/auth/page.tsx`,
+  `src/app/api/auth/*`, `src/app/api/orgs/route.ts`, `src/components/impactlens/AccountMenu.tsx`.
+- Modified: all 24 API routes (org scoping), `prisma/schema.prisma`, `src/lib/{ai,api}.ts`,
+  `MapView`, `ProjectsTab`, `ProjectLeaderboard`, `ReportsTab`, `UploadDialog`, `Header`, `providers.tsx`,
+  `package.json`, `bun.lock`, `.env`, `worklog.md`, `db/custom.db`.
+- Test accounts in the local dev DB (documented, not secrets): `ada@example.org` / `password123` (owner of
+  "GreenShoots" — holds the seeded data — plus empty org "FieldOps Kenya"), `cara@example.org` /
+  `password123` (member of GreenShoots), `bob@example.org` / `password123` (owner of isolated "OtherOrg").
+- Open login note: sign-up's org field joins when the name matches an existing slug — open join, not
+  invite tokens; swap it before any public deployment.
+
+Unresolved / Next-phase priorities:
+- Scheduled report generation + email delivery (env-configured HTTP mail API + `CRON_SECRET` cron route).
+- Fix the 4 pre-existing tsc errors above.

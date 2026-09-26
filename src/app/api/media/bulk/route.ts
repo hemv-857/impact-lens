@@ -4,9 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { analyzeMedia } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || !Array.isArray(body.ids) || body.ids.length === 0) {
       return NextResponse.json({ error: "ids (non-empty string[]) required" }, { status: 400 });
@@ -24,7 +28,8 @@ export async function POST(req: NextRequest) {
     if (action === "delete") {
       for (const id of ids) {
         try {
-          await db.mediaAsset.delete({ where: { id } });
+          const del = await db.mediaAsset.deleteMany({ where: { id, orgId: auth.orgId } });
+          if (del.count === 0) throw new Error("not found");
           results.push({ id, ok: true });
         } catch (e) {
           results.push({ id, ok: false, error: e instanceof Error ? e.message : "delete failed" });
@@ -37,23 +42,23 @@ export async function POST(req: NextRequest) {
       if (!projectId) {
         return NextResponse.json({ error: "projectId required for assign action" }, { status: 400 });
       }
-      const project = await db.project.findUnique({ where: { id: projectId } });
+      const project = await db.project.findFirst({ where: { id: projectId, orgId: auth.orgId } });
       if (!project) {
         return NextResponse.json({ error: "project not found" }, { status: 404 });
       }
-      const r = await db.mediaAsset.updateMany({ where: { id: { in: ids } }, data: { projectId } });
+      const r = await db.mediaAsset.updateMany({ where: { id: { in: ids }, orgId: auth.orgId }, data: { projectId } });
       return NextResponse.json({ action, processed: r.count, failed: ids.length - r.count });
     }
 
     if (action === "verify" || action === "unverify") {
       const verified = action === "verify";
-      const r = await db.mediaAsset.updateMany({ where: { id: { in: ids } }, data: { verified } });
+      const r = await db.mediaAsset.updateMany({ where: { id: { in: ids }, orgId: auth.orgId }, data: { verified } });
       return NextResponse.json({ action, processed: r.count, failed: ids.length - r.count });
     }
 
     if (action === "favorite" || action === "unfavorite") {
       const favorite = action === "favorite";
-      const r = await db.mediaAsset.updateMany({ where: { id: { in: ids } }, data: { favorite } });
+      const r = await db.mediaAsset.updateMany({ where: { id: { in: ids }, orgId: auth.orgId }, data: { favorite } });
       return NextResponse.json({ action, processed: r.count, failed: ids.length - r.count });
     }
 
@@ -63,7 +68,10 @@ export async function POST(req: NextRequest) {
       let failed = 0;
       for (const id of ids) {
         try {
-          const asset = await db.mediaAsset.findUnique({ where: { id }, include: { project: true } });
+          const asset = await db.mediaAsset.findFirst({
+            where: { id, orgId: auth.orgId },
+            include: { project: true },
+          });
           if (!asset) {
             results.push({ id, ok: false, error: "not found" });
             failed++;

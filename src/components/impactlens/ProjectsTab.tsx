@@ -49,7 +49,13 @@ import {
 import { ProjectCard, ProjectCardSkeleton } from "@/components/impactlens/ProjectCard";
 import { MediaCard, MediaCardSkeleton } from "@/components/impactlens/MediaCard";
 import { EmptyState } from "@/components/impactlens/EmptyState";
-import { MapView } from "@/components/impactlens/MapView";
+import dynamic from "next/dynamic";
+
+// Leaflet touches `window` at import time — load the map only on the client.
+const MapView = dynamic(
+  () => import("@/components/impactlens/MapView").then((m) => m.MapView),
+  { ssr: false, loading: () => <Card className="h-64 animate-pulse gap-0" /> }
+);
 import { TimelineView } from "@/components/impactlens/TimelineView";
 import { ProjectComparison } from "@/components/impactlens/ProjectComparison";
 import { ProjectHealthScore } from "@/components/impactlens/ProjectHealthScore";

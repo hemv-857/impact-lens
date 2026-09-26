@@ -172,15 +172,37 @@ const ANALYSIS_PROMPT = `You are a sustainability field-media analyst. Analyze t
 Return ONLY the JSON object.`;
 
 // Detect if a URL/extension is a video.
-function isVideoMedia(url: string, format?: string | null): boolean {
+export function isVideoMedia(url: string, format?: string | null): boolean {
   const ext = format || url.split(".").pop()?.split("?")[0]?.toLowerCase() || "";
   return ["mp4", "avi", "mov", "webm", "mkv", "flv", "wmv", "m4v", "3gp"].includes(ext);
+}
+
+// Local video files can't be fetched by a remote provider, so inline them.
+// ponytail: 8MB cap — larger videos need a hosted URL instead of base64
+async function resolveVideoUrl(url: string): Promise<string> {
+  if (!url || url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+    return url;
+  }
+  try {
+    const localPath = path.join(process.cwd(), "public", url.replace(/^\//, ""));
+    if (fs.existsSync(localPath)) {
+      const buf = fs.readFileSync(localPath);
+      if (buf.length <= 8 * 1024 * 1024) {
+        const ext = localPath.split(".").pop()?.toLowerCase() || "mp4";
+        const mime = ext === "mov" ? "quicktime" : ext === "mkv" ? "x-matroska" : ext === "3gp" ? "3gpp" : ext;
+        return `data:video/${mime};base64,${buf.toString("base64")}`;
+      }
+    }
+  } catch {
+    // fall through
+  }
+  return url;
 }
 
 export async function analyzeMedia(url: string, mediaType?: "image" | "video"): Promise<VlmAnalysis> {
   // Auto-detect video from URL extension if mediaType not provided
   const isVideo = mediaType === "video" || (!mediaType && isVideoMedia(url));
-  const resolved = isVideo ? url : await resolveImageUrl(url);
+  const resolved = isVideo ? await resolveVideoUrl(url) : await resolveImageUrl(url);
   const mediaContent = isVideo
     ? { type: "video_url" as const, video_url: { url: resolved } }
     : { type: "image_url" as const, image_url: { url: resolved } };
@@ -288,6 +310,8 @@ export interface ReportInput {
   assets: { caption: string; summary: string; tags: string[]; location?: string }[];
   comparisonNarrative?: string;
   audience?: string;
+  /** Optional slant so several variants of the same report read differently. */
+  angle?: string;
 }
 
 export interface ReportOutput {
@@ -328,6 +352,7 @@ export async function generateReport(input: ReportInput): Promise<ReportOutput> 
 
 PROJECT: ${input.projectName || "Unnamed project"}
 ${input.projectDescription ? `DESCRIPTION: ${input.projectDescription}` : ""}
+${input.angle ? `ANGLE / SLANT: ${input.angle}\nMake every section, headline and metric choice serve this angle.` : ""}
 ${input.comparisonNarrative ? `BEFORE/AFTER NARRATIVE: ${input.comparisonNarrative}` : ""}
 ${input.audience ? `AUDIENCE: ${input.audience}` : "AUDIENCE: donors, partners, and the public"}
 

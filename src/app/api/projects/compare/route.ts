@@ -4,9 +4,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializeProject, serializeAsset } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -20,12 +24,12 @@ export async function POST(req: NextRequest) {
     }
 
     const [projA, projB] = await Promise.all([
-      db.project.findUnique({
-        where: { id: projectIdA },
+      db.project.findFirst({
+        where: { id: projectIdA, orgId: auth.orgId },
         include: { _count: { select: { assets: true } }, assets: { take: 50 } },
       }),
-      db.project.findUnique({
-        where: { id: projectIdB },
+      db.project.findFirst({
+        where: { id: projectIdB, orgId: auth.orgId },
         include: { _count: { select: { assets: true } }, assets: { take: 50 } },
       }),
     ]);

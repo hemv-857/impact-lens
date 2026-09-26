@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializeAsset } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
@@ -11,9 +12,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
     const { id } = await params;
-    const asset = await db.mediaAsset.findUnique({
-      where: { id },
+    const asset = await db.mediaAsset.findFirst({
+      where: { id, orgId: auth.orgId },
       include: { project: true },
     });
     if (!asset) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -29,8 +32,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
     const { id } = await params;
-    const asset = await db.mediaAsset.findUnique({ where: { id } });
+    const asset = await db.mediaAsset.findFirst({ where: { id, orgId: auth.orgId } });
     if (!asset) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     await db.mediaAsset.delete({ where: { id } });

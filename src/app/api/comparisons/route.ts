@@ -2,10 +2,15 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializeAsset, serializeComparison } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const rows = await db.comparison.findMany({
+      where: { orgId: auth.orgId },
       orderBy: { createdAt: "desc" },
     });
 
@@ -18,7 +23,7 @@ export async function GET() {
     }
     const assets = ids.size
       ? await db.mediaAsset.findMany({
-          where: { id: { in: Array.from(ids) } },
+          where: { id: { in: Array.from(ids) }, orgId: auth.orgId },
           include: { project: true },
         })
       : [];

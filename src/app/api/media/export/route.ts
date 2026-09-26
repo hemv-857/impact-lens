@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 function csvEscape(v: unknown): string {
   if (v === null || v === undefined) return "";
@@ -53,6 +54,9 @@ const CSV_COLUMNS = [
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const sp = req.nextUrl.searchParams;
     const projectId = sp.get("projectId") || undefined;
     const category = sp.get("category") || undefined;
@@ -63,7 +67,7 @@ export async function GET(req: NextRequest) {
     const dateFrom = sp.get("dateFrom") || undefined;
     const dateTo = sp.get("dateTo") || undefined;
 
-    const where: Prisma.MediaAssetWhereInput = {};
+    const where: Prisma.MediaAssetWhereInput = { orgId: auth.orgId };
     if (projectId) where.projectId = projectId;
     if (category) where.category = category;
     if (source) where.source = source;

@@ -11,6 +11,8 @@ datasource db {
 }
 
 model Project {
+  orgId String?
+  org   Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
   id          String   @id @default(cuid())
   name        String
   slug        String   @unique
@@ -33,6 +35,8 @@ model Project {
 }
 
 model MediaAsset {
+  orgId String?
+  org   Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
   id            String   @id @default(cuid())
   publicId      String   @unique // cloudinary-style public id
   title         String
@@ -86,6 +90,8 @@ model MediaAsset {
 }
 
 model Report {
+  orgId String?
+  org   Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
   id          String   @id @default(cuid())
   title       String
   type        String   @default("impact") // impact, summary, campaign, comparison
@@ -102,6 +108,8 @@ model Report {
 }
 
 model Comparison {
+  orgId String?
+  org   Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
   id           String   @id @default(cuid())
   beforeId     String
   afterId      String
@@ -113,6 +121,8 @@ model Comparison {
 }
 
 model SavedSearch {
+  orgId String?
+  org   Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
   id          String   @id @default(cuid())
   query       String
   label       String?  // user-friendly name
@@ -122,6 +132,8 @@ model SavedSearch {
 }
 
 model AssetNote {
+  orgId String?
+  org   Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
   id          String   @id @default(cuid())
   assetId     String
   body        String
@@ -130,4 +142,42 @@ model AssetNote {
   updatedAt   DateTime @updatedAt
 
   @@index([assetId])
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+
+  users       Membership[]
+  projects    Project[]
+  assets      MediaAsset[]
+  reports     Report[]
+  comparisons Comparison[]
+  searches    SavedSearch[]
+  notes       AssetNote[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  memberships  Membership[]
+}
+
+model Membership {
+  id     String @id @default(cuid())
+  userId String
+  orgId  String
+  role   String @default("member") // owner | member
+  createdAt DateTime @default(now())
+
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
 }

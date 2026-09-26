@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializeProject } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 function slugify(name: string): string {
   return name
@@ -25,7 +26,11 @@ async function ensureUniqueSlug(base: string): Promise<string> {
 
 export async function GET() {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const projects = await db.project.findMany({
+      where: { orgId: auth.orgId },
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { assets: true } } },
     });
@@ -38,6 +43,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.name) {
       return NextResponse.json({ error: "Missing required field: name" }, { status: 400 });
@@ -87,6 +95,7 @@ export async function POST(req: NextRequest) {
         coverUrl: coverUrl || null,
         lat: typeof lat === "number" ? lat : null,
         lng: typeof lng === "number" ? lng : null,
+        orgId: auth.orgId,
       },
       include: { _count: { select: { assets: true } } },
     });

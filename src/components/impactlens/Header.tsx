@@ -12,6 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useImpactStore, type ImpactTab } from "@/lib/store";
+import { AccountMenu } from "@/components/impactlens/AccountMenu";
 
 interface NavItem {
   id: ImpactTab;
@@ -85,6 +86,7 @@ export function Header() {
 
         {/* Right side: Command palette trigger + CTA + mobile menu */}
         <div className="flex items-center gap-2">
+          <AccountMenu />
           {/* Command palette trigger */}
           <button
             type="button"

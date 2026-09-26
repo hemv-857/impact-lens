@@ -5,12 +5,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializeReport } from "@/lib/serialize";
 import { formatDateTime } from "@/lib/format";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const id = req.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-    const report = await db.report.findUnique({ where: { id } });
+    const report = await db.report.findFirst({ where: { id, orgId: auth.orgId } });
     if (!report) return NextResponse.json({ error: "Report not found" }, { status: 404 });
     const r = serializeReport(report);
 

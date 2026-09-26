@@ -4,15 +4,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { serializeProject } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
     const { id } = await params;
-    const project = await db.project.findUnique({
-      where: { id },
+    const project = await db.project.findFirst({
+      where: { id, orgId: auth.orgId },
       include: { _count: { select: { assets: true } } },
     });
     if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -28,6 +31,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
     const { id } = await params;
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
@@ -48,7 +53,7 @@ export async function PATCH(
       lng,
     } = body as Record<string, unknown>;
 
-    const existing = await db.project.findUnique({ where: { id } });
+    const existing = await db.project.findFirst({ where: { id, orgId: auth.orgId } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const data: Record<string, unknown> = {};
@@ -84,8 +89,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
     const { id } = await params;
-    const existing = await db.project.findUnique({ where: { id } });
+    const existing = await db.project.findFirst({ where: { id, orgId: auth.orgId } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
     await db.project.delete({ where: { id } });
     return NextResponse.json({ ok: true });

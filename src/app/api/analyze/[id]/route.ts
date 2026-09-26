@@ -5,15 +5,18 @@ import { db } from "@/lib/db";
 import { analyzeMedia } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import type { TransformStep } from "@/lib/types";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
     const { id } = await params;
-    const asset = await db.mediaAsset.findUnique({
-      where: { id },
+    const asset = await db.mediaAsset.findFirst({
+      where: { id, orgId: auth.orgId },
       include: { project: true },
     });
     if (!asset) return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { analyzeMedia, generateImage, saveUpload } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 import type { Prisma } from "@prisma/client";
 
 function rand(len: number) {
@@ -32,6 +33,9 @@ function analysisToData(a: Awaited<ReturnType<typeof analyzeMedia>>) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.prompt || typeof body.prompt !== "string") {
       return NextResponse.json({ error: "Missing required field: prompt (string)" }, { status: 400 });
@@ -94,6 +98,7 @@ export async function POST(req: NextRequest) {
       pairGroup: pairGroup || null,
       pairRole: pairRole || null,
       project: projectId ? { connect: { id: projectId } } : undefined,
+      org: { connect: { id: auth.orgId } },
     };
 
     let asset = await db.mediaAsset.create({ data: createData, include: { project: true } });

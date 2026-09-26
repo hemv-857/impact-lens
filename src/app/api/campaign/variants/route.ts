@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { chat, parseJsonLenient } from "@/lib/ai";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 const VALID_PLATFORMS = ["instagram", "twitter", "linkedin", "newsletter"] as const;
 const VALID_TONES = ["professional", "emotional", "data-driven"] as const;
@@ -25,6 +26,9 @@ export interface CampaignVariant {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -56,8 +60,10 @@ export async function POST(req: NextRequest) {
     const t = tone as (typeof VALID_TONES)[number];
 
     const [project, assets] = await Promise.all([
-      projectId ? db.project.findUnique({ where: { id: projectId } }) : null,
-      db.mediaAsset.findMany({ where: { id: { in: assetIds } } }),
+      projectId
+        ? db.project.findFirst({ where: { id: projectId, orgId: auth.orgId } })
+        : null,
+      db.mediaAsset.findMany({ where: { id: { in: assetIds }, orgId: auth.orgId } }),
     ]);
 
     if (assets.length === 0) {

@@ -5,9 +5,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { semanticSearch } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
+import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthContext();
+    if (!auth) return unauthorized();
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object" || !body.query) {
       return NextResponse.json({ error: "Missing required field: query" }, { status: 400 });
@@ -20,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     // Fetch ALL analyzed assets and reduce to the lightweight shape semanticSearch expects.
     const analyzed = await db.mediaAsset.findMany({
-      where: { analyzedAt: { not: null } },
+      where: { orgId: auth.orgId, analyzedAt: { not: null } },
     });
     if (analyzed.length === 0) {
       return NextResponse.json({ hits: [] });
@@ -50,7 +54,7 @@ export async function POST(req: NextRequest) {
     // Fetch full MediaAsset records for the top hit ids.
     const topIds = top.map((h) => h.assetId);
     const full = await db.mediaAsset.findMany({
-      where: { id: { in: topIds } },
+      where: { id: { in: topIds }, orgId: auth.orgId },
       include: { project: true },
     });
     const assetMap = new Map(full.map((a) => [a.id, a]));
