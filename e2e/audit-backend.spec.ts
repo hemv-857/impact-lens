@@ -191,6 +191,47 @@ test("security: DELETE refuses path traversal outside public/ and leaves the fil
   }
 });
 
+test("topic tags: PATCH validates, adds/removes, and is org-scoped", async ({ request, browser }) => {
+  // unauthenticated → 401
+  const anon = await browser.newContext();
+  expect((await anon.request.patch("/api/media/x", { data: { tags: ["t"] } })).status()).toBe(401);
+  await anon.close();
+
+  await apiLogin(request);
+  const list = (await (await request.get("/api/media?limit=1")).json()) as Array<{ id: string; tags: string[] }>;
+  const target = list[0];
+  const url = `/api/media/${target.id}`;
+  const orig = target.tags;
+
+  try {
+    // validation
+    expect((await request.patch(url, { data: {} })).status()).toBe(400);
+    expect((await request.patch(url, { data: { tags: "x" } })).status()).toBe(400);
+    expect((await request.patch(url, { data: { tags: [42] } })).status()).toBe(400);
+    expect((await request.patch(url, { data: { tags: ["x".repeat(41)] } })).status()).toBe(400);
+
+    // add — trimmed + case-insensitive dedupe keeps the first spelling
+    const add = await request.patch(url, { data: { tags: [...orig, "Manual Topic Alpha", "manual topic alpha "] } });
+    expect(add.status()).toBe(200);
+    const added = (await add.json()) as { tags: string[] };
+    expect(added.tags).toContain("Manual Topic Alpha");
+    expect(added.tags.filter((t) => t.toLowerCase() === "manual topic alpha")).toHaveLength(1);
+
+    // remove → exactly the original list
+    const back = await request.patch(url, { data: { tags: orig } });
+    expect(back.status()).toBe(200);
+    expect(((await back.json()) as { tags: string[] }).tags).toEqual(orig);
+  } finally {
+    await request.patch(url, { data: { tags: orig } });
+  }
+
+  // cross-org (bob on ada's asset) → 404
+  const other = await browser.newContext();
+  await apiLogin(other.request, { email: "bob@example.org", password: "password123" });
+  expect((await other.request.patch(url, { data: { tags: ["hijack"] } })).status()).toBe(404);
+  await other.close();
+});
+
 test("AI usage meter: 401 unauth, org-scoped rows, per-user breakdown", async ({ request, browser }) => {
   // unauthenticated → 401
   expect((await request.get("/api/ai/usage")).status()).toBe(401);

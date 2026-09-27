@@ -23,6 +23,7 @@ Core capabilities: ingest field media → AI-extract metadata (project, location
 - 33 — feature round: AI usage meter, share links, email contract smoke, dark mode, Slack notifications
 - 34 — feature follow-ups: org/user-scoped AI metering, share-view org branding + viewer note
 - 35 — port move 3001→3002 (edge-mem owns 3001) + test-cleanup hardening
+- 36 — manual topic tags: PATCH /api/media/[id] + drawer add/remove UI
 
 ---
 Task ID: 1
@@ -1311,4 +1312,22 @@ Work Log:
 Stage Summary:
 - Modified: playwright.config.ts, e2e/audit-ux.spec.ts, e2e/audit-backend.spec.ts, .github/workflows/ci.yml, README.md, .env.local, worklog.md.
 - DB: removed stray `F2 probe` row (restored 12 verified / 1 unverified).
+- Next: push + watch CI.
+
+---
+Task ID: 36
+Agent: lead
+Task: Add topic tags — let users manually add/remove topic tags on media assets (AI tags existed read-only).
+
+Work Log:
+- Recon: tags lived only as `tagsCsv` (AI-written at analysis time), rendered read-only in AssetDrawer — no write path anywhere (no PATCH, no bulk tag action).
+- API: `PATCH /api/media/[id]` accepts `{ tags: string[] }` only — auth first (401), validates array-of-strings (400), trims, drops empties, 40-char cap (400), case-insensitive dedupe keeping first spelling, 25-tag cap (400), org-scoped findFirst → 404, stores `tagsCsv`, returns `serializeAsset`.
+- Client: `updateMediaTags(id, tags)` in lib/api; `useUpdateMediaTags` hook (invalidate `["media"]` + `analytics`, `setQueryData` on mediaById) so drawer, cards, and the TopTagsCloud all refresh together.
+- UI: AssetDrawer Tags section now always visible — chips are buttons (`aria-label="Remove tag X"`, click removes) + input (Enter or + button adds, maxLength 40, duplicate → toast, failure → destructive toast). Reuses Section/Input/Button/toast patterns from AssetNotes; tags guard no longer hides the section when empty (needed to add the first tag).
+- Tests: backend `topic tags: PATCH validates, adds/removes, org-scoped` (401 anon, four 400 validation cases, add+dedupe, restore-equals-original in try/finally, bob cross-org 404); ui drawer test extended to add `unit-topic-xyz`, assert chip, remove it (DB state restored before close — exact-count and tag-cloud tests unaffected).
+- Gates on :3002: tsc 0 · lint clean · build ✓ · notify+ai smokes ✓ · e2e **52 passed / 6 skipped / 0 failed** (58 total).
+
+Stage Summary:
+- Modified: src/app/api/media/[id]/route.ts, src/lib/api.ts, src/components/impactlens/impact-hooks.ts, src/components/impactlens/AssetDrawer.tsx, e2e/audit-backend.spec.ts, e2e/audit-ui.spec.ts, worklog.md.
+- DB: transient test mutation (add/remove on newest asset) fully restored by finally + in-test remove.
 - Next: push + watch CI.

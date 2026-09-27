@@ -89,6 +89,12 @@ export const createMedia = (body: CreateMediaInput) =>
 export const analyzeMedia = (id: string) =>
   fetcher<MediaAsset>(`/api/analyze/${id}`, { method: "POST" });
 
+export const updateMediaTags = (id: string, tags: string[]) =>
+  fetcher<MediaAsset>(`/api/media/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ tags }),
+  });
+
 export const deleteMedia = (id: string) =>
   fetcher<{ ok: true }>(`/api/media/${id}`, { method: "DELETE" });
 

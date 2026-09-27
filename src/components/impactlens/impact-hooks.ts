@@ -39,6 +39,7 @@ import {
   semanticSearch,
   seedSampleData,
   updateSchedule,
+  updateMediaTags,
 } from "@/lib/api";
 
 export const qk = {
@@ -108,6 +109,19 @@ export function useAnalyzeMedia() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: analyzeMedia,
+    onSuccess: (asset) => {
+      qc.invalidateQueries({ queryKey: ["media"] });
+      qc.invalidateQueries({ queryKey: qk.analytics });
+      qc.setQueryData(qk.mediaById(asset.id), asset);
+    },
+  });
+}
+
+export function useUpdateMediaTags() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, tags }: { id: string; tags: string[] }) =>
+      updateMediaTags(id, tags),
     onSuccess: (asset) => {
       qc.invalidateQueries({ queryKey: ["media"] });
       qc.invalidateQueries({ queryKey: qk.analytics });

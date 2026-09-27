@@ -89,6 +89,13 @@ test("asset drawer shows AI caption and evidence chain", async () => {
     ).toBeVisible();
   }
   await expect(page.getByText("Evidence chain").first()).toBeVisible();
+  // add + remove a manual topic tag (restored before close)
+  await page.getByTestId("tag-input").fill("unit-topic-xyz");
+  await page.getByTestId("tag-input").press("Enter");
+  const chip = page.getByRole("button", { name: "Remove tag unit-topic-xyz", exact: true });
+  await expect(chip).toBeVisible();
+  await chip.click();
+  await expect(chip).toHaveCount(0);
   // Drawer is a modal — close it or it blocks header navigation.
   await page.keyboard.press("Escape");
   await expect(page.getByText("Evidence chain")).toHaveCount(0);

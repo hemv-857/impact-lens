@@ -20,6 +20,8 @@ import {
   Image as ImageIcon,
   Wand2,
   Activity,
+  X,
+  Plus,
 } from "lucide-react";
 import {
   Sheet,
@@ -29,6 +31,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,7 +39,7 @@ import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import { ConfidenceBar } from "@/components/impactlens/ConfidenceBar";
 import { AssetNotes } from "@/components/impactlens/AssetNotes";
 import { useImpactStore } from "@/lib/store";
-import { useAnalyzeMedia, useDeleteMedia, useMediaById } from "@/components/impactlens/impact-hooks";
+import { useAnalyzeMedia, useDeleteMedia, useMediaById, useUpdateMediaTags } from "@/components/impactlens/impact-hooks";
 import { useToast } from "@/hooks/use-toast";
 import { formatDateTime } from "@/lib/format";
 import type { TransformStep } from "@/lib/types";
@@ -85,6 +88,8 @@ export function AssetDrawer() {
   const { data: asset, isFetching } = useMediaById(assetId);
   const analyze = useAnalyzeMedia();
   const del = useDeleteMedia();
+  const tagMut = useUpdateMediaTags();
+  const [tagDraft, setTagDraft] = React.useState("");
 
   const open = !!assetId;
 
@@ -104,6 +109,38 @@ export function AssetDrawer() {
         variant: "destructive",
       });
     }
+  };
+
+  const saveTags = async (tags: string[]): Promise<boolean> => {
+    if (!assetId) return false;
+    try {
+      await tagMut.mutateAsync({ id: assetId, tags });
+      return true;
+    } catch (e) {
+      toast({
+        title: "Couldn't save tags",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const onAddTag = async () => {
+    if (!asset) return;
+    const v = tagDraft.trim();
+    if (!v) return;
+    if (asset.tags.some((t) => t.toLowerCase() === v.toLowerCase())) {
+      setTagDraft("");
+      toast({ title: "Already tagged", description: `#${v} is on this asset.` });
+      return;
+    }
+    if (await saveTags([...asset.tags, v])) setTagDraft("");
+  };
+
+  const onRemoveTag = (t: string) => {
+    if (!asset) return;
+    void saveTags(asset.tags.filter((x) => x !== t));
   };
 
   const onDelete = async () => {
@@ -352,22 +389,49 @@ export function AssetDrawer() {
                 </Section>
               )}
 
-              {/* Tags */}
-              {asset.tags?.length > 0 && (
-                <Section title="Tags">
-                  <div className="flex flex-wrap gap-1.5">
-                    {asset.tags.map((t) => (
-                      <Badge
-                        key={t}
-                        variant="secondary"
-                        className="bg-emerald-50 text-emerald-800"
-                      >
-                        #{t}
-                      </Badge>
-                    ))}
-                  </div>
-                </Section>
-              )}
+              {/* Topic tags — AI-generated + manual, click a chip to remove */}
+              <Section title="Tags" icon={<Tag className="size-4" />}>
+                <div className="flex flex-wrap gap-1.5" data-testid="asset-tags">
+                  {asset.tags.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => onRemoveTag(t)}
+                      aria-label={`Remove tag ${t}`}
+                      className="group inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs text-emerald-800 ring-1 ring-emerald-100 transition hover:bg-emerald-100"
+                    >
+                      #{t}
+                      <X className="size-3 opacity-40 transition group-hover:opacity-100" />
+                    </button>
+                  ))}
+                </div>
+                <form
+                  className="mt-2 flex gap-1.5"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void onAddTag();
+                  }}
+                >
+                  <Input
+                    value={tagDraft}
+                    onChange={(e) => setTagDraft(e.target.value)}
+                    placeholder="Add a topic tag…"
+                    maxLength={40}
+                    aria-label="New topic tag"
+                    data-testid="tag-input"
+                    className="h-8 flex-1"
+                  />
+                  <Button
+                    type="submit"
+                    size="sm"
+                    variant="outline"
+                    disabled={tagMut.isPending || !tagDraft.trim()}
+                    aria-label="Add tag"
+                  >
+                    <Plus className="size-3.5" />
+                  </Button>
+                </form>
+              </Section>
 
               {/* OCR */}
               {asset.ocrText && asset.ocrText.trim().length > 0 && (
