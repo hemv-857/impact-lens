@@ -18,7 +18,7 @@ export default async function SharePage({
 
   const report = await db.report.findUnique({
     where: { shareToken: token },
-    include: { project: true },
+    include: { project: true, org: true },
   });
   if (!report) notFound();
 
@@ -38,9 +38,9 @@ export default async function SharePage({
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
             <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-700 text-white">
-              <Leaf className="size-4" />
+              {report.org ? report.org.name.charAt(0).toUpperCase() : <Leaf className="size-4" />}
             </span>
-            <span className="text-lg font-semibold">ImpactLens</span>
+            <span className="text-lg font-semibold">{report.org ? report.org.name : "ImpactLens"}</span>
           </Link>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
             <ShieldCheck className="size-3" /> Read-only
@@ -70,6 +70,12 @@ export default async function SharePage({
 
         <p className="mt-4 text-stone-600">{report.summary}</p>
 
+        {report.shareNote && (
+          <p className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+            {report.shareNote}
+          </p>
+        )}
+
         {metrics && Object.keys(metrics).length > 0 && (
           <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {Object.entries(metrics).map(([k, v]) => (
@@ -90,7 +96,7 @@ export default async function SharePage({
         )}
 
         <p className="mt-10 text-center text-xs text-stone-400">
-          Shared read-only via ImpactLens · this link can be revoked by its owner
+          {report.org ? `Shared by ${report.org.name} · ` : ""}presented with ImpactLens · this link can be revoked by its owner
         </p>
       </main>
     </div>

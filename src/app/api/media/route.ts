@@ -6,6 +6,7 @@ import { analyzeMedia, isVideoMedia, saveUpload } from "@/lib/ai";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { getAuthContext, unauthorized } from "@/lib/auth";
 import { serializeAsset } from "@/lib/serialize";
+import { withAiScope } from "@/lib/ai-usage";
 import type { Prisma } from "@prisma/client";
 
 function rand(len: number) {
@@ -253,7 +254,7 @@ export async function POST(req: NextRequest) {
 
     if (autoAnalyze) {
       try {
-        const analysis = await analyzeMedia(finalUrl, mediaType as "image" | "video");
+        const analysis = await withAiScope(auth, () => analyzeMedia(finalUrl, mediaType as "image" | "video"));
         const updated = await db.mediaAsset.update({
           where: { id: asset.id },
           data: {

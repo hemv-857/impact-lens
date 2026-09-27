@@ -63,7 +63,7 @@ npm run test:e2e
 
 ## Tests
 
-`e2e/audit-*.spec.ts` — 56 checks across five files (incl. AI usage meter, share links, dark mode):
+`e2e/audit-*.spec.ts` — 57 checks across five files (incl. AI usage meter, share dialog + links, dark mode):
 
 - **ui** — library, compare, reports, search, campaign flows
 - **ux** — auth journey, dialogs, palette, custom 404, console-error watch

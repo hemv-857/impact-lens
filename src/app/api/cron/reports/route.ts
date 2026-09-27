@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { generateReportsForOrg, ReportGenError, type ReportRequest } from "@/lib/report-gen";
 import { isEmailConfigured, renderReportEmail, sendMail } from "@/lib/email";
 import { notifySlack } from "@/lib/slack";
+import { withAiScope } from "@/lib/ai-usage";
 
 const DAY_MS = 86_400_000;
 
@@ -59,13 +60,17 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        const { reports } = await generateReportsForOrg(schedule.orgId, {
-          type: schedule.type as ReportRequest["type"],
-          tone: schedule.tone as ReportRequest["tone"],
-          projectId: schedule.projectId || undefined,
-          assetIds,
-          audience: schedule.audience || undefined,
-        });
+        const { reports } = await withAiScope(
+          { orgId: schedule.orgId }, // cron is a system actor: org yes, user no
+          () =>
+            generateReportsForOrg(schedule.orgId, {
+              type: schedule.type as ReportRequest["type"],
+              tone: schedule.tone as ReportRequest["tone"],
+              projectId: schedule.projectId || undefined,
+              assetIds,
+              audience: schedule.audience || undefined,
+            })
+        );
 
         let email = "skipped: no recipient";
         if (schedule.emailTo) {

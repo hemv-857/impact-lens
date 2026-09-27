@@ -6,6 +6,7 @@ import { analyzeMedia } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import type { TransformStep } from "@/lib/types";
 import { getAuthContext, unauthorized } from "@/lib/auth";
+import { withAiScope } from "@/lib/ai-usage";
 
 export async function POST(
   _req: NextRequest,
@@ -24,7 +25,7 @@ export async function POST(
     let analysis: Awaited<ReturnType<typeof analyzeMedia>>;
     const mediaType = (asset.type === "video" ? "video" : "image") as "image" | "video";
     try {
-      analysis = await analyzeMedia(asset.url, mediaType);
+      analysis = await withAiScope(auth, () => analyzeMedia(asset.url, mediaType));
     } catch (e) {
       let message = e instanceof Error ? e.message : "VLM analysis failed";
       if (mediaType === "video") {

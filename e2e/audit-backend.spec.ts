@@ -180,9 +180,15 @@ test("security: DELETE refuses path traversal outside public/ and leaves the fil
   expect((await request.get(`/api/media/${asset.id}`)).status()).toBe(404);
 });
 
-test("AI usage meter: 401 unauthenticated, summary shape when authed", async ({ request }) => {
+test("AI usage meter: 401 unauth, org-scoped rows, per-user breakdown", async ({ request, browser }) => {
+  // unauthenticated → 401
   expect((await request.get("/api/ai/usage")).status()).toBe(401);
+
+  // owner: shape + rows scoped to the caller's org only
   await apiLogin(request);
+  const session = await (await request.get("/api/auth/session")).json();
+  const orgId = session.user?.orgId as string;
+  expect(typeof orgId).toBe("string");
   const res = await request.get("/api/ai/usage");
   expect(res.status()).toBe(200);
   const body = await res.json();
@@ -190,35 +196,71 @@ test("AI usage meter: 401 unauthenticated, summary shape when authed", async ({ 
   for (const k of ["total", "ok", "failed", "avgMs"]) {
     expect(typeof body.summary[k], k).toBe("number");
   }
-  if (body.items.length > 0) {
-    expect(typeof body.items[0].kind).toBe("string");
-    expect(typeof body.items[0].ok).toBe("boolean");
-    expect(typeof body.items[0].durationMs).toBe("number");
+  expect(Array.isArray(body.summary.byUser)).toBe(true);
+  for (const u of body.summary.byUser) {
+    expect(typeof u.email).toBe("string");
+    expect(typeof u.count).toBe("number");
   }
+  expect(body.items.every((i: { orgId: string | null }) => i.orgId === orgId)).toBe(true);
+
+  // cross-org: a different owner's meter only ever holds their own rows
+  const otherCtx = await browser.newContext();
+  await apiLogin(otherCtx.request, OTHER_OWNER);
+  const other = await (await otherCtx.request.get("/api/ai/usage")).json();
+  expect(other.items.every((i: { orgId: string | null }) => i.orgId !== orgId)).toBe(true);
+  expect(other.summary.total).toBe(other.items.length); // OtherOrg never called the AI
+  expect(other.summary.total).toBe(0);
+  await otherCtx.close();
 });
 
-test("share links: mint, anonymous public read, revoke, cross-org 404", async ({ browser }) => {
+test("share links: note, org branding, anon read, revoke, cross-org 404", async ({ browser }) => {
   const ownerCtx = await browser.newContext();
   await apiLogin(ownerCtx.request);
   const reports = await (await ownerCtx.request.get("/api/reports")).json();
   expect(reports.length).toBeGreaterThan(0);
   const id = reports[0].id as string;
 
+  const orgs = await (await ownerCtx.request.get("/api/auth/orgs")).json();
+  const orgName = ((orgs.find((o: { active?: boolean }) => o.active) ?? orgs[0]) as { name: string }).name;
+  expect(orgName).toBeTruthy();
+
   const anonCtx = await browser.newContext(); // no session — a stranger with the link
 
-  // mint (or rotate) the token
-  const mint = await ownerCtx.request.post(`/api/reports/${id}/share`);
+  // initial state: no link yet
+  const st0 = await (await ownerCtx.request.get(`/api/reports/${id}/share`)).json();
+  expect(st0.active).toBe(false);
+  expect(st0.url).toBeNull();
+
+  // invalid notes are rejected before anything is minted
+  expect(
+    (await ownerCtx.request.post(`/api/reports/${id}/share`, { data: { note: "x".repeat(501) } })).status()
+  ).toBe(400);
+  expect(
+    (await ownerCtx.request.post(`/api/reports/${id}/share`, { data: { note: 42 } })).status()
+  ).toBe(400);
+
+  // mint with a viewer note
+  const mint = await ownerCtx.request.post(`/api/reports/${id}/share`, {
+    data: { note: "For the board deck" },
+  });
   expect(mint.status(), JSON.stringify(await mint.json())).toBe(200);
-  const { token, url } = await mint.json();
+  const { token, url, note } = await mint.json();
   expect(token).toMatch(/^[0-9a-f]{32}$/);
   expect(url).toBe(`/share/${token}`);
+  expect(note).toBe("For the board deck");
 
-  // read WITHOUT any session — the public share view
+  // state reflects the active link + note
+  const st1 = await (await ownerCtx.request.get(`/api/reports/${id}/share`)).json();
+  expect(st1).toEqual({ active: true, url, note: "For the board deck" });
+
+  // read WITHOUT any session — org branding + note are on the public view
   const view = await anonCtx.request.get(url);
   expect(view.status()).toBe(200);
   const html = await view.text();
   expect(html).toContain("Read-only");
-  expect(html).toContain("ImpactLens");
+  expect(html).toContain("For the board deck");
+  expect(html).toContain(orgName);
+  expect(html).toContain("presented with ImpactLens");
 
   // unknown / malformed tokens → 404, not a redirect to sign-in
   expect((await anonCtx.request.get("/share/00000000000000000000000000000000")).status()).toBe(404);
@@ -227,11 +269,14 @@ test("share links: mint, anonymous public read, revoke, cross-org 404", async ({
   // another org's owner cannot mint a link for this report
   const otherCtx = await browser.newContext();
   await apiLogin(otherCtx.request, OTHER_OWNER);
-  expect((await otherCtx.request.post(`/api/reports/${id}/share`)).status()).toBe(404);
+  expect((await otherCtx.request.post(`/api/reports/${id}/share`, { data: {} })).status()).toBe(404);
+  expect((await otherCtx.request.get(`/api/reports/${id}/share`)).status()).toBe(404);
 
   // revoke → the previously shared link dies immediately
   expect((await ownerCtx.request.delete(`/api/reports/${id}/share`)).status()).toBe(200);
   expect((await anonCtx.request.get(url)).status()).toBe(404);
+  const st2 = await (await ownerCtx.request.get(`/api/reports/${id}/share`)).json();
+  expect(st2.active).toBe(false);
 
   await ownerCtx.close();
   await anonCtx.close();

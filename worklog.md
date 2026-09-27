@@ -21,6 +21,7 @@ Core capabilities: ingest field media → AI-extract metadata (project, location
 - 6 — lint + agent-browser QA (lead)
 - 7 — cron webDevReview every 15 min (lead)
 - 33 — feature round: AI usage meter, share links, email contract smoke, dark mode, Slack notifications
+- 34 — feature follow-ups: org/user-scoped AI metering, share-view org branding + viewer note
 
 ---
 Task ID: 1
@@ -1272,3 +1273,24 @@ Stage Summary:
 - Modified: `prisma/schema.prisma`, `src/lib/ai.ts`, `src/middleware.ts`, `src/app/providers.tsx`, `src/components/impactlens/{Header,OverviewTab,ReportsTab}.tsx`, `src/app/globals.css`, `src/app/api/cron/reports/route.ts`, `.env`, `README.md`, `.github/workflows/ci.yml`, 3 e2e specs.
 - Suite: 56 tests (backend 15, ux 11, ui 12, feasibility 11, capability 7).
 - Next: push + watch CI; Cloudinary secret rotation still advised (old AUDIT.md history).
+
+---
+Task ID: 34
+Agent: lead
+Task: Finish the items skipped in Task 33 — per-user usage attribution and share-view customization/org branding.
+
+Work Log:
+- Metering attribution: added `userId`/`orgId` (+ @@index orgId) to AiUsageLog. Attribution uses Node stdlib AsyncLocalStorage with an explicit `withAiScope(actor, fn)` wrapper at each AI call site (11 wraps: analyze, media POST/bulk/generate incl. generateImage, compare, report, search, campaign, campaign/variants, cron with `{orgId}` only). Deliberately NOT enterWith-in-getAuthContext: its store does not cross the caller's await boundary and enterWith can leak across interleaved requests. Rows without a scope (seed, ai-smoke) stay null = unattributed.
+- Usage endpoint now org-scoped (`where: { orgId: auth.orgId }`) on all five queries and returns `summary.byUser` (groupBy userId → email resolved via one User findMany, "system" for null), sorted by count.
+- Panel: per-user chips row (`ai-usage-byuser`) under the stats strip.
+- Share customization: `Report.shareNote String?` (db push). Share API grew GET (dialog state: active/url/note) and POST now validates+stores an optional ≤500-char viewer note (400 on non-string/too-long); DELETE unchanged.
+- Share page org branding: `include: { org: true }` → header monogram = org initial + org name (ImpactLens fallback), note rendered as an emerald callout after the summary, footer "Shared by {org} · presented with ImpactLens".
+- ShareDialog component (Dialog + note textarea + Create&copy / Revoke / Link-active badge) replaces the blind one-click copy; GET state on open, POST mints+copies, DELETE revokes — all with toasts. ReportsTab share button now opens the dialog.
+- Test fix found en route: Playwright `getByRole(name)` is substring-match by default — the report CARD's accessible name contains "Share report" (nested aria-label), so `.first()` clicked the card, not the icon. Fixed with `exact: true`.
+- Infra fix found en route: full e2e run started 404ing everything — a `next dev -p 3001` from ANOTHER project (edge-mem, started 05:33) bound [::1]:3001; happy-eyeballs hit it before our IPv4 bun server (root looked 200 = the other app!). Did not kill it; pinned playwright baseURL, the sign-out URL assertion, and the CI curl to `http://127.0.0.1:3001` so the suite is immune to IPv6 squatters.
+- Gates: lint clean · tsc 0 · build ✓ · ai-smoke ✓ · notify-smoke ✓ · e2e **51 passed / 6 skipped / 0 failed** (57 total; 6 skips = OpenRouter budget).
+
+Stage Summary:
+- Modified: prisma/schema.prisma, src/lib/ai-usage.ts, src/app/api/ai/usage/route.ts, src/app/api/reports/[id]/share/route.ts, src/app/share/[token]/page.tsx, src/components/impactlens/{AiUsagePanel,ReportsTab}.tsx, 10 API routes (withAiScope wraps), playwright.config.ts, e2e (2 specs), .github/workflows/ci.yml, README.md, worklog.md.
+- Added: src/components/impactlens/ShareDialog.tsx.
+- Next: push + watch CI. Note for env: another project's dev server now occupies [::1]:3001 — keep using 127.0.0.1 for ImpactLens.

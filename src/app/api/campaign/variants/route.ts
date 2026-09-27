@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { chat, parseJsonLenient } from "@/lib/ai";
 import { getAuthContext, unauthorized } from "@/lib/auth";
+import { withAiScope } from "@/lib/ai-usage";
 
 const VALID_PLATFORMS = ["instagram", "twitter", "linkedin", "newsletter"] as const;
 const VALID_TONES = ["professional", "emotional", "data-driven"] as const;
@@ -106,10 +107,10 @@ Return STRICT JSON only (no markdown). Schema:
 }
 Return ONLY the JSON object.`;
 
-    const raw = await chat([
+    const raw = await withAiScope(auth, () => chat([
       { role: "system", content: "You are a senior NGO campaign strategist." },
       { role: "user", content: prompt },
-    ]);
+    ]));
     const parsed = parseJsonLenient<{ variants: CampaignVariant[] }>(raw, {
       variants: [],
     });

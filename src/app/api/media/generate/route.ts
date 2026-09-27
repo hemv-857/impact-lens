@@ -5,6 +5,7 @@ import { db, orgOwnsProject } from "@/lib/db";
 import { analyzeMedia, generateImage, saveUpload } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
+import { withAiScope } from "@/lib/ai-usage";
 import type { Prisma } from "@prisma/client";
 
 function rand(len: number) {
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     const genSize = size || "1344x768";
     let gen;
     try {
-      gen = await generateImage(prompt, genSize);
+      gen = await withAiScope(auth, () => generateImage(prompt, genSize));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "image generation failed";
       return NextResponse.json({ error: `Image generation failed: ${msg}` }, { status: 502 });
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
     // 4. Optional VLM analysis
     if (analyze) {
       try {
-        const analysis = await analyzeMedia(saved.url);
+        const analysis = await withAiScope(auth, () => analyzeMedia(saved.url));
         const updated = await db.mediaAsset.update({
           where: { id: asset.id },
           data: {

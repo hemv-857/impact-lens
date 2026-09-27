@@ -17,7 +17,13 @@ interface UsageItem {
 
 interface UsageResp {
   items: UsageItem[];
-  summary: { total: number; ok: number; failed: number; avgMs: number };
+  summary: {
+    total: number;
+    ok: number;
+    failed: number;
+    avgMs: number;
+    byUser: { email: string; count: number }[];
+  };
 }
 
 /** Org-wide AI call meter. Server route enforces auth; scope is the whole org. */
@@ -55,6 +61,16 @@ export function AiUsagePanel() {
             <Stat icon={<XCircle className="size-3.5 text-red-500" />} label="Failed" value={q.data.summary.failed} />
             <Stat icon={<Timer className="size-3.5" />} label="Avg" value={`${q.data.summary.avgMs}ms`} />
           </div>
+          {q.data.summary.byUser.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2" data-testid="ai-usage-byuser">
+              <span className="text-xs text-stone-500">By user:</span>
+              {q.data.summary.byUser.map((u) => (
+                <Badge key={u.email} variant="outline" className="font-normal">
+                  {u.email} · {u.count}
+                </Badge>
+              ))}
+            </div>
+          )}
           <ul className="mt-3 space-y-1.5">
             {q.data.items.slice(0, 8).map((it) => (
               <li key={it.id} className="flex items-center justify-between text-xs">

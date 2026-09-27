@@ -6,6 +6,7 @@ import { db, orgOwnsProject } from "@/lib/db";
 import { compareImages } from "@/lib/ai";
 import { serializeAsset, serializeComparison } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
+import { withAiScope } from "@/lib/ai-usage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
       const context = before.project || after.project
         ? `Project: ${(before.project || after.project)?.name}. Activity: ${before.activity || after.activity || "unknown"}.`
         : undefined;
-      result = await compareImages(before.url, after.url, context);
+      result = await withAiScope(auth, () => compareImages(before.url, after.url, context));
     } catch (e) {
       const message = e instanceof Error ? e.message : "VLM comparison failed";
       return NextResponse.json({ error: message }, { status: 500 });

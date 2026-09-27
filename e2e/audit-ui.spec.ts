@@ -129,6 +129,18 @@ test("reports tab: configure form + past report opens in viewer", async () => {
   await expect(page.getByText("No report yet")).toHaveCount(0);
 });
 
+test("reports tab: share dialog exposes the viewer-note field", async () => {
+  await gotoTab(page, "Reports");
+  const section = page.locator("section").filter({ hasText: "Past reports" });
+  // exact: the card itself also "contains" the words via the nested aria-label
+  await section.getByRole("button", { name: "Share report", exact: true }).first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByLabel(/Note for viewers/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /copy link/i })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
 test("semantic search offers NL input, example chips and saved searches", async () => {
   await gotoTab(page, "Semantic Search");
   await expect(

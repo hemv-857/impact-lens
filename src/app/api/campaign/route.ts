@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { generateReport, type ReportInput } from "@/lib/ai";
 import { serializeReport } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
+import { withAiScope } from "@/lib/ai-usage";
 
 const VALID_PLATFORMS = ["instagram", "twitter", "linkedin", "newsletter"] as const;
 const VALID_TONES = ["professional", "emotional", "data-driven"] as const;
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
 
     let output: Awaited<ReturnType<typeof generateReport>>;
     try {
-      output = await generateReport(input);
+      output = await withAiScope(auth, () => generateReport(input));
     } catch (e) {
       const message = e instanceof Error ? e.message : "LLM campaign generation failed";
       return NextResponse.json({ error: message }, { status: 500 });

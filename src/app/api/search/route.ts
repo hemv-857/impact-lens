@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { semanticSearch } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
+import { withAiScope } from "@/lib/ai-usage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     let hits: Awaited<ReturnType<typeof semanticSearch>>;
     try {
-      hits = await semanticSearch(query, catalog);
+      hits = await withAiScope(auth, () => semanticSearch(query, catalog));
     } catch (e) {
       const message = e instanceof Error ? e.message : "Semantic search failed";
       return NextResponse.json({ error: message }, { status: 500 });

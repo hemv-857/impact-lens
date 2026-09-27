@@ -79,7 +79,7 @@ jobs:
           DATABASE_URL="file:$(pwd)/db/custom.db" NODE_ENV=production PORT=3001 \
             nohup bun .next/standalone/server.js > server.log 2>&1 &
           for i in $(seq 1 30); do
-            curl -sf -o /dev/null http://localhost:3001/auth && exit 0
+            curl -sf -o /dev/null http://127.0.0.1:3001/auth && exit 0
             sleep 1
           done
           echo "server never became healthy"; cat server.log; exit 1

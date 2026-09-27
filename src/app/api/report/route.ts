@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { serializeReport } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
 import { generateReportsForOrg, ReportGenError, type ReportRequest } from "@/lib/report-gen";
+import { withAiScope } from "@/lib/ai-usage";
 
 const VALID_TYPES = ["impact", "summary", "campaign", "comparison"] as const;
 const VALID_TONES = ["professional", "emotional", "data-driven"] as const;
@@ -53,16 +54,18 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const { reports, warning } = await generateReportsForOrg(auth.orgId, {
-        type: type as ReportRequest["type"],
-        tone: tone as ReportRequest["tone"],
-        projectId,
-        assetIds,
-        audience,
-        comparisonId,
-        variantCount,
-        angles,
-      });
+      const { reports, warning } = await withAiScope(auth, () =>
+        generateReportsForOrg(auth.orgId, {
+          type: type as ReportRequest["type"],
+          tone: tone as ReportRequest["tone"],
+          projectId,
+          assetIds,
+          audience,
+          comparisonId,
+          variantCount,
+          angles,
+        })
+      );
 
       if (variants === 1) return NextResponse.json(serializeReport(reports[0]), { status: 201 });
       return NextResponse.json(

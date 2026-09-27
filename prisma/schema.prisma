@@ -107,6 +107,7 @@ model Report {
   callToAction String?
   tone        String? // professional, emotional, data-driven
   shareToken  String? @unique // public read-only link /share/<token>
+  shareNote   String? // optional owner message shown on the share view
   createdAt   DateTime @default(now())
   @@index([orgId])
 }
@@ -121,7 +122,10 @@ model AiUsageLog {
   ok         Boolean
   status     Int?
   error      String?
+  userId     String? // attributed via withAiScope (null = system/cron-less calls)
+  orgId      String? // metering is org-scoped; null = unattributed
   @@index([createdAt])
+  @@index([orgId])
 }
 
 model Comparison {

@@ -6,6 +6,7 @@ import { analyzeMedia } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
 import type { TransformStep } from "@/lib/types";
+import { withAiScope } from "@/lib/ai-usage";
 
 export async function POST(req: NextRequest) {
   try {
@@ -78,7 +79,9 @@ export async function POST(req: NextRequest) {
             failed++;
             continue;
           }
-          const analysis = await analyzeMedia(asset.url, (asset.type === "video" ? "video" : "image") as "image" | "video");
+          const analysis = await withAiScope(auth, () =>
+            analyzeMedia(asset.url, (asset.type === "video" ? "video" : "image") as "image" | "video")
+          );
           // transformations is a JSON string column — parse existing steps (same as single analyze).
           let existingSteps: TransformStep[] = [];
           if (asset.transformations) {
