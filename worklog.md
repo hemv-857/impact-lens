@@ -22,6 +22,7 @@ Core capabilities: ingest field media → AI-extract metadata (project, location
 - 7 — cron webDevReview every 15 min (lead)
 - 33 — feature round: AI usage meter, share links, email contract smoke, dark mode, Slack notifications
 - 34 — feature follow-ups: org/user-scoped AI metering, share-view org branding + viewer note
+- 35 — port move 3001→3002 (edge-mem owns 3001) + test-cleanup hardening
 
 ---
 Task ID: 1
@@ -1294,3 +1295,20 @@ Stage Summary:
 - Modified: prisma/schema.prisma, src/lib/ai-usage.ts, src/app/api/ai/usage/route.ts, src/app/api/reports/[id]/share/route.ts, src/app/share/[token]/page.tsx, src/components/impactlens/{AiUsagePanel,ReportsTab}.tsx, 10 API routes (withAiScope wraps), playwright.config.ts, e2e (2 specs), .github/workflows/ci.yml, README.md, worklog.md.
 - Added: src/components/impactlens/ShareDialog.tsx.
 - Next: push + watch CI. Note for env: another project's dev server now occupies [::1]:3001 — keep using 127.0.0.1 for ImpactLens.
+
+---
+Task ID: 35
+Agent: lead
+Task: Move ImpactLens off port 3001 (another project keeps it) and harden the two flaky-failure-prone mutation tests; push.
+
+Work Log:
+- Port: edge-mem's `next dev -p 3001` stays on 3001 by user decision — ImpactLens moved to **3002** everywhere live: playwright baseURL (`http://127.0.0.1:3002`, IPv4 pin kept so future IPv6 squatters can't hijack resolution), ux sign-out URL assertion, ci.yml PORT + health curl, README e2e instructions, .env.local NEXTAUTH_URL comment. AUDIT.md/worklog history keep their dated :3001 references (they describe the past accurately).
+- Our old bun standalone on 3001 killed; fresh one on 3002 (edge-mem process untouched, still answering on [::1]:3001).
+- Bug 1 (Playwright `getByRole` substring-match clicking the card instead of the share icon) was already fixed with `exact: true` in f194e28 — confirmed in tree.
+- Cascade root cause found while re-running on 3002: a transient F2 failure (external CDN fetch) left its `F2 probe` asset in the DB → exact-count test `verified 12/1` failed → serial backend file aborted (12 did not run). Fixed properly: deleted the stray row and wrapped BOTH media-mutating tests (F2 data-URL, traversal probe) in try/finally so cleanup always runs — a leaked probe can never shift the exact-count assertions again.
+- Gates on :3002: tsc 0 · lint clean · notify+ai smokes ✓ · e2e **51 passed / 6 skipped / 0 failed** (57 total).
+
+Stage Summary:
+- Modified: playwright.config.ts, e2e/audit-ux.spec.ts, e2e/audit-backend.spec.ts, .github/workflows/ci.yml, README.md, .env.local, worklog.md.
+- DB: removed stray `F2 probe` row (restored 12 verified / 1 unverified).
+- Next: push + watch CI.

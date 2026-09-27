@@ -112,9 +112,9 @@ test("account menu exposes org actions and sign out", async () => {
   await expect(page.getByText(/New organization/).first()).toBeVisible();
   await expect(page.getByText("Sign out").first()).toBeVisible();
   await page.getByText("Sign out").click();
-  // Sign-out must resolve on the current origin (127.0.0.1:3001), not the
+  // Sign-out must resolve on the current origin (127.0.0.1:3002), not the
   // NEXTAUTH_URL default of :3000 — enforced by redirect:false + relative nav.
-  await expect(page).toHaveURL("http://127.0.0.1:3001/auth");
+  await expect(page).toHaveURL("http://127.0.0.1:3002/auth");
 });
 
 test("no console or page errors across the whole journey", async () => {

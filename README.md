@@ -47,17 +47,17 @@ npm run dev        # dev server on :3000
 npm run build      # production build (standalone + static/public copy)
 npm start          # run the standalone build (defaults to :3000)
 npm run lint       # eslint
-npm run test:e2e   # Playwright suite — start the prod server on :3001 first
+npm run test:e2e   # Playwright suite — start the prod server on :3002 first
 npm run db:push    # sync schema to db/custom.db
 bun scripts/ai-smoke.ts      # self-stubbed AI client contract check (no keys)
 bun scripts/notify-smoke.ts  # email + Slack contract check (no network)
 ```
 
-The e2e suite expects the production server on **http://localhost:3001**:
+The e2e suite expects the production server on **http://127.0.0.1:3002** (port 3001 is reserved for another project):
 
 ```bash
 npm run build
-DATABASE_URL="file:$(pwd)/db/custom.db" NODE_ENV=production PORT=3001 node .next/standalone/server.js &
+DATABASE_URL="file:$(pwd)/db/custom.db" NODE_ENV=production PORT=3002 node .next/standalone/server.js &
 npm run test:e2e
 ```
 

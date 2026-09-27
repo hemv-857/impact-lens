@@ -160,10 +160,16 @@ test("F2: data-URL upload lands on Cloudinary with a deliverable CDN URL", async
   });
   expect(res.status()).toBe(201);
   const asset = (await res.json()) as { id: string; url: string; publicId: string };
-  expect(asset.url).toMatch(/^https:\/\/res\.cloudinary\.com\/.+\/upload\/f_auto,q_auto\//);
-  expect(asset.publicId).toMatch(/^impactlens\//);
-  expect((await request.get(asset.url)).status()).toBe(200);
-  expect((await request.delete(`/api/media/${asset.id}`)).status()).toBe(200);
+  try {
+    expect(asset.url).toMatch(/^https:\/\/res\.cloudinary\.com\/.+\/upload\/f_auto,q_auto\//);
+    expect(asset.publicId).toMatch(/^impactlens\//);
+    // external CDN fetch — can flake; cleanup below must run regardless
+    expect((await request.get(asset.url)).status()).toBe(200);
+    expect((await request.delete(`/api/media/${asset.id}`)).status()).toBe(200);
+  } finally {
+    // a leaked probe asset breaks the exact verified-count test below
+    await request.delete(`/api/media/${asset.id}`);
+  }
 });
 
 test("security: DELETE refuses path traversal outside public/ and leaves the file intact", async ({ request }) => {
@@ -173,11 +179,16 @@ test("security: DELETE refuses path traversal outside public/ and leaves the fil
   });
   expect(res.status()).toBe(201);
   const asset = (await res.json()) as { id: string };
-  const del = await request.delete(`/api/media/${asset.id}`);
-  // the DB row is removed, but the escaped path must never be unlinked
-  expect(del.status(), JSON.stringify(await del.json())).toBe(200);
-  expect(existsSync(resolve(process.cwd(), ".env.local"))).toBe(true);
-  expect((await request.get(`/api/media/${asset.id}`)).status()).toBe(404);
+  try {
+    const del = await request.delete(`/api/media/${asset.id}`);
+    // the DB row is removed, but the escaped path must never be unlinked
+    expect(del.status(), JSON.stringify(await del.json())).toBe(200);
+    expect(existsSync(resolve(process.cwd(), ".env.local"))).toBe(true);
+    expect((await request.get(`/api/media/${asset.id}`)).status()).toBe(404);
+  } finally {
+    // never leak a probe row — it would shift the exact verified-count test
+    await request.delete(`/api/media/${asset.id}`);
+  }
 });
 
 test("AI usage meter: 401 unauth, org-scoped rows, per-user breakdown", async ({ request, browser }) => {

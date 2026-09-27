@@ -1,7 +1,8 @@
 import { defineConfig } from "@playwright/test";
 
-// ImpactLens audit suite. Expects the production server on :3001:
-//   NODE_ENV=production PORT=3001 bun .next/standalone/server.js
+// ImpactLens audit suite. Expects the production server on :3002:
+//   NODE_ENV=production PORT=3002 bun .next/standalone/server.js
+// (port 3001 is owned by another project's dev server — keep them apart)
 export default defineConfig({
   testDir: "./e2e",
   timeout: 90_000,
@@ -11,9 +12,9 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"]],
   use: {
-    // IPv4 literal: a dev server from another project can bind [::1]:3001;
+    // IPv4 literal: a stray dev server on another project can bind [::1]:<port>;
     // "localhost" resolves there first and 404s every route.
-    baseURL: "http://127.0.0.1:3001",
+    baseURL: "http://127.0.0.1:3002",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
