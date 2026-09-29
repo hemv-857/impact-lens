@@ -4,8 +4,13 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
+import dns from "dns";
+import net from "net";
+import http from "http";
+import https from "https";
 import { execFile as execFileCb } from "child_process";
 import { promisify } from "util";
+import { randomUUID } from "crypto";
 import { logAiUsage } from "./ai-usage";
 
 const execFile = promisify(execFileCb);
@@ -161,16 +166,60 @@ export function publicFilePath(url: string): string | null {
   return resolved.startsWith(root + path.sep) ? resolved : null;
 }
 
-/** True for hosts the server must never fetch (loopback/RFC1918/link-local/metadata). */
+/** True for IPv4 addresses the server must never connect to (loopback/RFC1918/link-local/CGNAT/metadata/multicast). */
+function isPrivateAddr(ip: string): boolean {
+  const v4 = ip.toLowerCase().startsWith("::ffff:") ? ip.slice(7) : ip;
+  if (!net.isIPv4(v4)) return true; // only public IPv4 is fetched (see guardedLookup)
+  const [a, b] = v4.split(".").map(Number);
+  return a === 0 || a === 127 || a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
+}
+
+/** Cheap pre-filter on the URL's hostname; the real check is on the resolved address. */
 function isPrivateHost(hostname: string): boolean {
   const h = hostname.toLowerCase();
   if (h.includes(":")) return true; // IPv6/bracketed literals — stored media URLs use hostnames
   if (h === "localhost" || h.endsWith(".local") || h.endsWith(".internal")) return true;
-  const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (!m) return false;
-  const a = Number(m[1]);
-  const b = Number(m[2]);
-  return a === 0 || a === 127 || a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254);
+  return net.isIPv4(h) && isPrivateAddr(h);
+}
+
+// SSRF: resolve, reject if any address is private, and hand the socket exactly
+// the checked addresses — the name can't re-resolve (rebind) between check and connect.
+// ponytail: IPv4 only — add a public-IPv6 check if media hosts turn out v6-only.
+const guardedLookup = ((host: string, opts: dns.LookupOptions, cb: (...args: unknown[]) => void) => {
+  dns.lookup(host, { family: 4, all: true }, (err, addrs) => {
+    if (err) return cb(err);
+    if (!addrs.length || addrs.some((a) => isPrivateAddr(a.address))) {
+      return cb(Object.assign(new Error(`blocked private address for ${host}`), { code: "EBLOCKED" }));
+    }
+    if (opts.all) cb(null, addrs);
+    else cb(null, addrs[0].address, 4);
+  });
+}) as unknown as net.LookupFunction;
+
+/** GET a member-supplied URL through guardedLookup: no redirects, capped, timed. Null on any failure. */
+function guardedGet(url: URL, maxBytes: number, timeoutMs: number): Promise<Buffer | null> {
+  return new Promise((resolve) => {
+    const client = url.protocol === "https:" ? https : http;
+    const req = client.get(url, { lookup: guardedLookup, signal: AbortSignal.timeout(timeoutMs) }, (res) => {
+      const status = res.statusCode ?? 0;
+      if (status < 200 || status > 299) {
+        res.resume();
+        return resolve(null);
+      }
+      const chunks: Buffer[] = [];
+      let total = 0;
+      res.on("data", (c: Buffer) => {
+        total += c.length;
+        if (total > maxBytes) {
+          req.destroy();
+          resolve(null);
+        } else chunks.push(c);
+      });
+      res.on("end", () => resolve(Buffer.concat(chunks)));
+      res.on("error", () => resolve(null));
+    });
+    req.on("error", () => resolve(null));
+  });
 }
 
 export async function resolveImageUrl(url: string): Promise<string> {
@@ -375,24 +424,7 @@ async function videoFramesAsParts(
     try {
       const u = new URL(videoUrl);
       if (isPrivateHost(u.hostname)) return null; // SSRF: never fetch loopback/private ranges
-      const r = await fetch(videoUrl, { redirect: "manual", signal: AbortSignal.timeout(15_000) });
-      if (r.ok && r.body) {
-        // manual-mode responses may omit content-length — cap while streaming
-        const reader = r.body.getReader();
-        const chunks: Buffer[] = [];
-        let total = 0;
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          total += value.byteLength;
-          if (total > 50 * 1024 * 1024) {
-            await reader.cancel();
-            return null;
-          }
-          chunks.push(Buffer.from(value));
-        }
-        bytes = Buffer.concat(chunks);
-      }
+      bytes = await guardedGet(u, 50 * 1024 * 1024, 15_000);
     } catch {
       // fall through — caller uses the raw video_url path
     }
@@ -758,7 +790,7 @@ async function openaiImage(c: AiConfig, prompt: string, size: string) {
 export function saveUpload(file: Buffer, ext: string): { path: string; url: string } {
   const dir = path.join(process.cwd(), "public", "uploads");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  const name = `upload_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const name = `upload_${randomUUID()}.${ext}`; // unguessable: /uploads/* is session- not org-gated
   const full = path.join(dir, name);
   fs.writeFileSync(full, file);
   return { path: full, url: `/uploads/${name}` };
