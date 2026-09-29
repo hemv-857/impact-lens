@@ -791,10 +791,14 @@ async function openaiImage(c: AiConfig, prompt: string, size: string) {
       const base64 = item?.b64_json || item?.base64;
       if (base64) return { base64, buffer: Buffer.from(base64, "base64") };
       if (item?.url) {
+        // ponytail: hostname-only private check (no DNS pinning) — the URL comes from the
+        // operator-configured provider, not a member; switch to guardedGet if that changes.
         const u = new URL(item.url);
-        if (!/^https?:$/.test(u.protocol)) throw new Error("Image download failed");
-        const buffer = await guardedGet(u, 20 * 1024 * 1024, 30_000);
-        if (!buffer) throw new Error("Image download failed");
+        if (!/^https?:$/.test(u.protocol) || isPrivateHost(u.hostname)) throw new Error("Image download failed");
+        const r = await fetch(u, { redirect: "error", signal: AbortSignal.timeout(30_000) });
+        if (!r.ok) throw new Error(`Image download failed ${r.status}`);
+        const buffer = Buffer.from(await r.arrayBuffer());
+        if (buffer.length > 20 * 1024 * 1024) throw new Error("Image download too large");
         return { base64: buffer.toString("base64"), buffer };
       }
       throw new Error("Image generation returned no data");

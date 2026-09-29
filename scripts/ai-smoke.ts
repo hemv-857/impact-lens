@@ -75,12 +75,13 @@ async function main() {
   calls.length = 0;
   (globalThis as { fetch: unknown }).fetch = async (
     url: string,
-    init?: { headers: Record<string, string>; body: string }
+    init?: { headers: Record<string, string>; body?: string; redirect?: string }
   ) => {
-    if (init) {
+    if (init?.body) {
       calls.push({ url, headers: init.headers, body: JSON.parse(init.body) });
       return { ok: true, status: 200, text: async () => JSON.stringify({ data: [{ url: "https://example.test/img.png" }] }) };
     }
+    assert.equal(init?.redirect, "error"); // download never follows redirects
     return {
       ok: true,
       status: 200,
