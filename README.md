@@ -21,10 +21,6 @@ npm run db:push             # create/update SQLite schema
 npm run dev                 # http://localhost:3000
 ```
 
-A seeded demo database ships in `db/`:
-
-- **ada@example.org / password123** (owner, GreenShoots — 13+ assets)
-- **cara@example.org** / **bob@example.org** — member / other-org owner
 
 ## Environment (`.env.local`, gitignored)
 

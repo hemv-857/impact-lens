@@ -53,6 +53,9 @@ server.log
 # Skills directory
 /skills/
 
+# databases (never commit production or seed DBs)
+db/*.db
+
 # user-uploaded media (never commit)
 public/uploads/
 
