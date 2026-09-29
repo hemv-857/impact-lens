@@ -21,10 +21,13 @@ npm run db:push             # create/update SQLite schema
 npm run dev                 # http://localhost:3000
 ```
 
-A seeded demo database ships in `db/`:
+For development and e2e tests, the test suite uses a seeded database (`db/seed.db`) with demo users:
 
-- **ada@example.org / password123** (owner, GreenShoots — 13+ assets)
-- **cara@example.org** / **bob@example.org** — member / other-org owner
+- **ada@example.org** (owner, GreenShoots)
+- **bob@example.org** — other-org owner
+- **cara@example.org** — member
+
+These test users are regenerated on each e2e run and are **not** available in production.
 
 ## Environment (`.env.local`, gitignored)
 
