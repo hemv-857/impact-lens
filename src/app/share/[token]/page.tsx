@@ -1,5 +1,6 @@
 // Public read-only report view. Reachable only with a valid share token;
 // 404s otherwise. No auth, no interactivity, no org data beyond the report.
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
@@ -7,6 +8,13 @@ import { MarkdownRenderer } from "@/components/impactlens/MarkdownRenderer";
 import { Leaf, ShieldCheck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+// Keep tokens out of search indexes and out of Referer headers sent to hosts
+// the narrative may embed (markdown images/links).
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  referrer: "no-referrer",
+};
 
 export default async function SharePage({
   params,
