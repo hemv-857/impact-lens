@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     if ((err as { code?: string })?.code === "P2002") {
       return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
     }
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[signup] Unexpected error:", err);
+    return NextResponse.json({ error: "Signup failed" }, { status: 500 });
   }
 }

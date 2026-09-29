@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[cron-reports] Unexpected error:", err);
+    return NextResponse.json({ error: "Request failed" }, { status: 500 });
   }
 }

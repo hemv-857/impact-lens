@@ -24,8 +24,8 @@ export async function GET() {
       (await db.organization.update({ where: { id: org!.id }, data: { inviteCode: generateInviteCode() } })).inviteCode;
     return NextResponse.json({ code, slug: org!.slug, name: org!.name });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[org-invite] Unexpected error:", err);
+    return NextResponse.json({ error: "Request failed" }, { status: 500 });
   }
 }
 
@@ -37,7 +37,7 @@ export async function POST() {
     await db.organization.update({ where: { id: org!.id }, data: { inviteCode: code } });
     return NextResponse.json({ code, slug: org!.slug, name: org!.name });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[org-invite] Unexpected error:", err);
+    return NextResponse.json({ error: "Request failed" }, { status: 500 });
   }
 }
