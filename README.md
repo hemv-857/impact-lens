@@ -21,13 +21,13 @@ npm run db:push             # create/update SQLite schema
 npm run dev                 # http://localhost:3000
 ```
 
-For development and e2e tests, the test suite uses a seeded database (`db/seed.db`) with demo users:
+No database is committed (`db/*.db` is gitignored). For demo data, copy the sanitized e2e fixture — test-only users, no invite codes or share tokens:
 
-- **ada@example.org** (owner, GreenShoots)
-- **bob@example.org** — other-org owner
-- **cara@example.org** — member
+```bash
+cp e2e/fixtures/seed.db db/custom.db   # ada@example.org (owner), bob@example.org (other org), cara@example.org (member)
+```
 
-These test users are regenerated on each e2e run and are **not** available in production.
+Never point production at the fixture: its demo passwords are public. Production starts from a fresh `db:push` schema.
 
 ## Environment (`.env.local`, gitignored)
 
