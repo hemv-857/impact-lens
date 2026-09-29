@@ -58,8 +58,8 @@ export async function POST(req: NextRequest) {
         : undefined;
       result = await withAiScope(auth, () => compareImages(before.url, after.url, context));
     } catch (e) {
-      const message = e instanceof Error ? e.message : "VLM comparison failed";
-      return NextResponse.json({ error: message }, { status: 500 });
+      console.error(e);
+      return NextResponse.json({ error: "VLM comparison failed" }, { status: 500 });
     }
 
     const comparison = await db.comparison.create({
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

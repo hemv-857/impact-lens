@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
     try {
       output = await withAiScope(auth, () => generateReport(input));
     } catch (e) {
-      const message = e instanceof Error ? e.message : "LLM campaign generation failed";
-      return NextResponse.json({ error: message }, { status: 500 });
+      console.error(e);
+      return NextResponse.json({ error: "LLM campaign generation failed" }, { status: 500 });
     }
 
     // Prepend platform context to the title so reports are scannable in the UI.
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(serializeReport(report), { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

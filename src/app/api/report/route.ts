@@ -74,12 +74,14 @@ export async function POST(req: NextRequest) {
       );
     } catch (e) {
       if (e instanceof ReportGenError) {
-        return NextResponse.json({ error: e.message }, { status: e.status });
+        // 4xx messages are our own; 5xx wrap provider errors — log, don't echo
+        if (e.status >= 500) console.error(e);
+        return NextResponse.json({ error: e.status < 500 ? e.message : "Report generation failed" }, { status: e.status });
       }
       throw e;
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
