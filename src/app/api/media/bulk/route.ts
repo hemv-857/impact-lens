@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "ids (non-empty string[]) required" }, { status: 400 });
     }
     // strings only: an object like {"not": ""} would become a Prisma filter and match every row
-    const ids: string[] = body.ids.filter((x: unknown) => typeof x === "string").slice(0, 200); // hard cap
+    const ids: string[] = [...new Set<string>(body.ids.filter((x: unknown) => typeof x === "string"))].slice(0, 200); // unique (workers must not race on one row), hard cap
     const action: string = body.action;
     const projectId: string | undefined = body.projectId;
     const validActions = ["analyze", "verify", "unverify", "delete", "assign", "favorite", "unfavorite"];
@@ -68,66 +68,73 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ action, processed: r.count, failed: ids.length - r.count });
     }
 
-    // action === "analyze" — run VLM on each sequentially (with built-in retry in analyzeImage)
+    // action === "analyze" — a small worker pool over the VLM (retry lives in analyzeMedia).
+    // ponytail: still inside one HTTP request; a job queue is the fix for very large batches.
     if (action === "analyze") {
       let processed = 0;
       let failed = 0;
-      for (const id of ids) {
-        try {
-          const asset = await db.mediaAsset.findFirst({
-            where: { id, orgId: auth.orgId },
-            include: { project: true },
-          });
-          if (!asset) {
-            results.push({ id, ok: false, error: "not found" });
-            failed++;
-            continue;
-          }
-          const analysis = await withAiScope(auth, () =>
-            analyzeMedia(asset.url, (asset.type === "video" ? "video" : "image") as "image" | "video")
-          );
-          // transformations is a JSON string column — parse existing steps (same as single analyze).
-          let existingSteps: TransformStep[] = [];
-          if (asset.transformations) {
-            try {
-              const v = JSON.parse(asset.transformations);
-              if (Array.isArray(v)) existingSteps = v as TransformStep[];
-            } catch {
-              existingSteps = [];
+      let cursor = 0;
+      const worker = async () => {
+        while (cursor < ids.length) {
+          const id = ids[cursor++];
+          try {
+            const asset = await db.mediaAsset.findFirst({
+              where: { id, orgId: auth.orgId },
+              include: { project: true },
+            });
+            if (!asset) {
+              results.push({ id, ok: false, error: "not found" });
+              failed++;
+              continue;
             }
+            const analysis = await withAiScope(auth, () =>
+              analyzeMedia(asset.url, (asset.type === "video" ? "video" : "image") as "image" | "video")
+            );
+            // transformations is a JSON string column — parse existing steps (same as single analyze).
+            let existingSteps: TransformStep[] = [];
+            if (asset.transformations) {
+              try {
+                const v = JSON.parse(asset.transformations);
+                if (Array.isArray(v)) existingSteps = v as TransformStep[];
+              } catch {
+                existingSteps = [];
+              }
+            }
+            const transformations = JSON.stringify([
+              ...existingSteps,
+              { type: "ai-analyze", at: new Date().toISOString(), note: "bulk VLM analysis" },
+            ] satisfies TransformStep[]);
+            await db.mediaAsset.update({
+              where: { id },
+              data: {
+                aiCaption: analysis.caption,
+                aiSummary: analysis.summary,
+                aiDescription: analysis.description,
+                projectName: analysis.projectName,
+                location: analysis.location || asset.location,
+                activity: analysis.activity,
+                category: analysis.category || asset.category,
+                signals: JSON.stringify(analysis.signals),
+                objects: JSON.stringify(analysis.objects),
+                tagsCsv: analysis.tags.join(", "),
+                mood: analysis.mood,
+                confidence: analysis.confidence,
+                ocrText: analysis.ocrText || null,
+                qualityScore: analysis.qualityScore,
+                analyzedAt: new Date(),
+                transformations,
+              },
+            });
+            results.push({ id, ok: true });
+            processed++;
+          } catch (e) {
+            console.error(e);
+            results.push({ id, ok: false, error: "analyze failed" });
+            failed++;
           }
-          const transformations = JSON.stringify([
-            ...existingSteps,
-            { type: "ai-analyze", at: new Date().toISOString(), note: "bulk VLM analysis" },
-          ] satisfies TransformStep[]);
-          await db.mediaAsset.update({
-            where: { id },
-            data: {
-              aiCaption: analysis.caption,
-              aiSummary: analysis.summary,
-              aiDescription: analysis.description,
-              projectName: analysis.projectName,
-              location: analysis.location || asset.location,
-              activity: analysis.activity,
-              category: analysis.category || asset.category,
-              signals: JSON.stringify(analysis.signals),
-              objects: JSON.stringify(analysis.objects),
-              tagsCsv: analysis.tags.join(", "),
-              mood: analysis.mood,
-              confidence: analysis.confidence,
-              ocrText: analysis.ocrText || null,
-              qualityScore: analysis.qualityScore,
-              analyzedAt: new Date(),
-              transformations,
-            },
-          });
-          results.push({ id, ok: true });
-          processed++;
-        } catch (e) {
-          results.push({ id, ok: false, error: "analyze failed" });
-          failed++;
         }
-      }
+      };
+      await Promise.all(Array.from({ length: Math.min(3, ids.length) }, worker));
       return NextResponse.json({ action, processed, failed, results });
     }
 

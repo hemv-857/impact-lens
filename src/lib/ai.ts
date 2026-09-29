@@ -11,7 +11,7 @@ import https from "https";
 import { execFile as execFileCb } from "child_process";
 import { promisify } from "util";
 import { randomUUID } from "crypto";
-import { logAiUsage } from "./ai-usage";
+import { assertAiBudget, logAiUsage } from "./ai-usage";
 
 const execFile = promisify(execFileCb);
 
@@ -111,6 +111,7 @@ export async function chat(messages: ChatMessage[], vision = false): Promise<str
 
 async function aiFetch<T>(pathname: string, body: unknown): Promise<T> {
   const { baseUrl, apiKey } = cfg();
+  await assertAiBudget();
   const t0 = Date.now();
   const kind = JSON.stringify(body).includes("image_url") ? "vision" : "chat";
   const model =
@@ -402,22 +403,38 @@ export async function analyzeMedia(url: string, mediaType?: "image" | "video"): 
     if (frameParts && e instanceof Error) (e as Error & { framesUsed?: boolean }).framesUsed = true;
     throw e;
   }
-  return parseJsonLenient<VlmAnalysis>(raw, {
-    caption: "Field media asset",
-    summary: "Analysis unavailable.",
-    description: raw.slice(0, 500),
-    projectName: "Unassigned",
-    location: "Unknown",
-    activity: "Unknown",
-    category: "other",
-    signals: [],
-    objects: [],
-    tags: [],
-    mood: "neutral",
-    confidence: 0.4,
-    ocrText: "",
-    qualityScore: 0.6,
-  });
+  return normalizeAnalysis(parseStrict(raw, (v) => typeof v.caption === "string" && !!v.caption.trim()));
+}
+
+const CATEGORIES = ["reforestation", "solar", "water", "education", "cleanup", "agriculture", "infrastructure", "conservation", "community", "energy", "other"];
+
+/** Coerce a model reply into the VlmAnalysis shape: missing/odd fields can't crash callers or poison the DB. */
+export function normalizeAnalysis(v: Record<string, unknown>): VlmAnalysis {
+  const str = (x: unknown, d: string) => (typeof x === "string" && x.trim() ? x.trim() : d);
+  const unit = (x: unknown, d: number) => (typeof x === "number" && Number.isFinite(x) ? Math.min(1, Math.max(0, x)) : d);
+  const list = (x: unknown): unknown[] => (Array.isArray(x) ? x : []);
+  const category = str(v.category, "other").toLowerCase();
+  return {
+    caption: str(v.caption, "Field media asset"),
+    summary: str(v.summary, ""),
+    description: str(v.description, ""),
+    projectName: str(v.projectName, "Unassigned"),
+    location: str(v.location, "Unknown"),
+    activity: str(v.activity, "Unknown"),
+    category: CATEGORIES.includes(category) ? category : "other",
+    signals: list(v.signals)
+      .filter((s): s is { label: string; confidence?: number; category?: string } => !!s && typeof (s as { label?: unknown }).label === "string")
+      .map((s) => ({ label: s.label, confidence: unit(s.confidence, 0.5), category: str(s.category, "environment") })),
+    objects: list(v.objects)
+      .filter((o): o is { name: string; count?: number } => !!o && typeof (o as { name?: unknown }).name === "string")
+      .map((o) => ({ name: o.name, ...(typeof o.count === "number" && Number.isFinite(o.count) ? { count: o.count } : {}) })),
+    // tags live in a comma-separated column — a comma inside a tag would split it
+    tags: list(v.tags).filter((t): t is string => typeof t === "string").map((t) => t.replace(/[,\s]+/g, " ").trim().toLowerCase()).filter(Boolean),
+    mood: str(v.mood, "neutral"),
+    confidence: unit(v.confidence, 0.5),
+    ocrText: str(v.ocrText, ""),
+    qualityScore: unit(v.qualityScore, 0.5),
+  };
 }
 
 // Backward-compatible alias — calls analyzeMedia with auto-detection.
@@ -537,11 +554,15 @@ Return ONLY the JSON.`;
       true
     )
   );
-  return parseJsonLenient<ComparisonOutput>(raw, {
-    narrative: raw.slice(0, 600) || "Comparison unavailable.",
-    changes: [],
-    impactScore: 0.5,
-  });
+  const v = parseStrict<Record<string, unknown>>(raw, (o) => typeof o.narrative === "string" && !!o.narrative.trim());
+  const score = typeof v.impactScore === "number" && Number.isFinite(v.impactScore) ? v.impactScore : 0.5;
+  return {
+    narrative: String(v.narrative).trim(),
+    changes: (Array.isArray(v.changes) ? v.changes : []).filter(
+      (c): c is ComparisonOutput["changes"][number] => !!c && typeof (c as { aspect?: unknown }).aspect === "string"
+    ),
+    impactScore: Math.min(1, Math.max(0, score)),
+  };
 }
 
 // ---------------- LLM: Report / campaign generation ----------------
@@ -609,23 +630,33 @@ Return STRICT JSON only (no markdown). Schema:
   "headline": "punchy one-line headline (<=110 chars)",
   "summary": "3-4 sentence executive summary",
   "narrative": "full report body in markdown (400-700 words), with ## section headers, bullet points where useful, and references to specific evidence assets by number",
-  "metrics": {"trees_planted": 250, "hectares_restored": 12, "people_reached": 340, ...} (4-8 plausible KPIs derived from evidence; numbers as integers),
+  "metrics": {"trees_planted": 250, ...} (0-6 KPIs. ONLY figures stated verbatim in the evidence or project description above — never estimate, extrapolate or invent a number; use {} when there are none),
   "callToAction": "a single motivating call-to-action sentence (<=140 chars)"
 }
+GROUNDING: use only the evidence above. Do not invent statistics, names, dates, places or outcomes the evidence does not show. Donors will read this.
 Return ONLY the JSON.`;
 
   const raw = await chat([
     { role: "system", content: "You are a senior NGO impact strategist." },
     { role: "user", content: prompt },
   ]);
-  return parseJsonLenient<ReportOutput>(raw, {
-    title: `${input.projectName || "Project"} Report`,
-    headline: "Impact report generated.",
-    summary: raw.slice(0, 400) || "Report unavailable.",
-    narrative: raw || "Report body unavailable.",
-    metrics: {},
-    callToAction: "Support this project today.",
-  });
+  const v = parseStrict<Record<string, unknown>>(raw, (o) => typeof o.narrative === "string" && !!o.narrative.trim());
+  const str = (x: unknown, d: string) => (typeof x === "string" && x.trim() ? x.trim() : d);
+  // metrics render straight into the share page / PDF: primitives only
+  const metrics: Record<string, string | number> = {};
+  if (v.metrics && typeof v.metrics === "object" && !Array.isArray(v.metrics)) {
+    for (const [k, m] of Object.entries(v.metrics).slice(0, 8)) {
+      if (typeof m === "string" || (typeof m === "number" && Number.isFinite(m))) metrics[k] = m;
+    }
+  }
+  return {
+    title: str(v.title, `${input.projectName || "Project"} Report`),
+    headline: str(v.headline, ""),
+    summary: str(v.summary, ""),
+    narrative: String(v.narrative).trim(),
+    metrics,
+    callToAction: str(v.callToAction, ""),
+  };
 }
 
 // ---------------- LLM: Semantic search scoring ----------------
@@ -663,8 +694,49 @@ Return up to 20 hits, sorted by score descending. ONLY the JSON.`;
     { role: "system", content: "You are a precise semantic search engine for field-media assets." },
     { role: "user", content: prompt },
   ]);
-  const parsed = parseJsonLenient<{ hits: SearchHit[] }>(raw, { hits: [] });
-  return parsed.hits.sort((a, b) => b.score - a.score);
+  const parsed = parseStrict<{ hits: unknown[] }>(raw, (o) => Array.isArray(o.hits));
+  const known = new Set(assets.map((a) => a.id));
+  const seen = new Set<string>();
+  const hits: SearchHit[] = [];
+  for (const h of parsed.hits) {
+    const x = h as { assetId?: unknown; score?: unknown; reason?: unknown };
+    // drop ids the model made up (or repeated) — only catalog ids may come back
+    if (typeof x.assetId !== "string" || !known.has(x.assetId) || seen.has(x.assetId)) continue;
+    seen.add(x.assetId);
+    const score = typeof x.score === "number" && Number.isFinite(x.score) ? Math.min(1, Math.max(0, x.score)) : 0;
+    hits.push({ assetId: x.assetId, score, reason: typeof x.reason === "string" ? x.reason.slice(0, 300) : "" });
+  }
+  return hits.sort((a, b) => b.score - a.score);
+}
+
+// ponytail: English-only filler list; other languages fall through as ordinary terms
+const STOPWORDS = new Set("a an and are as at be by for from has have in into is it its of on or that the their this to was were with about show shows photo photos image images video videos".split(" "));
+
+const SEARCH_FIELD_WEIGHT = { tags: 3, caption: 2, activity: 2, category: 2, location: 2, summary: 1 } as const;
+
+/**
+ * Keyword ranking over the same catalog shape: no AI, no cost. Used to cap what
+ * the LLM has to read on big libraries, and as the answer when the LLM is down.
+ * ponytail: substring match, no stemming/synonyms — the LLM pass is the semantic layer.
+ */
+export function lexicalHits(query: string, assets: Parameters<typeof semanticSearch>[1], limit = 20): SearchHit[] {
+  const terms = [...new Set(query.toLowerCase().match(/[\p{L}\p{N}]{2,}/gu) ?? [])].filter((t) => !STOPWORDS.has(t));
+  if (!terms.length) return [];
+  return assets
+    .map((a) => {
+      const fields = { tags: a.tags.join(" "), caption: a.caption, activity: a.activity ?? "", category: a.category ?? "", location: a.location ?? "", summary: a.summary };
+      const matched: string[] = [];
+      let sum = 0;
+      for (const t of terms) {
+        const w = Math.max(0, ...Object.entries(fields).map(([f, text]) => (text.toLowerCase().includes(t) ? SEARCH_FIELD_WEIGHT[f as keyof typeof SEARCH_FIELD_WEIGHT] : 0)));
+        if (w) matched.push(t);
+        sum += w;
+      }
+      return { assetId: a.id, score: sum / (3 * terms.length), reason: matched.length ? `keyword match: ${matched.join(", ")}` : "" };
+    })
+    .filter((h) => h.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
 // ---------------- Image generation (sample field media) ----------------
@@ -676,6 +748,7 @@ export async function generateImage(prompt: string, size = "1344x768"): Promise<
       `AI_PROVIDER=${process.env.AI_PROVIDER?.trim().toLowerCase() || DEFAULT_PROVIDER} has no image generation. Set AI_IMAGE_MODEL (and AI_BASE_URL) for an image-capable provider.`
     );
   }
+  if (c.imageApi === "gemini") await assertAiBudget(); // the other image paths go through aiFetch
   return c.imageApi === "gemini"
     ? geminiImage(c, prompt, size)
     : c.imageApi === "chat"
@@ -820,6 +893,13 @@ export function saveUpload(file: Buffer, ext: string): { path: string; url: stri
 }
 
 // ---------------- Helpers ----------------
+
+/** JSON object out of a model reply, or throw — callers persist results, so a made-up fallback is worse than an error. */
+function parseStrict<T>(raw: string, valid: (v: Record<string, unknown>) => boolean): T {
+  const v = parseJsonLenient<Record<string, unknown> | null>(raw, null);
+  if (!v || typeof v !== "object" || Array.isArray(v) || !valid(v)) throw new Error("AI returned an unparseable response");
+  return v as T;
+}
 
 export function parseJsonLenient<T>(raw: string, fallback: T): T {
   if (!raw) return fallback;

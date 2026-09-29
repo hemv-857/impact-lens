@@ -275,6 +275,8 @@ export interface SearchHit {
 
 export interface SearchResponse {
   hits: SearchHit[];
+  /** true when the AI ranker was unavailable and results are keyword matches */
+  degraded?: boolean;
 }
 
 export const semanticSearch = (query: string, limit = 24) =>

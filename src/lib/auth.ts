@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getServerSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -49,14 +50,22 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         const email = credentials?.email ? normalizeEmail(credentials.email) : "";
         const password = credentials?.password ?? "";
         if (!email || !password) return null;
 
+        // Throttle guessing (and the blocking scrypt it triggers): 10 failures per
+        // IP+email per 15 min. Only failures count, so normal sign-ins never trip it.
+        const failKey = `login-fail:${clientIp(new Headers(req?.headers as Record<string, string> | undefined))}:${email}`;
+        if (!rateLimit(failKey, 10, 15 * 60_000, false)) return null;
+
         try {
           const user = await db.user.findUnique({ where: { email } });
-          if (!user || !verifyPassword(password, user.passwordHash)) return null;
+          if (!user || !verifyPassword(password, user.passwordHash)) {
+            rateLimit(failKey, 10, 15 * 60_000);
+            return null;
+          }
 
           const membership = await db.membership.findFirst({ where: { userId: user.id } });
           return {

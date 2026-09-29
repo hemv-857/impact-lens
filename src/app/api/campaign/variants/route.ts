@@ -88,8 +88,10 @@ ${assetsBlock}
 
 Generate 3 variants, each using a DIFFERENT strategic angle:
 1. "Story-first" — open with a human narrative hook, emotional
-2. "Data-first" — lead with a striking metric or outcome, credibility-led
+2. "Data-first" — lead with an outcome or number that appears in the evidence above, credibility-led
 3. "Question-hook" — open with a provocative question that creates curiosity
+
+GROUNDING: use only the evidence above. Never invent statistics, names, places or outcomes.
 
 Return STRICT JSON only (no markdown). Schema:
 {
@@ -115,16 +117,13 @@ Return ONLY the JSON object.`;
       variants: [],
     });
 
-    // Fallback: if the LLM didn't return 3 variants, pad with the ones we have
-    const variants = (parsed.variants || []).slice(0, 3);
-    while (variants.length < 3) {
-      variants.push({
-        angle: ["Story-first", "Data-first", "Question-hook"][variants.length] || "Variant",
-        headline: "Campaign headline",
-        caption: raw.slice(0, 280) || "Caption unavailable.",
-        hashtags: [],
-        callToAction: "Support this project today.",
-      });
+    // Keep only well-formed variants — placeholder filler would read as real copy.
+    const variants = (Array.isArray(parsed.variants) ? parsed.variants : [])
+      .filter((v) => v && typeof v.caption === "string" && v.caption.trim())
+      .slice(0, 3)
+      .map((v) => ({ ...v, hashtags: Array.isArray(v.hashtags) ? v.hashtags.filter((h) => typeof h === "string") : [] }));
+    if (variants.length === 0) {
+      return NextResponse.json({ error: "Campaign generation failed" }, { status: 502 });
     }
 
     return NextResponse.json({ variants }, { status: 200 });

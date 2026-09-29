@@ -27,6 +27,19 @@ export function withAiScope<T>(actor: AiActor, fn: () => Promise<T>): Promise<T>
 }
 
 /**
+ * Per-org rolling-24h cap on provider calls (AI_DAILY_CALL_CAP, default 2000, 0 = off) so one
+ * bulk job or a leaked session can't run up the provider bill. Unattributed (system) calls skip it.
+ * ponytail: counts logged calls, not tokens — switch to a token/$ budget if prices per call diverge.
+ */
+export async function assertAiBudget(): Promise<void> {
+  const orgId = als.getStore()?.orgId;
+  const cap = Number(process.env.AI_DAILY_CALL_CAP ?? 2000);
+  if (!orgId || !(cap > 0)) return;
+  const used = await db.aiUsageLog.count({ where: { orgId, createdAt: { gte: new Date(Date.now() - 24 * 3600 * 1000) } } });
+  if (used >= cap) throw new Error("AI usage limit reached for this organization. Try again later.");
+}
+
+/**
  * Fire-and-forget metering: never awaited, never throws — an analytics write
  * must not be able to fail an AI request.
  */

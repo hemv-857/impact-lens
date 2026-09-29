@@ -191,7 +191,7 @@ export function AssetDrawer() {
                 </video>
               ) : (
                 <img
-                  src={asset.thumbnailUrl || asset.url}
+                  src={asset.url}
                   alt={asset.title || asset.aiCaption || "Field media asset"}
                   className="h-full w-full object-cover"
                 />

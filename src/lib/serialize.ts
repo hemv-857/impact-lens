@@ -132,6 +132,18 @@ function iso(d: Date | null | undefined): string | null {
   return d ? d.toISOString() : null;
 }
 
+/**
+ * Cloudinary delivery URL → small preview (images: 640px wide; video: first-frame JPEG), so
+ * grids don't pull multi-MB originals. Null for anything not stored on Cloudinary.
+ */
+export function cdnThumbnail(url: string, type: string): string | null {
+  const m = url.match(/^(https:\/\/res\.cloudinary\.com\/.+?\/upload\/)f_auto,q_auto\/(.+)$/);
+  if (!m) return null;
+  return type === "video"
+    ? `${m[1]}so_0,c_limit,w_640,f_jpg,q_auto/${m[2].replace(/\.[a-z0-9]+$/i, ".jpg")}`
+    : `${m[1]}c_limit,w_640,f_auto,q_auto/${m[2]}`;
+}
+
 export function serializeAsset(p: PrismaMedia): MediaAsset {
   const signals = safeParseArray<VisualSignal>(p.signals, []);
   const objects = safeParseArray<DetectedObject>(p.objects, []);
@@ -145,7 +157,7 @@ export function serializeAsset(p: PrismaMedia): MediaAsset {
     description: p.description,
     type: (p.type as MediaType) ?? "image",
     url: p.url,
-    thumbnailUrl: p.thumbnailUrl,
+    thumbnailUrl: p.thumbnailUrl ?? cdnThumbnail(p.url, p.type),
     format: p.format,
     width: p.width,
     height: p.height,

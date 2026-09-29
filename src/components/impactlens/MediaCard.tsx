@@ -107,15 +107,27 @@ export function MediaCard({
         )}
       >
         <div className="relative aspect-video w-full overflow-hidden bg-stone-100">
-          <img
-            src={thumbnail}
-            alt={title}
-            loading="lazy"
-            className={cn(
-              "h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]",
-              !isAnalyzed && "opacity-90"
-            )}
-          />
+          {asset.type === "video" && !asset.thumbnailUrl ? (
+            // no poster image (local upload): let the browser paint the first frame
+            <video
+              src={`${asset.url}#t=0.1`}
+              preload="metadata"
+              muted
+              playsInline
+              aria-label={title}
+              className={cn("h-full w-full object-cover", !isAnalyzed && "opacity-90")}
+            />
+          ) : (
+            <img
+              src={thumbnail}
+              alt={title}
+              loading="lazy"
+              className={cn(
+                "h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]",
+                !isAnalyzed && "opacity-90"
+              )}
+            />
+          )}
           {/* Pending-analysis overlay */}
           {!isAnalyzed && (
             <div className="absolute inset-0 flex items-center justify-center bg-stone-900/30">

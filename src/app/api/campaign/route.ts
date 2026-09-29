@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateReport, type ReportInput } from "@/lib/ai";
 import { serializeReport } from "@/lib/serialize";
+import { evidenceFacts } from "@/lib/report-gen";
 import { getAuthContext, unauthorized } from "@/lib/auth";
 import { withAiScope } from "@/lib/ai-usage";
 
@@ -95,8 +96,10 @@ export async function POST(req: NextRequest) {
 
     // Prepend platform context to the title so reports are scannable in the UI.
     const title = `[${PLATFORM_LABEL[p]}] ${output.title}`;
-    const callToAction = `${output.callToAction} (Channel: ${PLATFORM_LABEL[p]})`;
-    const metrics = { ...(output.metrics || {}), platform: p, channel: PLATFORM_LABEL[p] };
+    const callToAction = output.callToAction
+      ? `${output.callToAction} (Channel: ${PLATFORM_LABEL[p]})`
+      : `Channel: ${PLATFORM_LABEL[p]}`;
+    const metrics = { ...output.metrics, ...evidenceFacts(assets), platform: p, channel: PLATFORM_LABEL[p] };
 
     const report = await db.report.create({
       data: {

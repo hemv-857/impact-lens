@@ -38,6 +38,7 @@ Never point production at the fixture: its demo passwords are public. Production
 | `OPENROUTER_API_KEY` / `GEMINI_API_KEY` / `AI_API_KEY` | provider key for the chosen preset |
 | `CLOUDINARY_URL` | `cloudinary://key:secret@cloud-name` — uploads go to the CDN; unset ⇒ local fallback |
 | `CRON_SECRET` | shared secret gating `POST /api/cron/reports` |
+| `AI_DAILY_CALL_CAP` | max provider calls per org per rolling 24 h (default `2000`, `0` disables) |
 | `EMAIL_*` | optional scheduled-report email delivery |
 | `SLACK_WEBHOOK_URL` | optional Slack incoming webhook for cron run summaries |
 
@@ -66,7 +67,7 @@ npm run test:e2e
 
 ## Tests
 
-`e2e/audit-*.spec.ts` — 57 checks across five files (incl. AI usage meter, share dialog + links, dark mode):
+`e2e/` — audit, security (`sec-p*`) and production-readiness (`prod-readiness`) specs, 80 checks (72 run without an AI key). `scripts/ai-smoke.ts` covers the AI client contract, output validation and search ranking with a stubbed provider. The audit files:
 
 - **ui** — library, compare, reports, search, campaign flows
 - **ux** — auth journey, dialogs, palette, custom 404, console-error watch
@@ -94,3 +95,6 @@ AUDIT.md         audit findings + resolution status
 - Uploads cap at ~10 MB (413); runtime uploads are served by `/uploads/[name]` (no restart needed).
 - Joining an existing org requires an invite code — owners copy/regenerate it from the account menu.
 - Media delete removes the local file or the Cloudinary object (best-effort).
+- `GET /api/health` is the unauthenticated liveness/DB probe (200 `ok`, 503 `unavailable`).
+- Search falls back to keyword ranking when the AI provider fails (`degraded: true`); AI output that isn't valid JSON is rejected, never stored as a result.
+- Cloudinary uploads keep the untouched original in `originalUrl`, read EXIF capture dates, and serve 640 px previews in grids.

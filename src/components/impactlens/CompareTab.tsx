@@ -427,7 +427,7 @@ function ComparisonResultView({
           {/* After image (full width bottom layer) */}
           { }
           <img
-            src={after?.thumbnailUrl || after?.url}
+            src={after?.url}
             alt={
               after?.title || after?.aiCaption || "After image"
             }
@@ -440,7 +440,7 @@ function ComparisonResultView({
           >
             { }
             <img
-              src={before?.thumbnailUrl || before?.url}
+              src={before?.url}
               alt={
                 before?.title || before?.aiCaption || "Before image"
               }

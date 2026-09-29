@@ -206,3 +206,56 @@ Six scoped `security-audit` passes ran in parallel (P1–P6 in `SECURITY-PHASES.
 - `Project.slug` is globally unique, which reveals whether another org has a project with the same name. Fix: `@@unique([orgId, slug])` (schema change).
 - Remote markdown images in AI narratives act as view beacons on share pages (product decision).
 - Login throttling, and request-size limits on routes without a content-length.
+
+---
+
+## 10. Rev. 4: production-readiness audit against Problem Statement 02 (2026-09-29)
+
+Source of truth: the PS 02 text (Cloudinary track). Audited every PS requirement against the code, not against the UI, and fixed what was safe to fix. Gate on this branch: `tsc` clean, lint 0 errors, build passes, **e2e 72 passed / 8 skipped (live AI, no key) / 0 failed**, `ai-smoke` passes (`npx tsx scripts/ai-smoke.ts` locally, `bun` in CI).
+
+### PS requirement coverage
+
+| # | PS requirement | Status | What is true in the code |
+|---|---|---|---|
+| R1 | Analyze and organize large image + video collections | **PARTIAL** | Per-asset VLM analysis works (video via ffmpeg frames). Organization into projects is manual (upload picker / bulk assign). Analysis runs inside the HTTP request (worker pool of 3, 200 ids max). `GET /api/media` has no offset/cursor, so a library past 500 assets cannot be paged. |
+| R2 | Identify projects, activities, locations, visual signals | **PARTIAL** | Activity, category, signals, objects, mood, OCR are extracted. `location` is a model guess of a location *type* ("rural hillside, East Africa"), not a place. No EXIF GPS. `projectName` is free text and never matched to the org's real projects. |
+| R3 | Before/after comparison | **COMPLETE** | Slider, AI-described changes, score, history. The score is the model's opinion, not a measurement. Pairs are chosen by hand. |
+| R4 | Searchable via AI metadata, tags, semantic discovery | **PARTIAL** | Rich metadata + filters + LLM ranking. Ranking pastes the catalog into one prompt (no embeddings). Now capped to 120 candidates and falls back to keyword ranking, but the ceiling is a few thousand assets. |
+| R5 | Visual reports, summaries, campaign content | **PARTIAL** | Was text-only, with model-invented KPIs. Now grounded, with counted facts, and the print/PDF report carries the numbered evidence. The public share page is still text-only (decision needed). |
+| R6 | Traceability to source assets and transformations | **COMPLETE** (Cloudinary path not exercised live) | The untransformed Cloudinary original is now stored in `originalUrl` (it was discarded, only the `f_auto,q_auto` derivative was kept), with delivery params in the evidence chain. Reports list their source assets with `publicId`. |
+| R7 | Built on Cloudinary | **PARTIAL** | Storage + delivery transforms + EXIF capture date + derived previews. Not used: Cloudinary AI (tagging, moderation, video intelligence), signed/private delivery. |
+
+### Findings and fixes
+
+| Sev | Finding | Fix |
+|---|---|---|
+| **P0** | `next` 16.1.3 and `next-auth` 4.24.14 carried **critical** advisories (unauthenticated RCE, middleware/proxy bypass, homoglyph email bypass) | Upgraded to `next` 16.3.7, `next-auth` 4.24.15, `eslint-config-next` 16.3.7. `npm audit --omit=dev`: critical 2 → 0 |
+| **P1** | Reports and campaigns published model-invented KPIs ("plausible KPIs", "trees_planted: 250") next to real evidence; the "Data-first" campaign angle asked for a "striking metric" | Prompts forbid estimates and require grounding. Every report now also carries counted facts (`evidence_assets`, `human_verified`, `period`) that the model cannot override. Metrics are validated to primitives (an object value used to crash the share page) |
+| **P1** | Malformed model replies were saved as if they were results: analysis stored `"Field media asset" / "Unassigned" / confidence 0.4` and set `analyzedAt`; comparisons stored a made-up 50% score; reports stored raw text as the narrative; campaign variants were padded with "Campaign headline" filler | `analyzeMedia`, `compareImages`, `generateReport`, `semanticSearch` validate and normalize (clamped scores, category allowlist, comma-safe tags), or **throw**. Callers already handle failure |
+| **P1** | Semantic search sent the entire org catalog to one LLM call and returned a 500 whenever the provider failed; invented ids were passed through | Keyword shortlist caps the prompt; hallucinated/duplicate ids are dropped; on any AI failure the route answers with keyword results (`degraded: true`, shown in the UI). `query` is validated (string, ≤300 chars) |
+| **P1** | Printable/PDF report had no images and no source list: "visual reports" and "traceability" stopped at the report boundary | Evidence appendix: the assets the report was written from, numbered as the narrative cites them, with capture date, verification state and `publicId`. Org-scoped |
+| **P1** | Cloudinary uploads discarded the original URL, `width`/`height`, and ignored EXIF, so a bulk upload put every photo on the upload date in the timeline | `originalUrl`, dimensions and EXIF `DateTimeOriginal` (validated) are stored; a `cloudinary-delivery` step is added to the evidence chain. An invalid `captureDate` is now a 400, not a 500 |
+| **P1** | Library grid loaded full-size originals (no thumbnails were ever generated), and video cards rendered a broken `<img src="clip.mp4">` | Cloudinary previews derived in the serializer (640 px image, first-frame JPEG for video); detail views keep the full image; local videos render their first frame |
+| **P1** | No per-org AI spend limit (open item from Rev. 3) | `AI_DAILY_CALL_CAP` (default 2000 calls per org per rolling 24 h, `0` = off), checked before every provider call. Verified against a real SQLite DB |
+| **P1** | No login throttling (PRD non-functional requirement; open in Rev. 3); every guess also runs a blocking `scryptSync` | 10 failed attempts per IP+email per 15 min, failures only, so normal sign-ins never trip it |
+| P2 | Bulk analyze ran strictly one at a time; duplicate ids could race on one row | Worker pool of 3, ids de-duplicated |
+| P2 | No health probe | `GET /api/health` (public, no detail): 200 `ok` / 503 `unavailable` |
+| P2 | `assetIds` for reports was unbounded (prompt size and spend) | Strings only, max 60 |
+| P2 | In-memory rate limiter kept empty keys forever | Bounded map, empty keys dropped |
+
+New tests: `e2e/prod-readiness.spec.ts` (5), plus 31 new assertions in `scripts/ai-smoke.ts` (junk replies throw, normalization, ID hallucination, keyword ranking, EXIF parser, preview URLs).
+
+### Needs a decision or information (not changed)
+
+1. **Rotate the Cloudinary credential** (still in git history, commit `51de907`). Owner action.
+2. **Public share page shows no evidence images.** Adding them would expose asset URLs to anyone holding the link. Product/privacy call: all, verified-only, or none.
+3. **Cloudinary delivery is public.** Assets are `type: upload`, so anyone with a URL can read it, while local `./uploads` are org-checked. Switching to `authenticated` + signed URLs makes both consistent but changes every media URL.
+4. **Auto-assign uploads to projects?** Needs a policy: silently assign, or only suggest. Wrong auto-attribution of evidence is worse than none.
+5. **Embeddings / vector search** past a few thousand assets: needs an embeddings provider and a store (Postgres + pgvector, or an external index).
+6. **Job queue + Postgres + shared rate limit store** before any multi-instance or large-batch use. Blocked on the undecided deploy target.
+7. **Pagination** of the library (cursor + infinite scroll) is a UI change.
+8. **GPS geotagging** (EXIF → lat/lng) needs schema columns on `MediaAsset`.
+9. **Local-fallback thumbnails** (sharp) if the fallback is meant to be a real deployment mode.
+10. **Remaining advisories** (`npm audit --omit=dev`: 10 high, mostly the Prisma CLI toolchain and `sharp`, which needs a 0.34 → 0.35 major bump and a HEIC/AVIF upload test). `bun.lock` is now stale relative to `package.json`; CI uses `package-lock.json`. Drop one lockfile.
+11. **Not verified live:** the Cloudinary `image_metadata` request and response fields are implemented from the SDK/API contract but were not exercised against a real account (no credentials in this environment).
+12. **No backups, structured logging or metrics** for the SQLite database and AI calls.

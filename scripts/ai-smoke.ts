@@ -2,7 +2,10 @@
 // Stubs global fetch and asserts request shape, size fallback, and response parsing.
 // Run: bun scripts/ai-smoke.ts
 import assert from "node:assert";
-import { chat, generateImage } from "../src/lib/ai";
+import { analyzeMedia, chat, compareImages, generateImage, generateReport, lexicalHits, semanticSearch } from "../src/lib/ai";
+import { assertAiBudget, withAiScope } from "../src/lib/ai-usage";
+import { parseExifDate } from "../src/lib/cloudinary";
+import { cdnThumbnail } from "../src/lib/serialize";
 
 process.env.AI_PROVIDER = "openai"; // steps 1-4 exercise the OpenAI-style path; default (gemini) is step 8
 process.env.AI_BASE_URL = "https://example.test/v1/";
@@ -166,6 +169,80 @@ async function main() {
   assert.equal(g2.buffer.toString(), "gimg");
   assert.equal((calls[3].body.generationConfig as { imageConfig?: unknown }).imageConfig, undefined);
   assert.equal(calls.length, 4);
+
+  // 10. model output is validated, never invented: junk throws, partial JSON is normalized
+  let reply = "";
+  let lastPrompt = "";
+  (globalThis as { fetch: unknown }).fetch = async (_url: string, init: { body: string }) => {
+    lastPrompt = JSON.stringify(JSON.parse(init.body).messages);
+    return { ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: reply } }] }) };
+  };
+  const IMG = "https://example.test/a.jpg";
+
+  reply = "Sorry, I can't help with that.";
+  await assert.rejects(() => analyzeMedia(IMG, "image"), /unparseable/);
+  await assert.rejects(() => compareImages(IMG, IMG), /unparseable/);
+  await assert.rejects(() => generateReport({ type: "impact", tone: "professional", assets: [] }), /unparseable/);
+  await assert.rejects(() => semanticSearch("q", [{ id: "a", caption: "c", summary: "", tags: [] }]), /unparseable/);
+
+  reply = JSON.stringify({ caption: "Saplings in rows", confidence: 7, qualityScore: -2, category: "made-up", tags: ["Tree, Planting", 5, " "], signals: [{ label: "canopy", confidence: 3 }, "junk"] });
+  const an = await analyzeMedia(IMG, "image");
+  assert.equal(an.caption, "Saplings in rows");
+  assert.equal(an.confidence, 1); // clamped, not stored as 7
+  assert.equal(an.qualityScore, 0);
+  assert.equal(an.category, "other"); // off-list category
+  assert.deepEqual(an.tags, ["tree planting"]); // comma would split the CSV column; non-strings dropped
+  assert.deepEqual(an.signals, [{ label: "canopy", confidence: 1, category: "environment" }]);
+  assert.deepEqual(an.objects, []); // missing array -> [], callers never see undefined
+
+  reply = JSON.stringify({ narrative: "Visible regrowth.", impactScore: 9, changes: [{ aspect: "cover" }, 3] });
+  const cmp = await compareImages(IMG, IMG);
+  assert.equal(cmp.impactScore, 1);
+  assert.equal(cmp.changes.length, 1);
+
+  // 11. reports: grounded prompt, primitive-only metrics, no filler defaults
+  reply = JSON.stringify({ title: "T", narrative: "N", metrics: { trees: 250, nested: { a: 1 }, list: [1], ok: "12 ha", nan: null } });
+  const rep = await generateReport({ type: "impact", tone: "professional", assets: [{ caption: "c", summary: "s", tags: [] }] });
+  assert.deepEqual(rep.metrics, { trees: 250, ok: "12 ha" });
+  assert.equal(rep.headline, ""); // not a fabricated "Impact report generated."
+  assert.match(lastPrompt, /never estimate, extrapolate or invent a number/);
+  assert.match(lastPrompt, /GROUNDING/);
+
+  // 12. semantic search: invented/duplicate ids dropped, scores clamped
+  reply = JSON.stringify({ hits: [{ assetId: "ghost", score: 1 }, { assetId: "a", score: 5, reason: "r" }, { assetId: "a", score: 0.1 }, { assetId: "b" }] });
+  const sr = await semanticSearch("q", [
+    { id: "a", caption: "c", summary: "", tags: [] },
+    { id: "b", caption: "c", summary: "", tags: [] },
+  ]);
+  assert.deepEqual(sr, [{ assetId: "a", score: 1, reason: "r" }, { assetId: "b", score: 0, reason: "" }]);
+
+  // 13. keyword ranking (the no-AI / oversized-library path)
+  const cat = [
+    { id: "solar", caption: "Rooftop panels", summary: "", tags: ["solar", "energy"], activity: "solar installation" },
+    { id: "trees", caption: "Volunteers planting saplings", summary: "", tags: ["reforestation"], location: "hillside" },
+    { id: "misc", caption: "Office", summary: "", tags: [] },
+  ];
+  assert.deepEqual(lexicalHits("solar energy", cat).map((h) => h.assetId), ["solar"]);
+  assert.deepEqual(lexicalHits("plant", cat).map((h) => h.assetId), ["trees"]); // substring: plant ⊂ planting
+  assert.deepEqual(lexicalHits("!", cat), []);
+  assert.deepEqual(lexicalHits("the of for", cat), []); // filler words alone match nothing
+  assert.deepEqual(lexicalHits("photos of solar", cat).map((h) => h.assetId), ["solar"]);
+  assert.match(lexicalHits("solar", cat)[0].reason, /solar/);
+
+  // 14. Cloudinary helpers: EXIF dates, preview URLs
+  assert.equal(parseExifDate("2024:03:09 14:05:59")?.toISOString(), "2024-03-09T14:05:59.000Z");
+  assert.equal(parseExifDate("0000:00:00 00:00:00"), null); // unset camera clock
+  assert.equal(parseExifDate("2999:01:01 00:00:00"), null);
+  assert.equal(parseExifDate(undefined), null);
+  const base = "https://res.cloudinary.com/demo/";
+  assert.equal(cdnThumbnail(`${base}image/upload/f_auto,q_auto/v1/impactlens/a.jpg`, "image"), `${base}image/upload/c_limit,w_640,f_auto,q_auto/v1/impactlens/a.jpg`);
+  assert.equal(cdnThumbnail(`${base}video/upload/f_auto,q_auto/v1/impactlens/a.mp4`, "video"), `${base}video/upload/so_0,c_limit,w_640,f_jpg,q_auto/v1/impactlens/a.jpg`);
+  assert.equal(cdnThumbnail("/uploads/upload_x.jpg", "image"), null); // local media has no CDN preview
+
+  // 15. spend cap is a no-op without an org scope or when disabled (DB path is covered in e2e/prod-readiness)
+  await assertAiBudget();
+  process.env.AI_DAILY_CALL_CAP = "0";
+  await withAiScope({ orgId: "org" }, () => assertAiBudget());
 
   console.log("ai-smoke: all assertions passed");
 }

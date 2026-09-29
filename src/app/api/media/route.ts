@@ -8,6 +8,7 @@ import { getAuthContext, unauthorized } from "@/lib/auth";
 import { serializeAsset } from "@/lib/serialize";
 import { withAiScope } from "@/lib/ai-usage";
 import type { Prisma } from "@prisma/client";
+import type { TransformStep } from "@/lib/types";
 import { posix } from "node:path";
 
 function rand(len: number) {
@@ -200,10 +201,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "url must be a data: or http(s) URL" }, { status: 400 });
     }
 
+    const captured = captureDate ? new Date(captureDate) : null;
+    if (captured && Number.isNaN(+captured)) {
+      return NextResponse.json({ error: "Invalid captureDate" }, { status: 400 });
+    }
+
     let finalUrl = rawUrl;
     let bytes: number | null = null;
     let format: string | null = null;
-    let cloudPublicId: string | null = null;
+    let cdn: Awaited<ReturnType<typeof uploadToCloudinary>> = null;
 
     if (rawUrl.startsWith("data:")) {
       // ponytail: cap inline uploads at ~10MB binary (base64 ≈ 4/3 + prefix);
@@ -216,10 +222,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid data URL" }, { status: 400 });
       }
       // F2: Cloudinary first (f_auto,q_auto CDN URL); local public/uploads is the fallback.
-      const cdn = await uploadToCloudinary(decoded.buffer, decoded.ext);
+      cdn = await uploadToCloudinary(decoded.buffer, decoded.ext);
       if (cdn) {
         finalUrl = cdn.url;
-        cloudPublicId = cdn.publicId;
       } else {
         finalUrl = saveUpload(decoded.buffer, decoded.ext).url;
       }
@@ -231,12 +236,20 @@ export async function POST(req: NextRequest) {
       if (m) format = m[1].toLowerCase().replace("jpeg", "jpg");
     }
 
-    const publicId = cloudPublicId ?? `impactlens/${Date.now()}-${rand(6)}`;
+    const publicId = cdn?.publicId ?? `impactlens/${Date.now()}-${rand(6)}`;
     const now = new Date();
 
-    const transforms = [
+    const transforms: TransformStep[] = [
       { type: "upload", at: now.toISOString(), note: source || (rawUrl.startsWith("data:") ? "browser upload" : "external url") },
     ];
+    if (cdn) {
+      transforms.push({
+        type: "cloudinary-delivery",
+        at: now.toISOString(),
+        params: { publicId: cdn.publicId, transformation: "f_auto,q_auto" },
+        note: "original stored untouched (originalUrl); the displayed URL is a derived delivery",
+      });
+    }
 
     // Detect video from format/extension
     const isVideo = isVideoMedia(finalUrl, format);
@@ -249,11 +262,13 @@ export async function POST(req: NextRequest) {
       url: finalUrl,
       format,
       bytes,
+      width: cdn?.width,
+      height: cdn?.height,
       source: source || "upload",
-      originalUrl: rawUrl.startsWith("data:") ? null : rawUrl,
+      originalUrl: cdn?.originalUrl ?? (rawUrl.startsWith("data:") ? null : rawUrl),
       transformations: JSON.stringify(transforms),
       verified: false,
-      captureDate: captureDate ? new Date(captureDate) : null,
+      captureDate: captured ?? cdn?.capturedAt ?? null,
       pairGroup: pairGroup || null,
       pairRole: pairRole || null,
       project: projectId ? { connect: { id: projectId } } : undefined,

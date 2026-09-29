@@ -189,6 +189,7 @@ export function SearchTab() {
                     : `${searchQ.data.hits.length} result${
                         searchQ.data.hits.length === 1 ? "" : "s"
                       } for “${query}”`}
+                  {searchQ.data.degraded && " — AI ranking unavailable, showing keyword matches"}
                 </p>
                 {searchQ.data.hits.length > 0 && (
                   <Button

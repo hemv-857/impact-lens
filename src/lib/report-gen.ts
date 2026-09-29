@@ -31,6 +31,21 @@ export interface ReportRequest {
   angles?: string[];
 }
 
+/**
+ * Numbers a reader can trust because we count them, not the model: they go on every
+ * report next to whatever figures the model quotes from the evidence.
+ */
+export function evidenceFacts(
+  assets: { verified: boolean; captureDate: Date | null; createdAt: Date }[]
+): Record<string, string | number> {
+  const days = assets.map((a) => (a.captureDate ?? a.createdAt).toISOString().slice(0, 10)).sort();
+  return {
+    evidence_assets: assets.length,
+    human_verified: assets.filter((a) => a.verified).length,
+    period: days[0] === days[days.length - 1] ? days[0] : `${days[0]} → ${days[days.length - 1]}`,
+  };
+}
+
 export interface GeneratedReports {
   reports: Report[];
   warning: string | null;
@@ -41,7 +56,8 @@ export async function generateReportsForOrg(
   req: ReportRequest
 ): Promise<GeneratedReports> {
   const variants = Math.max(1, Math.min(4, parseInt(String(req.variantCount ?? 1), 10) || 1));
-  const assetIds = Array.isArray(req.assetIds) ? req.assetIds : [];
+  // strings only, and a hard cap: every asset becomes prompt text (and provider spend)
+  const assetIds = (Array.isArray(req.assetIds) ? req.assetIds : []).filter((x): x is string => typeof x === "string").slice(0, 60);
 
   const [project, comparison, explicitAssets] = await Promise.all([
     req.projectId
@@ -103,7 +119,7 @@ export async function generateReportsForOrg(
             headline: output.headline,
             summary: output.summary,
             narrative: output.narrative,
-            metrics: JSON.stringify(output.metrics || {}),
+            metrics: JSON.stringify({ ...output.metrics, ...evidenceFacts(assets) }),
             mediaIds: JSON.stringify(assets.map((a) => a.id)),
             callToAction: output.callToAction,
             tone: req.tone,
