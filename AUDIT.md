@@ -183,7 +183,7 @@ Six scoped `security-audit` passes ran in parallel (P1–P6 in `SECURITY-PHASES.
 | MEDIUM | Uploads under `public/` present at boot were served by Next's static layer, skipping that org check | P7 | **FIXED**: uploads moved to `<cwd>/uploads`, outside `public/` (`publicFilePath` maps `/uploads/*` there) |
 | MEDIUM | Delete paths could unlink shared `field-media` or out-of-uploads files; bulk delete left files behind | P3 | **FIXED** |
 | MEDIUM | Video-fetch SSRF guard checked the hostname string only, so DNS names that resolve to private IPs passed | P4 | **FIXED**: the resolved address is checked and pinned (`guardedLookup`/`guardedGet`) |
-| MEDIUM | Provider-returned image URL fetched with no SSRF guard, size cap or timeout | P7 | **FIXED**: goes through `guardedGet` (20 MB, 30 s) |
+| MEDIUM | Provider-returned image URL fetched with no SSRF guard, size cap or timeout | P7 | **FIXED**: private-host check, no redirects, 30 s timeout, 20 MB cap (hostname-level; the URL comes from the operator-configured provider) |
 | MEDIUM | ffmpeg/ffprobe on member bytes with no demuxer limits: a crafted HLS/concat playlist could make ffmpeg read files or URLs | P7 | **FIXED**: `-protocol_whitelist file -format_whitelist <video containers>`. Verified locally: mp4/webm pass, an m3u8 disguised as `.mp4` is rejected |
 | LOW | Inline upload extension came from the member-chosen MIME subtype (`data:image/html`) | P3 | **FIXED**: media extension allowlist |
 | LOW | Schedule `emailTo` could be any address (the org's sender becomes a relay) | P3/P7 | **FIXED**: must be an org member on create and edit, and is re-checked at send time |
