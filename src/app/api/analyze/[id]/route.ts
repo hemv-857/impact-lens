@@ -27,7 +27,8 @@ export async function POST(
     try {
       analysis = await withAiScope(auth, () => analyzeMedia(asset.url, mediaType));
     } catch (e) {
-      let message = e instanceof Error ? e.message : "VLM analysis failed";
+      console.error(e);
+      let message = "VLM analysis failed";
       if (mediaType === "video") {
         message += (e as { framesUsed?: boolean }).framesUsed
           ? " — frame-sampling ran; the vision provider rejected the request (check OPENROUTER_API_KEY credits/balance)."
@@ -79,7 +80,7 @@ export async function POST(
 
     return NextResponse.json(serializeAsset(updated));
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

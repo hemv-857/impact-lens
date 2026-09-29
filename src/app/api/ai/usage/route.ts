@@ -10,7 +10,8 @@ export async function GET() {
 
     const where = { orgId: auth.orgId };
     const [items, total, ok, avg, byUserRows] = await Promise.all([
-      db.aiUsageLog.findMany({ where, orderBy: { createdAt: "desc" }, take: 50 }),
+      // provider error text stays server-side (the panel never shows it)
+      db.aiUsageLog.findMany({ where, orderBy: { createdAt: "desc" }, take: 50, omit: { error: true } }),
       db.aiUsageLog.count({ where }),
       db.aiUsageLog.count({ where: { ...where, ok: true } }),
       db.aiUsageLog.aggregate({ where, _avg: { durationMs: true } }),
@@ -42,7 +43,7 @@ export async function GET() {
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

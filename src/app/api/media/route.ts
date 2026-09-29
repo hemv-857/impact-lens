@@ -8,6 +8,7 @@ import { getAuthContext, unauthorized } from "@/lib/auth";
 import { serializeAsset } from "@/lib/serialize";
 import { withAiScope } from "@/lib/ai-usage";
 import type { Prisma } from "@prisma/client";
+import { posix } from "node:path";
 
 function rand(len: number) {
   return Math.random().toString(36).slice(2, 2 + len);
@@ -16,20 +17,22 @@ function rand(len: number) {
 // Decode a data: URL into a buffer + extension (images and videos).
 const MIME_EXT: Record<string, string> = {
   jpeg: "jpg",
-  "svg+xml": "svg",
   quicktime: "mov",
   "x-matroska": "mkv",
   "3gpp": "3gp",
   "x-msvideo": "avi",
   "mp2t": "mpg",
 };
+const UPLOAD_EXTS = new Set(["png", "jpg", "webp", "gif", "avif", "bmp", "heic", "heif", "tiff", "mp4", "webm", "mov", "m4v", "mkv", "avi", "3gp", "mpg"]);
 function decodeDataUrl(dataUrl: string): { buffer: Buffer; ext: string } | null {
   const m = dataUrl.match(/^data:((?:image|video)\/([a-zA-Z0-9.+-]+));base64,(.+)$/);
   if (!m) return null;
   const mimeSub = m[2].toLowerCase();
-  // SECURITY: SVGs carry script — never accept them (served same-origin they'd be stored XSS)
-  if (mimeSub.includes("svg")) return null;
-  const ext = (MIME_EXT[mimeSub] || mimeSub).replace(/[^a-z0-9]/g, "").slice(0, 8) || "bin";
+  // SECURITY: the subtype becomes the saved file's extension — allowlist media only.
+  // SVG carries script, and `data:image/html` would land as upload_*.html, which
+  // the static layer serves as text/html after a restart (stored XSS).
+  const ext = MIME_EXT[mimeSub] || mimeSub;
+  if (!UPLOAD_EXTS.has(ext)) return null;
   return { buffer: Buffer.from(m[3], "base64"), ext };
 }
 
@@ -147,8 +150,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(rows.map(serializeAsset));
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
 
@@ -163,7 +166,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File too large — maximum 10MB" }, { status: 413 });
     }
     const body = await req.json().catch(() => null);
-    if (!body || typeof body !== "object" || !body.url) {
+    if (!body || typeof body !== "object" || !body.url || typeof body.url !== "string") {
       return NextResponse.json({ error: "Missing required field: url" }, { status: 400 });
     }
     const {
@@ -188,6 +191,13 @@ export async function POST(req: NextRequest) {
 
     if (projectId && !(await orgOwnsProject(auth.orgId, projectId))) {
       return NextResponse.json({ error: "Unknown project" }, { status: 400 });
+    }
+
+    // SECURITY: /uploads/* files belong to the org whose upload created them; a
+    // client-supplied path there would let another org read (analyze, /uploads
+    // route) or unlink them. Normalized + lowercased: the FS may be case-insensitive.
+    if (posix.normalize("/" + rawUrl).toLowerCase().startsWith("/uploads/")) {
+      return NextResponse.json({ error: "url must be a data: or http(s) URL" }, { status: 400 });
     }
 
     let finalUrl = rawUrl;
@@ -270,13 +280,13 @@ export async function POST(req: NextRequest) {
         asset = updated;
       } catch (e) {
         // Swallow analysis error — asset still exists. Mark as failed transform.
-        const msg = e instanceof Error ? e.message : "analyze failed";
+        console.error(e);
         await db.mediaAsset.update({
           where: { id: asset.id },
           data: {
             transformations: JSON.stringify([
               ...transforms,
-              { type: "ai-analyze", at: new Date().toISOString(), note: `failed: ${msg}` },
+              { type: "ai-analyze", at: new Date().toISOString(), note: "failed" },
             ]),
           },
         });
@@ -285,7 +295,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(serializeAsset(asset), { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

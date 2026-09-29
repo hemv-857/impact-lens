@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
     try {
       hits = await withAiScope(auth, () => semanticSearch(query, catalog));
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Semantic search failed";
-      return NextResponse.json({ error: message }, { status: 500 });
+      console.error(e);
+      return NextResponse.json({ error: "Semantic search failed" }, { status: 500 });
     }
 
     const top = hits.slice(0, limit);
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ hits: resultHits });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

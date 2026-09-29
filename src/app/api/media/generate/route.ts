@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
     try {
       gen = await withAiScope(auth, () => generateImage(prompt, genSize));
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "image generation failed";
-      return NextResponse.json({ error: `Image generation failed: ${msg}` }, { status: 502 });
+      console.error(e);
+      return NextResponse.json({ error: "Image generation failed" }, { status: 502 });
     }
 
     // 2. Persist to /public/uploads/
@@ -126,13 +126,13 @@ export async function POST(req: NextRequest) {
         });
         asset = updated;
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "analyze failed";
+        console.error(e);
         await db.mediaAsset.update({
           where: { id: asset.id },
           data: {
             transformations: JSON.stringify([
               ...transforms,
-              { type: "ai-analyze", at: new Date().toISOString(), note: `failed: ${msg}` },
+              { type: "ai-analyze", at: new Date().toISOString(), note: "failed" },
             ]),
           },
         });
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(serializeAsset(asset), { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

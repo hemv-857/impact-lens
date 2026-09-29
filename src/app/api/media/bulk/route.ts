@@ -1,7 +1,7 @@
 // POST /api/media/bulk — apply an action to many assets at once.
 // Body: { ids: string[], action: "analyze"|"verify"|"unverify"|"delete"|"assign", projectId? }
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, removeAssetStorage } from "@/lib/db";
 import { analyzeMedia } from "@/lib/ai";
 import { serializeAsset } from "@/lib/serialize";
 import { getAuthContext, unauthorized } from "@/lib/auth";
@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     if (!body || !Array.isArray(body.ids) || body.ids.length === 0) {
       return NextResponse.json({ error: "ids (non-empty string[]) required" }, { status: 400 });
     }
-    const ids: string[] = body.ids.slice(0, 200); // hard cap
+    // strings only: an object like {"not": ""} would become a Prisma filter and match every row
+    const ids: string[] = body.ids.filter((x: unknown) => typeof x === "string").slice(0, 200); // hard cap
     const action: string = body.action;
     const projectId: string | undefined = body.projectId;
     const validActions = ["analyze", "verify", "unverify", "delete", "assign", "favorite", "unfavorite"];
@@ -30,11 +31,14 @@ export async function POST(req: NextRequest) {
     if (action === "delete") {
       for (const id of ids) {
         try {
-          const del = await db.mediaAsset.deleteMany({ where: { id, orgId: auth.orgId } });
-          if (del.count === 0) throw new Error("not found");
+          const asset = await db.mediaAsset.findFirst({ where: { id, orgId: auth.orgId } });
+          if (!asset) throw new Error("not found");
+          await db.mediaAsset.delete({ where: { id } });
+          // same storage cleanup as DELETE /api/media/[id]
+          await removeAssetStorage(asset);
           results.push({ id, ok: true });
         } catch (e) {
-          results.push({ id, ok: false, error: e instanceof Error ? e.message : "delete failed" });
+          results.push({ id, ok: false, error: "delete failed" });
         }
       }
       return NextResponse.json({ action, processed: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok).length, results });
@@ -120,7 +124,7 @@ export async function POST(req: NextRequest) {
           results.push({ id, ok: true });
           processed++;
         } catch (e) {
-          results.push({ id, ok: false, error: e instanceof Error ? e.message : "analyze failed" });
+          results.push({ id, ok: false, error: "analyze failed" });
           failed++;
         }
       }
@@ -129,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ error: "unreachable" }, { status: 500 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

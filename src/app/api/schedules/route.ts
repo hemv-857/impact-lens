@@ -1,7 +1,7 @@
 // GET  /api/schedules — list the org's report schedules
 // POST /api/schedules — create one { type?, tone?, projectId?, audience?, everyDays?, emailTo? }
 import { NextRequest, NextResponse } from "next/server";
-import { db, orgOwnsProject } from "@/lib/db";
+import { db, orgHasMemberEmail, orgOwnsProject } from "@/lib/db";
 import { getAuthContext, unauthorized } from "@/lib/auth";
 
 const VALID_TYPES = ["impact", "summary", "campaign", "comparison"] as const;
@@ -34,8 +34,8 @@ export async function GET() {
     });
     return NextResponse.json(rows.map(serialize));
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
 
@@ -76,8 +76,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unknown project" }, { status: 400 });
     }
     const days = Math.max(1, Math.min(90, parseInt(String(everyDays), 10) || 7));
-    if (emailTo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTo)) {
-      return NextResponse.json({ error: "emailTo must be a valid email" }, { status: 400 });
+    // SECURITY: the cron mails org report content here — members only, so a schedule
+    // can't turn the org's sender into a relay to arbitrary outside addresses.
+    if (emailTo && (typeof emailTo !== "string" || !(await orgHasMemberEmail(auth.orgId, emailTo)))) {
+      return NextResponse.json({ error: "emailTo must be the email of a member of this organization" }, { status: 400 });
     }
 
     const row = await db.reportSchedule.create({
@@ -89,12 +91,12 @@ export async function POST(req: NextRequest) {
         projectId: projectId || null,
         audience: audience || null,
         everyDays: days,
-        emailTo: emailTo || null,
+        emailTo: emailTo ? emailTo.trim().toLowerCase() : null,
       },
     });
     return NextResponse.json(serialize(row), { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

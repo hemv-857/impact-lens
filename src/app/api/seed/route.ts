@@ -11,6 +11,7 @@ import { analyzeImage } from "@/lib/ai";
 import fs from "fs";
 import path from "path";
 import { getAuthContext, unauthorized } from "@/lib/auth";
+import { withAiScope } from "@/lib/ai-usage";
 
 type PairKey = "before" | "after";
 
@@ -312,7 +313,7 @@ export async function POST() {
 
       // Analyze via VLM (long-running per image — that's fine for a seed).
       try {
-        const analysis = await analyzeImage(url);
+        const analysis = await withAiScope(auth, () => analyzeImage(url));
         const updated = await db.mediaAsset.update({
           where: { id: asset.id },
           data: {
@@ -340,13 +341,13 @@ export async function POST() {
         analyzed.push(updated.id);
       } catch (e) {
         // Analysis failed for this asset — leave the asset unanalyzed and continue.
-        const msg = e instanceof Error ? e.message : "analyze failed";
+        console.error(e);
         await db.mediaAsset.update({
           where: { id: asset.id },
           data: {
             transformations: JSON.stringify([
               ...transforms,
-              { type: "ai-analyze", at: new Date().toISOString(), note: `seed failed: ${msg}` },
+              { type: "ai-analyze", at: new Date().toISOString(), note: "seed failed" },
             ]),
           },
         });
@@ -361,9 +362,9 @@ export async function POST() {
       skipped,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(err);
     return NextResponse.json(
-      { ok: false, error: message, projectsCreated, assetsCreated, analyzed, skipped },
+      { ok: false, error: "Internal error", projectsCreated, assetsCreated, analyzed, skipped },
       { status: 500 }
     );
   }

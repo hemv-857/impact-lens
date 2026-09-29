@@ -21,8 +21,8 @@ export async function GET(
     if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(serializeProject(project));
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
 
@@ -79,8 +79,8 @@ export async function PATCH(
     });
     return NextResponse.json(serializeProject(updated));
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
 
@@ -97,7 +97,7 @@ export async function DELETE(
     await db.project.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

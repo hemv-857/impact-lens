@@ -1,7 +1,7 @@
 // PATCH /api/schedules/[id] — toggle active / edit interval + recipient
 // DELETE /api/schedules/[id] — remove a schedule
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, orgHasMemberEmail } from "@/lib/db";
 import { getAuthContext, unauthorized } from "@/lib/auth";
 
 export async function PATCH(
@@ -28,7 +28,13 @@ export async function PATCH(
     if (body.everyDays !== undefined) {
       data.everyDays = Math.max(1, Math.min(90, parseInt(String(body.everyDays), 10) || 7));
     }
-    if (body.emailTo !== undefined) data.emailTo = body.emailTo ? String(body.emailTo) : null;
+    if (body.emailTo !== undefined) {
+      // same members-only rule as POST /api/schedules
+      if (body.emailTo && (typeof body.emailTo !== "string" || !(await orgHasMemberEmail(auth.orgId, body.emailTo)))) {
+        return NextResponse.json({ error: "emailTo must be the email of a member of this organization" }, { status: 400 });
+      }
+      data.emailTo = body.emailTo ? body.emailTo.trim().toLowerCase() : null;
+    }
     if (body.name !== undefined) data.name = body.name ? String(body.name).slice(0, 120) : null;
     if (body.audience !== undefined) data.audience = body.audience ? String(body.audience) : null;
 
@@ -39,8 +45,8 @@ export async function PATCH(
       createdAt: updated.createdAt.toISOString(),
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
 
@@ -60,7 +66,7 @@ export async function DELETE(
     await db.reportSchedule.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
