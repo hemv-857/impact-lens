@@ -22,8 +22,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Prisma generate + schema sync
-        run: npm run db:push
+      - name: Prisma generate + schema sync (sanitized fixture DB)
+        run: mkdir -p db && cp e2e/fixtures/seed.db db/seed.db && npm run db:push
         env:
           DATABASE_URL: file:${{ github.workspace }}/db/seed.db
 
@@ -45,16 +45,16 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       # NEXTAUTH_SECRET / CRON_SECRET live in gitignored .env.local — generate
-      # per-run so login + cron tests work without repo secrets. public/uploads
-      # is also gitignored (F7): materialize whatever the committed DB references
-      # from committed field-media so seeded assets don't 404 in the journey.
+      # per-run so login + cron tests work without repo secrets. Uploads are
+      # gitignored: materialize whatever the fixture DB references from committed
+      # field-media into the standalone server's ./uploads so seeded assets don't 404.
       - name: Generate CI-only env (secrets + seeded uploads)
         run: |
           {
             echo "NEXTAUTH_SECRET=$(openssl rand -hex 32)"
             echo "CRON_SECRET=$(openssl rand -hex 32)"
           } >> .env.local
-          mkdir -p public/uploads
+          mkdir -p .next/standalone/uploads
           python3 - <<'EOF'
           import os, shutil, sqlite3
           srcs = sorted(os.listdir("public/field-media"))
@@ -62,16 +62,13 @@ jobs:
           rows = con.execute("SELECT url FROM MediaAsset WHERE url LIKE '/uploads/%'").fetchall()
           for (url,) in rows:
               name = os.path.basename(url.split("?")[0])
-              dst = f"public/uploads/{name}"
+              dst = f".next/standalone/uploads/{name}"
               if name and not os.path.exists(dst) and srcs:
                   shutil.copy(f"public/field-media/{srcs[0]}", dst)
                   print(f"materialized {dst} (seeded asset referenced {url})")
           print(f"{len(rows)} DB-referenced upload(s)")
           EOF
-          [ -n "$(ls -A public/uploads 2>/dev/null)" ] || echo "ci placeholder" > public/uploads/ci-placeholder.txt
-          # build already copied public/ into standalone — mirror the seeded files there too
-          mkdir -p .next/standalone/public/uploads
-          cp public/uploads/* .next/standalone/public/uploads/
+          [ -n "$(ls -A .next/standalone/uploads 2>/dev/null)" ] || echo "ci placeholder" > .next/standalone/uploads/ci-placeholder.txt
 
       - name: Start production server
         run: |

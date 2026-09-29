@@ -164,3 +164,45 @@ the window refills.
 7. Rate limits beyond signup (login, AI endpoints) — in-memory only, single-instance ceiling noted in `rate-limit.ts`.
 8. Multi-instance rate limiting requires a shared store (Redis/Upstash) — `ponytail:` comment in `src/lib/rate-limit.ts`.
 9. F13 scale posture (Postgres + worker queue) only when deploying multi-instance.
+
+---
+
+## 9. Rev. 3: phased security audit (2026-09-29)
+
+Six scoped `security-audit` passes ran in parallel (P1–P6 in `SECURITY-PHASES.md`), followed by consolidation (P7). Every P7 item carries a regression check in `e2e/sec-p*.spec.ts`.
+
+**Gate on the merged branch:**
+- `tsc` and `lint` are clean, and the build passes.
+- e2e: **67 passed**, 8 skipped (LIVE AI, no key), **0 failed**, run against the sanitized fixture DB.
+
+| Sev | Finding | Phase | Status |
+|---|---|---|---|
+| **HIGH** | `Caddyfile` `?XTransformPort=<n>` reverse-proxied any client to any loopback port, unauthenticated | P1 | **FIXED**: block removed |
+| **HIGH** | Public repo shipped `db/custom.db` (demo password, live invite code). The release scripts packaged it, and `start.sh` defaulted to it | P1/P6 | **FIXED**: DB untracked, `db/*.db` ignored. The release builds a fresh schema and `DATABASE_URL` is required. Tests use the sanitized `e2e/fixtures/seed.db` |
+| MEDIUM | Cross-org upload read: `/uploads/[name]` was session-gated only | P3 | **FIXED**: the route checks that an asset in the caller's org owns the file |
+| MEDIUM | Uploads under `public/` present at boot were served by Next's static layer, skipping that org check | P7 | **FIXED**: uploads moved to `<cwd>/uploads`, outside `public/` (`publicFilePath` maps `/uploads/*` there) |
+| MEDIUM | Delete paths could unlink shared `field-media` or out-of-uploads files; bulk delete left files behind | P3 | **FIXED** |
+| MEDIUM | Video-fetch SSRF guard checked the hostname string only, so DNS names that resolve to private IPs passed | P4 | **FIXED**: the resolved address is checked and pinned (`guardedLookup`/`guardedGet`) |
+| MEDIUM | Provider-returned image URL fetched with no SSRF guard, size cap or timeout | P7 | **FIXED**: goes through `guardedGet` (20 MB, 30 s) |
+| MEDIUM | ffmpeg/ffprobe on member bytes with no demuxer limits: a crafted HLS/concat playlist could make ffmpeg read files or URLs | P7 | **FIXED**: `-protocol_whitelist file -format_whitelist <video containers>`. Verified locally: mp4/webm pass, an m3u8 disguised as `.mp4` is rejected |
+| LOW | Inline upload extension came from the member-chosen MIME subtype (`data:image/html`) | P3 | **FIXED**: media extension allowlist |
+| LOW | Schedule `emailTo` could be any address (the org's sender becomes a relay) | P3/P7 | **FIXED**: must be an org member on create and edit, and is re-checked at send time |
+| LOW | `err.message` returned to clients (auth/org/cron, data API, report-pdf) | P2/P3/P5 | **FIXED**: generic 500 plus a server log |
+| LOW | Signup crashed (500) on non-string JSON fields | P7 | **FIXED**: 400 |
+| LOW | AI usage not attributed: seed ran outside `withAiScope`, and native Gemini image calls bypassed metering | P3/P7 | **FIXED** |
+| LOW | Missing security headers | P7 | **FIXED**: `frame-ancestors 'none'`, XFO, nosniff, Referrer-Policy (`no-referrer` on `/share/*`), HSTS. `noindex` on share pages (P5) |
+| LOW | Upload names used `Math.random` | P4 | **FIXED**: `randomUUID()` |
+| LOW | `start.sh` echoed `DATABASE_URL`; `.zscripts/dev.pid` committed; CI token permissions unset | P1/P6/P7 | **FIXED** |
+| — | IDOR sweep of every data route (P3) and client rendering / share page (P5) | P3/P5 | **Clean**: org-scoping held everywhere; no XSS sinks |
+
+### Needs owner validation (no severity until confirmed)
+1. **Rotate the Cloudinary credential.** It is in git history (commit `51de907`). Rotate it in the dashboard; rewriting history is optional.
+2. **AI spend cap.** There is no per-org budget before provider calls: one bulk analyze makes ~200 calls. Confirm whether the provider key has a hard spend cap and whether ingress rate-limits `/api/*`. If neither, add a budget check in `aiFetch`/`geminiImage`.
+3. **Deploy topology.** `clientIp()` trusts `X-Forwarded-For`. That is safe behind the Caddyfile, which overwrites it (and `start.sh` now binds Next to 127.0.0.1), but spoofable if `server.js` is exposed directly.
+4. **Dependencies.** Check `next` 16.1.3 advisories and the `sharp` 0.34.5 libvips CVE for reachability, then upgrade.
+
+### Still deferred
+- A full `script-src` CSP. It needs nonces from middleware for Next's inline bootstrap.
+- `Project.slug` is globally unique, which reveals whether another org has a project with the same name. Fix: `@@unique([orgId, slug])` (schema change).
+- Remote markdown images in AI narratives act as view beacons on share pages (product decision).
+- Login throttling, and request-size limits on routes without a content-length.

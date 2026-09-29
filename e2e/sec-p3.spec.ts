@@ -1,6 +1,6 @@
 // Phase 3 (tenant isolation / data API) regression checks — one per fix.
 // Local-only: no AI provider, Cloudinary, or email calls (data-URL uploads fall
-// back to public/uploads when CLOUDINARY_URL is unset).
+// back to ./uploads when CLOUDINARY_URL is unset).
 import { existsSync, readFileSync } from "node:fs";
 import { test, expect, request as pwRequest, type APIRequestContext } from "@playwright/test";
 import { apiLogin, OWNER, OTHER_OWNER } from "./helpers";
@@ -57,8 +57,8 @@ test("sec-p3 bulk delete: removes the uploaded file like single delete does", as
   const up = await ada.post("/api/media", { data: { url: PNG, title: "sec-p3 bulk probe" } });
   expect(up.status()).toBe(201);
   const asset = (await up.json()) as { id: string; url: string };
-  // prod standalone server chdirs into .next/standalone; dev serves from ./public
-  const onDisk = () => [".next/standalone/public", "public"].some((root) => existsSync(root + asset.url));
+  // prod standalone server chdirs into .next/standalone; dev writes to ./uploads
+  const onDisk = () => [".next/standalone", "."].some((root) => existsSync(root + asset.url));
   expect(onDisk()).toBe(true);
   const del = await ada.post("/api/media/bulk", { data: { ids: [asset.id], action: "delete" } });
   expect((await del.json()).processed).toBe(1);

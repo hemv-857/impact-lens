@@ -81,7 +81,7 @@ if [ -f "./next-service-dist/server.js" ]; then
         exit 1
     fi
 
-    echo "🗄️  Using database: $DATABASE_URL"
+    echo "🗄️  Using database from DATABASE_URL"
     
     # 后台启动 Next.js
     bun server.js &

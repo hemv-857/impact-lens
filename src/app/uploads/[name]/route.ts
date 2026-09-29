@@ -1,10 +1,6 @@
-// Runtime uploads land in <cwd>/public/uploads after server start, but Next
-// indexes the public folder only at boot — files saved later would 404 until a
-// restart. Public files present at boot are served by Next's static layer
-// first; everything else falls through to this route.
+// Serves runtime uploads from <cwd>/uploads (outside public/, so Next's static
+// layer never serves them and every read goes through the org check below).
 // ponytail: streams from disk per request (uploads are 10MB-capped images).
-// ponytail: files already in public/uploads at boot are served by the static
-// layer and skip the org check below — moving uploads out of public/ fixes it (P4/P1 handoff).
 import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
@@ -39,7 +35,7 @@ export async function GET(
     where: { url: `/uploads/${name}`, orgId: auth.orgId },
     select: { id: true },
   });
-  const file = path.join(process.cwd(), "public", "uploads", name);
+  const file = path.join(process.cwd(), "uploads", name);
   if (!owned || !fs.existsSync(file)) return new NextResponse(null, { status: 404 });
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   return new NextResponse(fs.readFileSync(file), {

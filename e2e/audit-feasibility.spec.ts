@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { apiLogin } from "./helpers";
 
@@ -26,8 +26,8 @@ test("PASS: Cloudinary integrated (PS 02 mandate) with local fallback", () => {
   expect(srcHits("cloudinary").length).toBeGreaterThan(0);
 });
 
-test("PASS: public/uploads is git-ignored (user media never committed)", () => {
-  expect(read(".gitignore")).toMatch(/public\/uploads/);
+test("PASS: uploads/ is git-ignored (user media never committed)", () => {
+  expect(read(".gitignore")).toMatch(/^\/uploads\/$/m);
 });
 
 test("PASS: .env files are git-ignored (secrets stay local)", () => {
@@ -35,9 +35,10 @@ test("PASS: .env files are git-ignored (secrets stay local)", () => {
 });
 
 test("uploads/ is live local storage with files present", () => {
-  const dir = path.join(root, "public/uploads");
-  expect(existsSync(dir)).toBe(true);
-  expect(readdirSync(dir).length).toBeGreaterThan(0);
+  // prod standalone server chdirs into .next/standalone; dev writes to ./uploads
+  const dir = [".next/standalone/uploads", "uploads"].map((d) => path.join(root, d)).find(existsSync);
+  expect(dir).toBeTruthy();
+  expect(readdirSync(dir!).length).toBeGreaterThan(0);
 });
 
 test("GAP: repo ships no video fixtures — video path never exercised by seed", () => {
@@ -54,9 +55,7 @@ test("PASS: start script pins absolute DATABASE_URL for standalone build", () =>
 });
 
 test("GAP: single-file SQLite DB — no external DB / horizontal scale path", () => {
-  const db = path.join(root, "db/custom.db");
-  expect(existsSync(db)).toBe(true);
-  expect(statSync(db).size).toBeGreaterThan(10_000);
+  expect(read("prisma/schema.prisma")).toMatch(/provider\s*=\s*"sqlite"/);
   expect(Object.keys(deps).join(",")).not.toMatch(/postgres|mysql|mariadb|@supabase/);
 });
 

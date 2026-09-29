@@ -159,10 +159,17 @@ async function aiFetch<T>(pathname: string, body: unknown): Promise<T> {
 // into a form the VLM API can consume. Relative "/field-media/x.jpg" or
 // "/uploads/y.png" paths are read from disk, normalized/resized via sharp, and
 // returned as base64 JPEG data URLs (keeps payload small for the VLM API).
-/** Map a root-relative URL to an absolute path, only if it stays inside public/. */
+/**
+ * Map a root-relative URL to an absolute path, only if it stays inside its root:
+ * /uploads/* → <cwd>/uploads (private, outside public/ so Next never serves it
+ * statically), everything else → <cwd>/public.
+ */
 export function publicFilePath(url: string): string | null {
-  const root = path.join(process.cwd(), "public");
-  const resolved = path.resolve(root, "." + path.posix.normalize(url));
+  const n = path.posix.normalize("/" + url);
+  const [root, rel] = n.startsWith("/uploads/")
+    ? [path.join(process.cwd(), "uploads"), n.slice("/uploads".length)]
+    : [path.join(process.cwd(), "public"), n];
+  const resolved = path.resolve(root, "." + rel);
   return resolved.startsWith(root + path.sep) ? resolved : null;
 }
 
@@ -195,6 +202,13 @@ const guardedLookup = ((host: string, opts: dns.LookupOptions, cb: (...args: unk
     else cb(null, addrs[0].address, 4);
   });
 }) as unknown as net.LookupFunction;
+
+// Member bytes: only the local-file protocol and real video containers, so a
+// crafted playlist (hls/concat) can't make ffmpeg read other files or URLs.
+const FF_INPUT_GUARD = [
+  "-protocol_whitelist", "file",
+  "-format_whitelist", "mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,avi,flv,asf",
+];
 
 /** GET a member-supplied URL through guardedLookup: no redirects, capped, timed. Null on any failure. */
 function guardedGet(url: URL, maxBytes: number, timeoutMs: number): Promise<Buffer | null> {
@@ -439,7 +453,7 @@ async function videoFramesAsParts(
       duration =
         parseFloat(
           (
-            await execFile("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", input], {
+            await execFile("ffprobe", ["-v", "error", ...FF_INPUT_GUARD, "-show_entries", "format=duration", "-of", "csv=p=0", input], {
               timeout: 5_000,
             })
           ).stdout
@@ -451,7 +465,7 @@ async function videoFramesAsParts(
     const pattern = path.join(dir, "frame-%02d.jpg");
     await execFile(
       "ffmpeg",
-      ["-loglevel", "error", "-i", input, "-vf", `fps=${fps},scale=640:-2`, "-frames:v", "6", pattern],
+      ["-loglevel", "error", ...FF_INPUT_GUARD, "-i", input, "-vf", `fps=${fps},scale=640:-2`, "-frames:v", "6", pattern],
       { timeout: 30_000 }
     );
     const frames = fs.readdirSync(dir).filter((f) => /^frame-\d+\.jpg$/.test(f)).sort();
@@ -700,8 +714,9 @@ interface GeminiImageResp {
 
 async function geminiImage(c: AiConfig, prompt: string, size: string) {
   const root = c.baseUrl.replace(/\/openai\/?$/, "");
-  const call = (aspect?: string) =>
-    fetch(`${root}/models/${encodeURIComponent(c.imageModel)}:generateContent`, {
+  const call = async (aspect?: string) => {
+    const t0 = Date.now();
+    const r = await fetch(`${root}/models/${encodeURIComponent(c.imageModel)}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": c.apiKey },
       body: JSON.stringify({
@@ -712,6 +727,9 @@ async function geminiImage(c: AiConfig, prompt: string, size: string) {
         },
       }),
     });
+    logAiUsage({ kind: "image", model: c.imageModel, provider: "gemini", durationMs: Date.now() - t0, ok: r.ok, status: r.status });
+    return r;
+  };
 
   const read = async (r: { ok: boolean; status: number; text: () => Promise<string> }) => {
     const t = await r.text();
@@ -773,9 +791,10 @@ async function openaiImage(c: AiConfig, prompt: string, size: string) {
       const base64 = item?.b64_json || item?.base64;
       if (base64) return { base64, buffer: Buffer.from(base64, "base64") };
       if (item?.url) {
-        const r = await fetch(item.url);
-        if (!r.ok) throw new Error(`Image download failed ${r.status}`);
-        const buffer = Buffer.from(await r.arrayBuffer());
+        const u = new URL(item.url);
+        if (!/^https?:$/.test(u.protocol)) throw new Error("Image download failed");
+        const buffer = await guardedGet(u, 20 * 1024 * 1024, 30_000);
+        if (!buffer) throw new Error("Image download failed");
         return { base64: buffer.toString("base64"), buffer };
       }
       throw new Error("Image generation returned no data");
@@ -788,9 +807,9 @@ async function openaiImage(c: AiConfig, prompt: string, size: string) {
 }
 
 export function saveUpload(file: Buffer, ext: string): { path: string; url: string } {
-  const dir = path.join(process.cwd(), "public", "uploads");
+  const dir = path.join(process.cwd(), "uploads"); // outside public/: only the org-checked route serves it
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  const name = `upload_${randomUUID()}.${ext}`; // unguessable: /uploads/* is session- not org-gated
+  const name = `upload_${randomUUID()}.${ext}`; // unguessable, and served only via the org-checked /uploads route
   const full = path.join(dir, name);
   fs.writeFileSync(full, file);
   return { path: full, url: `/uploads/${name}` };

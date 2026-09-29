@@ -9,7 +9,7 @@ AI-powered impact & sustainability media platform. Ingest field media (images/vi
 - **Prisma + SQLite** (single-file DB, no external services)
 - **NextAuth** credentials auth (scrypt) with per-user org scoping
 - **AI**: any OpenAI-compatible endpoint — presets for Gemini, OpenRouter, OpenAI, Groq (`AI_PROVIDER`); vision analysis, semantic search, reports, campaigns; video analyzed via ffmpeg frame sampling
-- **Storage**: Cloudinary (`CLOUDINARY_URL`) with automatic fallback to local `public/uploads`
+- **Storage**: Cloudinary (`CLOUDINARY_URL`) with automatic fallback to local `./uploads` (private, served only via the org-checked `/uploads/[name]` route)
 - **ffmpeg** on PATH enables video analysis (tests skip it when missing)
 
 ## Quick start
@@ -82,7 +82,8 @@ src/components   impactlens feature components + shadcn ui
 src/lib          ai, auth, db, cloudinary, serialize, store
 prisma           schema.prisma (SQLite)
 e2e              Playwright audit suite
-public           static assets + uploads fallback
+public           static assets
+uploads          local upload fallback (gitignored, private)
 db/custom.db     seeded SQLite database
 AUDIT.md         audit findings + resolution status
 ```

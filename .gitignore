@@ -59,7 +59,11 @@ server.log
 
 # user-uploaded media (never commit)
 public/uploads/
+/uploads/
 
 # playwright artifacts
 test-results/
 playwright-report/
+
+# runtime state
+.zscripts/dev.pid

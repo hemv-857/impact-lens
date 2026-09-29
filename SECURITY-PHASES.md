@@ -1,5 +1,7 @@
 # Security audit + remediation: parallel phases
 
+> **Status: complete (2026-09-29).** Results and open owner items are in `AUDIT.md` §9 (Rev. 3).
+
 Six **independent** phases (P1–P6) that can run at the same time in separate chats, plus one final sequential phase (P7). Each phase owns a **disjoint set of files**, so the branches merge without conflicts.
 
 The leads below come from a source-only recon pass on 2026-09-29 (commit `d9d650b`). They are **unverified candidates**, not confirmed findings. Each phase confirms or rejects them with the `security-audit` skill before fixing anything. `AUDIT.md` §7 lists what earlier reviews already fixed: don't re-report those unless the fix is broken.

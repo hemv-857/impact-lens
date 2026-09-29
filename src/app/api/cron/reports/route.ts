@@ -74,9 +74,17 @@ export async function POST(req: NextRequest) {
 
         let email = "skipped: no recipient";
         if (schedule.emailTo) {
-          const { subject, text } = renderReportEmail(reports[0]);
-          const res = await sendMail({ to: schedule.emailTo, subject, text });
-          email = res.sent ? "sent" : `skipped: ${res.reason}`;
+          // Re-check at send time: a recipient who left the org stops getting its reports.
+          const member = await db.membership.findFirst({
+            where: { orgId: schedule.orgId, user: { email: schedule.emailTo.toLowerCase() } },
+          });
+          if (!member) {
+            email = "skipped: recipient is not an org member";
+          } else {
+            const { subject, text } = renderReportEmail(reports[0]);
+            const res = await sendMail({ to: schedule.emailTo, subject, text });
+            email = res.sent ? "sent" : `skipped: ${res.reason}`;
+          }
         }
 
         await db.reportSchedule.update({

@@ -38,12 +38,11 @@ export async function POST(req: NextRequest) {
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
-    const { email, password, name, orgName } = body as {
-      email?: string;
-      password?: string;
-      name?: string;
-      orgName?: string;
-    };
+    // JSON can carry any type: non-strings become "" so they fail validation (400), not .trim() (500).
+    const str = (v: unknown) => (typeof v === "string" ? v : "");
+    const { email, password, name, orgName } = Object.fromEntries(
+      ["email", "password", "name", "orgName"].map((k) => [k, str((body as Record<string, unknown>)[k])])
+    );
 
     const normalizedEmail = email ? normalizeEmail(email) : "";
     if (!isValidEmail(normalizedEmail)) {

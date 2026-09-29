@@ -12,7 +12,7 @@ test.describe('P2 Security Findings', () => {
       },
     });
     
-    expect(response.status()).toBe(400); // or 500 if it fails after validation
+    expect(response.status()).toBe(400);
     const body = await response.json();
     
     // Response should not contain error class names, TypeError, Prisma messages, etc.
@@ -21,7 +21,7 @@ test.describe('P2 Security Findings', () => {
     expect(errorMessage).not.toMatch(/Prisma/);
     expect(errorMessage).not.toMatch(/at |Error:/);
     // Should be generic: "Signup failed" or a validation error
-    expect(['Signup failed', 'Invalid JSON body', 'Enter a valid email']).toContainEqual(body.error);
+    expect(['Signup failed', 'Invalid JSON body', 'Enter a valid email address']).toContainEqual(body.error);
   });
 
   test('err.message leak: POST /api/orgs with missing auth returns 401 without leaking error', async ({ request }) => {

@@ -46,7 +46,7 @@ export async function removeAssetStorage(asset: { url: string; publicId: string;
   }
   try {
     if (/^\/uploads\/[\w-]+\.[a-z0-9]+$/.test(asset.url) && !(await db.mediaAsset.count({ where: { url: asset.url } }))) {
-      fs.rmSync(path.join(process.cwd(), "public", asset.url), { force: true });
+      fs.rmSync(path.join(process.cwd(), asset.url), { force: true });
     }
   } catch {
     // file cleanup is best-effort

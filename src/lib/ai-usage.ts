@@ -29,8 +29,6 @@ export function withAiScope<T>(actor: AiActor, fn: () => Promise<T>): Promise<T>
 /**
  * Fire-and-forget metering: never awaited, never throws — an analytics write
  * must not be able to fail an AI request.
- * ponytail: covers OpenAI-compatible calls (aiFetch); the native Gemini image
- * path bypasses it — hook there if that provider becomes the default.
  */
 export function logAiUsage(e: AiUsageEntry): void {
   const actor = als.getStore();

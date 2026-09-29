@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { execFileSync } from "node:child_process";
+import path from "node:path";
 import { login, OWNER } from "./helpers";
 
 test.describe("Security: P6 supply chain, repo hygiene, CI", () => {
@@ -13,20 +15,13 @@ test.describe("Security: P6 supply chain, repo hygiene, CI", () => {
     await ctx.close();
   });
 
-  test("seed.db has no leaked invite codes or share tokens", async ({ browser }) => {
-    // Verify the fixture is sanitized: no non-null invite codes or share tokens
-    // that could enable unauthorized org joins or report access.
-    const ctx = await browser.newContext();
-    const page = await ctx.newPage();
-    await login(page, OWNER);
-
-    // Fetch org data to verify invite code is null.
-    const res = await page.request.get("/api/orgs");
-    const orgs = await res.json();
-    for (const org of orgs) {
-      expect(org.inviteCode).toBeNull();
-    }
-
-    await ctx.close();
+  test("committed fixture carries no invite codes or share tokens", () => {
+    // Read the fixture file itself: the running server's DB mints codes during other tests.
+    const out = execFileSync("python3", [
+      "-c",
+      "import sqlite3,sys;c=sqlite3.connect(sys.argv[1]);print(c.execute('select (select count(*) from Organization where inviteCode is not null)+(select count(*) from Report where shareToken is not null)').fetchone()[0])",
+      path.join(process.cwd(), "e2e/fixtures/seed.db"),
+    ]).toString().trim();
+    expect(out).toBe("0");
   });
 });
