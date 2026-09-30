@@ -2,6 +2,12 @@
 
 ImpactLens is a media platform for impact and sustainability organizations. Teams upload photos and videos from the field, and the AI writes captions, adds tags, and records the signals it found along with a confidence score. From there you can group media by project, compare before and after shots, search in plain language, and generate impact reports and campaign content.
 
+## Demo
+
+- [Demo video](https://drive.google.com/file/d/11VSgRHmy4o2It3bwwtuu_SqMzcLd0c-8/view?usp=sharing)
+- [Pitch deck (PDF)](https://drive.google.com/file/d/1eu5ZtWKXBnZgW54yCASbtCHHqdK432yv/view?usp=sharing)
+- [All submission files](https://drive.google.com/drive/folders/1qJCBh_EF2hMQnT4OBIaJfF7RY9sz_TAU?usp=sharing) (video, deck and both spreadsheets)
+
 ## Business model
 
 - [Pricing model](https://docs.google.com/spreadsheets/d/1WIFK6_iso3vl1DMP3qsm1B_FH52WUs_3/edit?usp=sharing&ouid=114034518876045891640&rtpof=true&sd=true) (Google Sheets)
