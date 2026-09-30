@@ -35,6 +35,10 @@ export async function apiLogin(ctx: APIRequestContext, who = OWNER) {
   expect([200, 302]).toContain(res.status());
 }
 
+/** "Section" or "Section/View", e.g. "Home", "Library/Search". */
 export async function gotoTab(page: Page, name: string) {
-  await page.locator("header").getByRole("button", { name, exact: true }).click();
+  const i = name.indexOf("/");
+  const [section, view] = i < 0 ? [name, ""] : [name.slice(0, i), name.slice(i + 1)];
+  await page.locator("header nav").getByRole("button", { name: section, exact: true }).click();
+  if (view) await page.getByRole("tab", { name: view, exact: true }).click();
 }

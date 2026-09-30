@@ -17,34 +17,35 @@ test.afterAll(async () => {
 });
 
 const VIEWS: Array<[string, RegExp]> = [
-  ["Overview", /Turn field media into measurable impact/],
-  ["Media Library", /AI-analyzed field media with intelligence, signals/],
-  ["Projects", /projects across the globe/],
-  ["Before / After", /Before \/ After Compare/],
-  ["Timeline", /Chronological view of all field media/],
-  ["Reports", /Configure report/],
-  ["Semantic Search", /Search your library by meaning/],
-  ["Campaign Studio", /Configure campaign/],
+  ["Home", /To review/],
+  ["Library/Media", /\d+ assets? match/],
+  ["Library/Search", /Saved searches/],
+  ["Library/Timeline", /Unique days/],
+  ["Projects/Projects", /projects across the globe/],
+  ["Projects/Before \/ After", /Past comparisons/],
+  ["Projects/Insights", /Geographic reach/],
+  ["Reports/Reports", /Configure report/],
+  ["Reports/Campaigns", /Configure campaign/],
 ];
 
-test("header exposes all 8 product areas, each renders its view", async () => {
+test("header exposes 4 sections; every view renders", async () => {
   for (const [tab, copy] of VIEWS) {
     await gotoTab(page, tab);
     await expect(page.getByText(copy).first(), `view: ${tab}`).toBeVisible();
   }
 });
 
-test("overview shows KPIs, charts and primary actions", async () => {
-  await gotoTab(page, "Overview");
-  await expect(page.getByText("Platform at a glance")).toBeVisible();
-  await expect(page.getByText("Geographic reach")).toBeVisible();
+test("home shows totals, the review queue and primary actions", async () => {
+  await gotoTab(page, "Home");
+  await expect(page.getByText("To review")).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Awaiting review|latest accessions/ }).first()).toBeVisible();
   expect(await page.locator("main svg").count()).toBeGreaterThan(0);
-  await expect(page.getByRole("button", { name: "Analyze new media" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add media" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate report" }).first()).toBeVisible();
 });
 
-test("overview shows the AI usage meter", async () => {
-  await gotoTab(page, "Overview");
+test("insights shows the AI usage meter", async () => {
+  await gotoTab(page, "Projects/Insights");
   await expect(page.getByRole("heading", { name: "AI usage" })).toBeVisible();
   await expect(page.getByTestId("ai-usage")).toBeVisible();
 });
@@ -53,8 +54,8 @@ test("PASS: Media Library shows every asset by default (no verified filter)", as
   // Reload to reset the in-memory query cache (staleTime 30s) so the Library
   // mount reflects the current query params.
   await page.reload();
-  await expect(page.getByText("Turn field media into measurable impact.")).toBeVisible();
-  await gotoTab(page, "Media Library");
+  await expect(page.getByText("To review")).toBeVisible();
+  await gotoTab(page, "Library/Media");
 
   const all = await (await page.request.get("/api/media?limit=100")).json();
   const cards = page
@@ -66,7 +67,7 @@ test("PASS: Media Library shows every asset by default (no verified filter)", as
 });
 
 test("library exposes filters, export and bulk-select tools", async () => {
-  await gotoTab(page, "Media Library");
+  await gotoTab(page, "Library/Media");
   await expect(page.getByText(/\d+ assets? match/)).toBeVisible();
   const exportLink = page.getByRole("link", { name: "Export CSV" });
   await expect(exportLink).toBeVisible();
@@ -79,7 +80,7 @@ test("library exposes filters, export and bulk-select tools", async () => {
 });
 
 test("asset drawer shows AI caption and evidence chain", async () => {
-  await gotoTab(page, "Media Library");
+  await gotoTab(page, "Library/Media");
   const assets = await (await page.request.get("/api/media?limit=100")).json();
   const first = assets[0];
   await page.locator("main").getByRole("button", { name: "View", exact: true }).first().click();
@@ -110,8 +111,7 @@ test("projects tab renders map, stats and project grid", async () => {
 });
 
 test("compare tab offers pickers, generator and past comparisons", async () => {
-  await gotoTab(page, "Before / After");
-  await expect(page.getByRole("heading", { name: "Before / After Compare" })).toBeVisible();
+  await gotoTab(page, "Projects/Before / After");
   await expect(page.getByRole("button", { name: "Pick before image" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Pick after image" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Generate comparison" })).toBeVisible();
@@ -120,8 +120,8 @@ test("compare tab offers pickers, generator and past comparisons", async () => {
 });
 
 test("timeline groups assets by capture date with stats strip", async () => {
-  await gotoTab(page, "Timeline");
-  await expect(page.getByRole("heading", { name: "Timeline", exact: true })).toBeVisible();
+  await gotoTab(page, "Library/Timeline");
+  await expect(page.getByRole("tab", { name: "Timeline", selected: true })).toBeVisible();
   await expect(page.getByText("Unique days")).toBeVisible();
   await expect(page.getByText("Avg confidence")).toBeVisible();
   await expect(page.getByText(/assets across \d+ day/).first()).toBeVisible();
@@ -149,7 +149,7 @@ test("reports tab: share dialog exposes the viewer-note field", async () => {
 });
 
 test("semantic search offers NL input, example chips and saved searches", async () => {
-  await gotoTab(page, "Semantic Search");
+  await gotoTab(page, "Library/Search");
   await expect(
     page.getByPlaceholder(
       "Search by meaning: 'tree planting in arid regions' or 'solar installation progress'"
@@ -160,7 +160,7 @@ test("semantic search offers NL input, example chips and saved searches", async 
 });
 
 test("campaign studio exposes platforms, tone and media picker", async () => {
-  await gotoTab(page, "Campaign Studio");
+  await gotoTab(page, "Reports/Campaigns");
   await expect(page.getByRole("heading", { name: "Configure campaign" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Instagram/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /LinkedIn/ })).toBeVisible();

@@ -65,7 +65,7 @@ test("signup form documents and enforces 8-char password policy", async () => {
 test("login lands on overview with signed-in org context", async () => {
   await login(page);
   await expect(page.getByText("GreenShoots").first()).toBeVisible();
-  await expect(page.getByText("Turn field media into measurable impact.")).toBeVisible();
+  await expect(page.getByText("To review")).toBeVisible();
 });
 
 test("Quick actions opens the command palette via ⌘K", async () => {
@@ -77,8 +77,8 @@ test("Quick actions opens the command palette via ⌘K", async () => {
   await expect(page.getByPlaceholder("Search commands or jump to a tab…")).toHaveCount(0);
 });
 
-test("Analyze media dialog accepts images AND videos", async () => {
-  await page.getByRole("button", { name: "Analyze media", exact: true }).first().click();
+test("Add media dialog accepts images AND videos", async () => {
+  await page.getByRole("button", { name: "Add media", exact: true }).first().click();
   const file = page.locator('input[type="file"]');
   await expect(file).toBeAttached();
   expect(await file.getAttribute("accept")).toContain("video/mp4");
