@@ -1,9 +1,24 @@
 {
-  "buildCommand": "npx prisma generate && next build",
   "crons": [
     {
       "path": "/api/cron/reports",
       "schedule": "0 6 * * *"
+    }
+  ],
+  "services": {
+    "impact-lens": {
+      "root": ".",
+      "framework": "nextjs",
+      "buildCommand": "npx prisma generate && next build"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": {
+        "type": "service",
+        "service": "impact-lens"
+      }
     }
   ]
 }
