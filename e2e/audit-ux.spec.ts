@@ -65,7 +65,7 @@ test("signup form documents and enforces 8-char password policy", async () => {
 test("login lands on overview with signed-in org context", async () => {
   await login(page);
   await expect(page.getByText("GreenShoots").first()).toBeVisible();
-  await expect(page.getByText("To review")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /what’s happening/ })).toBeVisible();
 });
 
 test("Quick actions opens the command palette via ⌘K", async () => {
@@ -108,7 +108,7 @@ test("dark mode toggle applies and persists across reload", async () => {
 });
 
 test("account menu exposes org actions and sign out", async () => {
-  await page.locator("header").getByText("GreenShoots").click();
+  await page.locator("aside").getByText("GreenShoots").click();
   await expect(page.getByText(/New organization/).first()).toBeVisible();
   await expect(page.getByText("Sign out").first()).toBeVisible();
   await page.getByText("Sign out").click();

@@ -17,15 +17,15 @@ test.afterAll(async () => {
 });
 
 const VIEWS: Array<[string, RegExp]> = [
-  ["Home", /To review/],
+  ["Home", /what’s happening/],
   ["Library/Media", /\d+ assets? match/],
   ["Library/Search", /Saved searches/],
   ["Library/Timeline", /Unique days/],
-  ["Projects/Projects", /projects across the globe/],
+  ["Projects/Projects", /Project sites/],
   ["Projects/Before \/ After", /Past comparisons/],
   ["Projects/Insights", /Geographic reach/],
-  ["Reports/Reports", /Configure report/],
-  ["Reports/Campaigns", /Configure campaign/],
+  ["Reports/Reports", /New report/],
+  ["Reports/Campaigns", /New campaign/],
 ];
 
 test("header exposes 4 sections; every view renders", async () => {
@@ -37,11 +37,11 @@ test("header exposes 4 sections; every view renders", async () => {
 
 test("home shows totals, the review queue and primary actions", async () => {
   await gotoTab(page, "Home");
-  await expect(page.getByText("To review")).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Awaiting review|latest accessions/ }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /what’s happening/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Awaiting review|Latest accessions/ }).first()).toBeVisible();
   expect(await page.locator("main svg").count()).toBeGreaterThan(0);
   await expect(page.getByRole("button", { name: "Add media" }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Generate report" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Reports" })).toBeVisible();
 });
 
 test("insights shows the AI usage meter", async () => {
@@ -54,7 +54,7 @@ test("PASS: Media Library shows every asset by default (no verified filter)", as
   // Reload to reset the in-memory query cache (staleTime 30s) so the Library
   // mount reflects the current query params.
   await page.reload();
-  await expect(page.getByText("To review")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /what’s happening/ })).toBeVisible();
   await gotoTab(page, "Library/Media");
 
   const all = await (await page.request.get("/api/media?limit=100")).json();
@@ -104,7 +104,7 @@ test("asset drawer shows AI caption and evidence chain", async () => {
 
 test("projects tab renders map, stats and project grid", async () => {
   await gotoTab(page, "Projects");
-  await expect(page.getByText(/projects across the globe/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Project sites" })).toBeVisible();
   await expect(page.locator(".leaflet-container")).toBeVisible();
   await expect(page.getByRole("button", { name: "New project" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Women's Cooperative Livelihoods" })).toBeVisible();
@@ -129,17 +129,17 @@ test("timeline groups assets by capture date with stats strip", async () => {
 
 test("reports tab: configure form + past report opens in viewer", async () => {
   await gotoTab(page, "Reports");
-  await expect(page.getByRole("heading", { name: "Configure report" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "New report" })).toBeVisible();
   const section = page.locator("section").filter({ hasText: "Past reports" });
   await expect(section).toBeVisible();
   await section.getByRole("button").first().click();
-  await expect(page.getByText("No report yet")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "PDF" })).toBeVisible();
+  await page.getByRole("button", { name: "Past reports" }).click();
 });
 
 test("reports tab: share dialog exposes the viewer-note field", async () => {
   await gotoTab(page, "Reports");
   const section = page.locator("section").filter({ hasText: "Past reports" });
-  // exact: the card itself also "contains" the words via the nested aria-label
   await section.getByRole("button", { name: "Share report", exact: true }).first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(page.getByLabel(/Note for viewers/)).toBeVisible();
@@ -161,7 +161,7 @@ test("semantic search offers NL input, example chips and saved searches", async 
 
 test("campaign studio exposes platforms, tone and media picker", async () => {
   await gotoTab(page, "Reports/Campaigns");
-  await expect(page.getByRole("heading", { name: "Configure campaign" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "New campaign" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Instagram/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /LinkedIn/ })).toBeVisible();
   await expect(page.getByText(/Select media \(0 selected\)/)).toBeVisible();

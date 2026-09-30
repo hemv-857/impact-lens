@@ -11,7 +11,7 @@ test.describe("Security: P6 supply chain, repo hygiene, CI", () => {
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
     await login(page, OWNER);
-    await expect(page.getByText("To review")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: /what’s happening/ })).toBeVisible();
     await ctx.close();
   });
 

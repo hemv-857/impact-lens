@@ -39,6 +39,6 @@ export async function apiLogin(ctx: APIRequestContext, who = OWNER) {
 export async function gotoTab(page: Page, name: string) {
   const i = name.indexOf("/");
   const [section, view] = i < 0 ? [name, ""] : [name.slice(0, i), name.slice(i + 1)];
-  await page.locator("header nav").getByRole("button", { name: section, exact: true }).click();
+  await page.locator('nav[aria-label="Sections"]').getByRole("button", { name: section, exact: true }).click();
   if (view) await page.getByRole("tab", { name: view, exact: true }).click();
 }
