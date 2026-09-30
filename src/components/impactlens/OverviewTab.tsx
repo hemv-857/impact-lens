@@ -608,9 +608,10 @@ function StatCard({ stat, now, loading }: { stat: HeroStat; now: Date | null; lo
         </span>
         <div className="min-w-0">
           <p className="text-sm text-stone-600 dark:text-white/70">{stat.label}</p>
-          <p className="mt-0.5 text-3xl font-semibold tabular-nums tracking-tight">
+          {/* div, not p: Skeleton is a block div and <p> cannot contain it (HTML auto-close → hydration mismatch) */}
+          <div className="mt-0.5 text-3xl font-semibold tabular-nums tracking-tight">
             {stat.value === undefined || loading ? <Skeleton className="mt-1 h-8 w-12 bg-stone-200 dark:bg-white/15" /> : stat.value.toLocaleString()}
-          </p>
+          </div>
         </div>
       </div>
       <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[var(--cl)] sm:text-sm dark:text-[var(--c)]">
