@@ -338,6 +338,16 @@ textarea:focus-visible,
 .dark .text-emerald-900,
 .dark .text-emerald-800,
 .dark .text-emerald-700 { color: #f5a771; }
+.dark .bg-emerald-50\/60 { background-color: rgb(42 26 16 / 0.6); }
+.dark .border-emerald-100 { border-color: #5a3620; }
+/* .markdown-body @applies raw colors, so the utility overrides above miss it. */
+.dark .markdown-body h1,
+.dark .markdown-body strong { color: #f5eee6; }
+.dark .markdown-body h2 { color: #f5a771; }
+.dark .markdown-body h3 { color: #e6dccf; }
+.dark .markdown-body p,
+.dark .markdown-body li { color: #cfc3b4; }
+.dark .markdown-body blockquote { color: #b3a697; border-color: #3a322b; }
 .dark .text-amber-700 { color: #e3b85c; }
 /* SDG / archive labels: a quiet slate tag. */
 .dark .bg-teal-50 { background-color: #22252a; }
