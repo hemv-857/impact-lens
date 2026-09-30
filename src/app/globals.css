@@ -3,10 +3,50 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Accession Register palette. The app's components use Tailwind's stone /
+   emerald / teal utilities; remapping the scales here re-skins every screen
+   at once: stone = archival neutrals, emerald = field green (the one commit
+   colour), teal = archive-box blue-grey. */
+@theme {
+  --color-stone-50: #f6f7f6;
+  --color-stone-100: #eceeed;
+  --color-stone-200: #dde1e0;
+  --color-stone-300: #c4cac9;
+  --color-stone-400: #6c7775;
+  --color-stone-500: #5a6563;
+  --color-stone-600: #46504e;
+  --color-stone-700: #333c3a;
+  --color-stone-800: #222a28;
+  --color-stone-900: #16201c;
+  --color-stone-950: #0d1311;
+  --color-emerald-50: #eef5f1;
+  --color-emerald-100: #d7e8de;
+  --color-emerald-200: #b3d3c0;
+  --color-emerald-300: #85b89b;
+  --color-emerald-400: #4f9570;
+  --color-emerald-500: #2f7d56;
+  --color-emerald-600: #1f6b4a;
+  --color-emerald-700: #185a3d;
+  --color-emerald-800: #134832;
+  --color-emerald-900: #0f3a29;
+  --color-emerald-950: #08231a;
+  --color-teal-50: #f0f3f5;
+  --color-teal-100: #dde4e9;
+  --color-teal-200: #c1ccd4;
+  --color-teal-300: #9daebb;
+  --color-teal-400: #7b8f9d;
+  --color-teal-500: #5f7584;
+  --color-teal-600: #4d6170;
+  --color-teal-700: #3e4f5c;
+  --color-teal-800: #31404b;
+  --color-teal-900: #26323b;
+}
+
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-ui);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -44,72 +84,72 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.375rem;
+  --background: #f6f7f6;
+  --foreground: #16201c;
+  --card: #ffffff;
+  --card-foreground: #16201c;
+  --popover: #ffffff;
+  --popover-foreground: #16201c;
+  --primary: #16201c;
+  --primary-foreground: #f6f7f6;
+  --secondary: #eceeed;
+  --secondary-foreground: #16201c;
+  --muted: #eceeed;
+  --muted-foreground: #5a6563;
+  --accent: #eceeed;
+  --accent-foreground: #16201c;
+  --destructive: #b3261e;
+  --border: #dde1e0;
+  --input: #c4cac9;
+  --ring: #2f7d56;
+  --chart-1: #1f6b4a;
+  --chart-2: #5f7584;
+  --chart-3: #9aa5a3;
+  --chart-4: #b07a2a;
+  --chart-5: #333c3a;
+  --sidebar: #eceeed;
+  --sidebar-foreground: #16201c;
+  --sidebar-primary: #1f6b4a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #dde1e0;
+  --sidebar-accent-foreground: #16201c;
+  --sidebar-border: #dde1e0;
+  --sidebar-ring: #2f7d56;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0f1412;
+  --foreground: #eef1f0;
+  --card: #161d1b;
+  --card-foreground: #eef1f0;
+  --popover: #161d1b;
+  --popover-foreground: #eef1f0;
+  --primary: #eef1f0;
+  --primary-foreground: #16201c;
+  --secondary: #222a28;
+  --secondary-foreground: #eef1f0;
+  --muted: #222a28;
+  --muted-foreground: #a3adab;
+  --accent: #222a28;
+  --accent-foreground: #eef1f0;
+  --destructive: #f2877e;
+  --border: #2c3533;
+  --input: #3a4442;
+  --ring: #6fbf93;
+  --chart-1: #6fbf93;
+  --chart-2: #8fa6b4;
+  --chart-3: #5a6563;
+  --chart-4: #d7a55a;
+  --chart-5: #c4cac9;
+  --sidebar: #161d1b;
+  --sidebar-foreground: #eef1f0;
+  --sidebar-primary: #6fbf93;
+  --sidebar-primary-foreground: #0f1412;
+  --sidebar-accent: #222a28;
+  --sidebar-accent-foreground: #eef1f0;
+  --sidebar-border: #2c3533;
+  --sidebar-ring: #6fbf93;
 }
 
 @layer base {
@@ -118,6 +158,19 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "tnum" 0;
+  }
+  ::selection {
+    background: var(--color-emerald-100);
+    color: var(--color-emerald-900);
+  }
+  .dark ::selection {
+    background: #24493a;
+    color: #eef1f0;
+  }
+  input,
+  textarea {
+    caret-color: var(--color-emerald-600);
   }
 }
 
@@ -133,40 +186,33 @@ nextjs-portal,
 /* Thin emerald scrollbar on stone track — used in long lists, drawers, panels */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: oklch(0.62 0.17 152) #f5f5f4;
+  scrollbar-color: var(--color-stone-300) transparent;
 }
 .scrollbar-thin::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: #f5f5f4;
-  border-radius: 9999px;
+  background: transparent;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: oklch(0.62 0.17 152);
+  background-color: var(--color-stone-300);
   border-radius: 9999px;
-  border: 2px solid #f5f5f4;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: oklch(0.52 0.16 152);
+  background-color: var(--color-stone-400);
 }
 
-/* Subtle hover lift used across cards */
+/* Hover lift: a hairline darkens, nothing floats. */
 .lift-on-hover {
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 .lift-on-hover:hover {
-  box-shadow: 0 10px 25px -10px rgba(13, 42, 33, 0.25);
-  transform: translateY(-2px);
+  border-color: var(--color-stone-300);
 }
 
-/* Hero gradient band — emerald → teal */
-.hero-gradient {
-  background:
-    radial-gradient(1200px 400px at 10% 0%, oklch(0.78 0.13 152 / 0.35), transparent 60%),
-    linear-gradient(135deg, #047857 0%, #0f766e 45%, #134e4a 100%);
-}
 
 /* Smooth focus ring for all interactive elements */
 button:focus-visible,
@@ -175,7 +221,7 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [role="button"]:focus-visible {
-  outline: 2px solid oklch(0.62 0.17 152);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -211,7 +257,7 @@ textarea:focus-visible,
   @apply font-semibold text-stone-900;
 }
 .markdown-body blockquote {
-  @apply border-l-4 border-emerald-300 bg-emerald-50 pl-4 py-2 my-3 text-sm italic text-stone-700;
+  @apply border-l-2 border-stone-300 pl-4 my-4 text-sm text-stone-600;
 }
 .markdown-body a {
   @apply text-emerald-700 underline underline-offset-2 hover:text-emerald-800;
@@ -232,27 +278,39 @@ textarea:focus-visible,
    specificity, so this one block flips the whole shell without touching
    every component. Accents (emerald/amber/red) and mid grays (stone-400..600
    bars, skeletons, avatars) intentionally stay as-is. */
-.dark .bg-white { background-color: #1c1917; }
-.dark .hover\:bg-white:hover { background-color: #292524; }
-.dark .bg-stone-50 { background-color: #0c0a09; }
-.dark .hover\:bg-stone-50:hover { background-color: #292524; }
-.dark .bg-stone-100 { background-color: #292524; }
-.dark .hover\:bg-stone-100:hover { background-color: #44403c; }
-.dark .bg-stone-200 { background-color: #44403c; }
-.dark .bg-stone-800 { background-color: #44403c; }
-.dark .hover\:bg-stone-900:hover { background-color: #57534e; }
-.dark .bg-stone-900 { background-color: #44403c; }
-.dark .hover\:bg-stone-700:hover { background-color: #57534e; }
-.dark .border-stone-50 { border-color: #292524; }
-.dark .border-stone-100 { border-color: #292524; }
-.dark .border-stone-200 { border-color: #44403c; }
-.dark .border-stone-300 { border-color: #57534e; }
-.dark .ring-stone-50 { --tw-ring-color: #292524; }
-.dark .ring-stone-200 { --tw-ring-color: #44403c; }
-.dark .text-stone-900 { color: #fafaf9; }
-.dark .text-stone-800 { color: #e7e5e4; }
-.dark .text-stone-700 { color: #d6d3d1; }
-.dark .text-stone-600 { color: #a8a29e; }
+.dark .bg-white { background-color: #161d1b; }
+.dark .hover\:bg-white:hover { background-color: #222a28; }
+.dark .bg-stone-50 { background-color: #0f1412; }
+.dark .hover\:bg-stone-50:hover { background-color: #1b2321; }
+.dark .bg-stone-100 { background-color: #222a28; }
+.dark .hover\:bg-stone-100:hover { background-color: #2c3533; }
+.dark .bg-stone-200 { background-color: #2c3533; }
+.dark .bg-stone-800 { background-color: #2c3533; }
+.dark .hover\:bg-stone-900:hover { background-color: #3a4442; }
+.dark .bg-stone-900 { background-color: #2c3533; }
+.dark .hover\:bg-stone-700:hover { background-color: #3a4442; }
+.dark .border-stone-50 { border-color: #1b2321; }
+.dark .border-stone-100 { border-color: #222a28; }
+.dark .border-stone-200 { border-color: #2c3533; }
+.dark .border-stone-300 { border-color: #3a4442; }
+.dark .ring-stone-50 { --tw-ring-color: #222a28; }
+.dark .ring-stone-200 { --tw-ring-color: #2c3533; }
+.dark .text-stone-900 { color: #eef1f0; }
+.dark .text-stone-800 { color: #dde1e0; }
+.dark .text-stone-700 { color: #c4cac9; }
+.dark .text-stone-600 { color: #a3adab; }
+.dark .text-stone-500 { color: #95a09e; }
+.dark .text-stone-400 { color: #7f8a88; }
 .dark .hover\:text-stone-700:hover,
 .dark .hover\:text-stone-800:hover,
-.dark .hover\:text-stone-900:hover { color: #e7e5e4; }
+.dark .hover\:text-stone-900:hover { color: #dde1e0; }
+/* Field-green tints: pale washes become deep green panels in the dark. */
+.dark .bg-emerald-50,
+.dark .hover\:bg-emerald-50:hover { background-color: #13261d; }
+.dark .bg-emerald-100 { background-color: #173226; }
+.dark .border-emerald-200,
+.dark .border-emerald-300 { border-color: #24493a; }
+.dark .text-emerald-900,
+.dark .text-emerald-800,
+.dark .text-emerald-700 { color: #8fd1ab; }
+.dark .divide-stone-200 > * { border-color: #2c3533; }
