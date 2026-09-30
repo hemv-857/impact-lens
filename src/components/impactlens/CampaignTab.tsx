@@ -3,7 +3,6 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import {
-  Megaphone,
   Sparkles,
   Loader2,
   Copy,
@@ -92,7 +91,6 @@ export function CampaignTab() {
   });
   const create = useCreateCampaign();
   const variantsMut = useGenerateCampaignVariants();
-  const setUploadOpen = useImpactStore((s) => s.setUploadOpen);
   const { toast } = useToast();
 
   const platformMeta =
@@ -175,16 +173,6 @@ export function CampaignTab() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900">
-          Campaign Studio
-        </h1>
-        <p className="text-sm text-stone-500">
-          Generate platform-ready campaign content from your field-media
-          evidence
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         {/* Form */}
         <Card className="gap-0 p-4 lg:col-span-2 sm:p-6">
@@ -348,7 +336,7 @@ export function CampaignTab() {
               onClick={onGenerateVariants}
               disabled={variantsMut.isPending}
               variant="outline"
-              className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+              className="w-full"
             >
               {variantsMut.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -380,7 +368,7 @@ export function CampaignTab() {
           ) : showVariants ? (
             variantsMut.isPending ? (
               <Card className="p-6">
-                <CampaignGenerating label="Generating 3 A/B variants…" icon={<GitBranch className="size-12 animate-pulse text-amber-500" />} />
+                <CampaignGenerating label="Generating 3 A/B variants…" />
               </Card>
             ) : variants && variants.length > 0 ? (
               <VariantsView variants={variants} onCopy={onCopy} platformLabel={platformMeta.label} />
@@ -389,9 +377,7 @@ export function CampaignTab() {
             <EmptyState
               emoji="📣"
               title="No campaign yet"
-              description="Pick a platform, tone, and the media you want to feature, then click Generate campaign or Generate 3 A/B variants."
-              actionLabel="Analyze new media"
-              onAction={() => setUploadOpen(true)}
+              description="Pick a platform and the media to feature, then generate."
             />
           )}
         </div>
@@ -409,21 +395,19 @@ function VariantsView({
   onCopy: (text: string, label: string) => void;
   platformLabel: string;
 }) {
-  const ANGLE_STYLES: Record<string, { color: string; bg: string; icon: string }> = {
-    "Story-first": { color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", icon: "📖" },
-    "Data-first": { color: "text-amber-700", bg: "bg-amber-50 border-amber-200", icon: "📊" },
-    "Question-hook": { color: "text-teal-700", bg: "bg-teal-50 border-teal-200", icon: "❓" },
+  const ANGLE_STYLES: Record<string, { color: string; bg: string }> = {
+    "Story-first": { color: "text-stone-600", bg: "" },
+    "Data-first": { color: "text-stone-600", bg: "" },
+    "Question-hook": { color: "text-stone-600", bg: "" },
   };
   return (
     <div className="space-y-3">
       <Card className="gap-0 p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-              <GitBranch className="size-4 text-amber-600" />
+            <h3 className="text-sm font-semibold text-stone-900">
               A/B Variants — {platformLabel}
             </h3>
-            <p className="text-xs text-stone-500">3 strategic angles for testing. Copy your favorite.</p>
           </div>
           <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
             {variants.length} variants
@@ -442,7 +426,6 @@ function VariantsView({
             <Card className={cn("gap-0 p-4 border", style.bg)}>
               <div className="mb-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{style.icon}</span>
                   <div>
                     <p className={cn("text-xs font-bold uppercase tracking-wide", style.color)}>
                       Variant {i + 1} · {v.angle}
@@ -496,18 +479,15 @@ function CampaignGenerating({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      {icon ?? <Megaphone className="size-12 animate-pulse text-amber-500" />}
-      <h3 className="mt-4 text-lg font-semibold text-stone-800">
-        {label ?? "Crafting your campaign…"}
+      {icon}
+      <h3 className="text-base font-semibold text-stone-800">
+        {label ?? "Writing campaign copy…"}
       </h3>
-      <p className="mt-1 max-w-sm text-sm text-stone-500">
-        Writing platform-ready copy with hashtags and a clear call-to-action.
-      </p>
       <div className="mt-4 flex gap-1">
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="size-2 rounded-full bg-amber-500"
+            className="size-1.5 rounded-full bg-stone-400"
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
           />
@@ -677,21 +657,13 @@ function CampaignView({
 
         {/* CTA */}
         {report.callToAction && (
-          <div className="mt-4 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 p-4 text-white">
-            <div className="flex items-center gap-2">
-              <Megaphone className="size-4" />
-              <span className="text-xs font-semibold uppercase tracking-wide">
-                Call to action
-              </span>
+          <div className="mt-5 flex items-start justify-between gap-3 border-t border-stone-200 pt-4">
+            <div>
+              <p className="text-xs font-medium text-stone-500">Call to action</p>
+              <p className="mt-1 text-sm font-medium text-stone-900">{report.callToAction}</p>
             </div>
-            <p className="mt-1 text-sm font-medium">{report.callToAction}</p>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="mt-2 bg-white text-amber-800 hover:bg-amber-50"
-              onClick={() => onCopy(report.callToAction!, "CTA")}
-            >
-              <Copy className="size-3.5" /> Copy CTA
+            <Button size="sm" variant="outline" onClick={() => onCopy(report.callToAction!, "CTA")}>
+              <Copy className="size-3.5" /> Copy
             </Button>
           </div>
         )}

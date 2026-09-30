@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  Leaf,
   Images,
   FileText,
   Search,
@@ -8,6 +7,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Footer } from "@/components/impactlens/Footer";
+import { Mark } from "@/components/impactlens/Header";
 
 const FEATURES = [
   {
@@ -38,9 +38,7 @@ export function Landing() {
       <header className="border-b border-stone-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-700 text-white">
-              <Leaf className="size-4" />
-            </span>
+            <Mark />
             <span className="text-lg font-semibold">ImpactLens</span>
           </div>
           <Link
@@ -54,14 +52,9 @@ export function Landing() {
 
       <main className="flex-1">
         <section className="mx-auto max-w-6xl px-4 py-16 text-center sm:px-6 sm:py-24">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
-            <Leaf className="size-3" /> AI-powered impact &amp; sustainability media
-          </span>
-          <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
             Turn field media into{" "}
-            <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-              evidence of impact
-            </span>
+            <span className="text-emerald-700">evidence of impact</span>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-lg text-stone-600">
             ImpactLens organizes your photos and video, analyzes them with AI,

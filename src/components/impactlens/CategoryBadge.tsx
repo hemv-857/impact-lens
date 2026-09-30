@@ -87,14 +87,17 @@ export function CategoryBadge({
   className?: string;
   compact?: boolean;
 }) {
-  const s = categoryStyle(category);
+  // Category is a label, not a state: neutral ink so hue stays reserved for the commit colour.
   const label = category ?? "uncategorized";
   return (
     <Badge
       variant="outline"
-      className={cn(s.badge, "capitalize", compact ? "px-1.5 py-0 text-[9px]" : className)}
+      className={cn(
+        "border-stone-200 bg-white/90 font-normal capitalize text-stone-700",
+        compact ? "px-1.5 py-0 text-[10px]" : className
+      )}
     >
-      {compact ? label.slice(0, 6) : label}
+      {label}
     </Badge>
   );
 }

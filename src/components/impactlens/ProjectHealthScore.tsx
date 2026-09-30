@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { HeartPulse, Images, Sparkles, BadgeCheck, Target } from "lucide-react";
+import { Images, Sparkles, BadgeCheck, Target } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/impactlens/EmptyState";
@@ -88,8 +88,7 @@ export function ProjectHealthScore({
   if (score.assetCount === 0) {
     return (
       <Card className="gap-0 p-4 sm:p-6">
-        <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-          <HeartPulse className="size-4 text-emerald-600" />
+        <h3 className="mb-3 text-sm font-semibold text-stone-900">
           Project health score
         </h3>
         <EmptyState
@@ -104,8 +103,7 @@ export function ProjectHealthScore({
   return (
     <Card className="gap-0 p-4 sm:p-6">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-          <HeartPulse className="size-4 text-emerald-600" />
+        <h3 className="text-sm font-semibold text-stone-900">
           Project health score
         </h3>
         <Badge variant="outline" className={labelColor}>{label}</Badge>

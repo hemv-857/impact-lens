@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Clock, Calendar, MapPin, Image as ImageIcon, ArrowDown } from "lucide-react";
+import { Calendar, MapPin, Image as ImageIcon, ArrowDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,8 +40,7 @@ export function TimelineView({ assets }: { assets: MediaAsset[] }) {
   if (assets.length === 0) {
     return (
       <Card className="gap-0 p-4 sm:p-6">
-        <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-          <Clock className="size-4 text-emerald-600" />
+        <h3 className="mb-3 text-sm font-semibold text-stone-900">
           Media timeline
         </h3>
         <EmptyState
@@ -57,8 +56,7 @@ export function TimelineView({ assets }: { assets: MediaAsset[] }) {
     <Card className="gap-0 p-4 sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-            <Clock className="size-4 text-emerald-600" />
+          <h3 className="text-sm font-semibold text-stone-900">
             Media timeline
           </h3>
           <p className="text-xs text-stone-500">

@@ -5,8 +5,6 @@ import {
   Eye,
   GitCompareArrows,
   FileText,
-  MapPin,
-  BadgeCheck,
   MoreVertical,
   Sparkles,
   Loader2,
@@ -16,9 +14,11 @@ import {
   Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EvidenceMark, evidenceState } from "@/components/impactlens/EvidenceMark";
+import { accessionNo } from "@/lib/format";
+import { Thumb } from "@/components/impactlens/Thumb";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,8 +27,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
-import { ConfidenceBar } from "@/components/impactlens/ConfidenceBar";
-import { truncate } from "@/lib/format";
 import { useImpactStore } from "@/lib/store";
 import { useAnalyzeMedia, useToggleFavorite } from "@/components/impactlens/impact-hooks";
 import { useToast } from "@/hooks/use-toast";
@@ -57,7 +55,6 @@ export function MediaCard({
   const analyze = useAnalyzeMedia();
   const favMut = useToggleFavorite();
   const { toast } = useToast();
-  const thumbnail = asset.thumbnailUrl || asset.url;
   const title = asset.title || asset.aiCaption || "Untitled media";
   const isAnalyzed = !!asset.analyzedAt;
 
@@ -101,7 +98,7 @@ export function MediaCard({
           }
         }}
         className={cn(
-          "lift-on-hover group relative h-full cursor-pointer gap-0 overflow-hidden p-0 transition",
+          "lift-on-hover group relative h-full cursor-pointer gap-0 overflow-hidden rounded-md p-0 shadow-none",
           selected && "ring-2 ring-emerald-500 ring-offset-1",
           selectable && !selected && "ring-1 ring-stone-200"
         )}
@@ -118,20 +115,12 @@ export function MediaCard({
               className={cn("h-full w-full object-cover", !isAnalyzed && "opacity-90")}
             />
           ) : (
-            <img
-              src={thumbnail}
-              alt={title}
-              loading="lazy"
-              className={cn(
-                "h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]",
-                !isAnalyzed && "opacity-90"
-              )}
-            />
+            <Thumb asset={asset} alt={title} className={cn(!isAnalyzed && "opacity-90")} />
           )}
           {/* Pending-analysis overlay */}
           {!isAnalyzed && (
             <div className="absolute inset-0 flex items-center justify-center bg-stone-900/30">
-              <span className="flex items-center gap-1.5 rounded-full bg-amber-500/95 px-3 py-1 text-[11px] font-medium text-white shadow">
+              <span className="flex items-center gap-1.5 rounded-full bg-stone-900/80 px-3 py-1 text-[11px] font-medium text-white">
                 <Clock className="size-3" />
                 Pending analysis
               </span>
@@ -177,22 +166,14 @@ export function MediaCard({
                 aria-label={asset.favorite ? "Remove from favorites" : "Add to favorites"}
                 title={asset.favorite ? "Remove from favorites" : "Add to favorites"}
                 className={cn(
-                  "flex size-6 items-center justify-center rounded-full border shadow-sm transition",
+                  "flex size-6 items-center justify-center rounded-full transition",
                   asset.favorite
-                    ? "border-amber-300 bg-amber-400 text-white hover:bg-amber-500"
-                    : "border-stone-200 bg-white/90 text-stone-400 hover:border-amber-300 hover:text-amber-500"
+                    ? "bg-white/90 text-stone-900"
+                    : "bg-stone-900/50 text-white opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                 )}
               >
                 <Star className={cn("size-3.5", asset.favorite && "fill-current")} />
               </button>
-              {asset.verified && (
-                <Badge
-                  variant="outline"
-                  className="bg-white/90 text-emerald-700 border-emerald-200"
-                >
-                  <BadgeCheck className="size-3" /> Verified
-                </Badge>
-              )}
             </div>
           </div>
           {/* Hover quick actions — hidden when in selection mode */}
@@ -284,51 +265,25 @@ export function MediaCard({
             </div>
           )}
         </div>
-        <div className={cn("flex flex-col gap-2 p-4", compact && "p-3")}>
-          <h3 className="line-clamp-1 text-sm font-semibold text-stone-900">
-            {title}
-          </h3>
-          {asset.aiSummary && (
-            <p className="line-clamp-2 text-xs leading-relaxed text-stone-500">
-              {truncate(asset.aiSummary, 110)}
+        <div className={cn("flex items-start gap-3 p-3", compact && "p-2.5")}>
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-1 text-sm font-medium text-stone-900">{title}</h3>
+            <p className="mt-0.5 flex items-center gap-2 text-xs text-stone-500">
+              <span className="font-mono text-[11px] text-stone-600">{accessionNo(asset.id)}</span>
+              {asset.location && <span className="truncate">{asset.location}</span>}
             </p>
-          )}
-          {!isAnalyzed && !asset.aiSummary && (
-            <p className="line-clamp-2 text-xs leading-relaxed text-stone-400 italic">
-              Not yet analyzed. Click Analyze to extract AI intelligence.
-            </p>
-          )}
-          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-stone-500">
-            {asset.location && (
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="size-3" /> {asset.location}
+          </div>
+          <span className="flex shrink-0 items-center gap-2 pt-0.5">
+            {typeof asset.confidence === "number" && (
+              <span
+                className={cn("text-xs tabular-nums", asset.confidence < 0.6 ? "text-amber-700" : "text-stone-600")}
+                title="AI confidence"
+              >
+                {Math.round(asset.confidence * 100)}%
               </span>
             )}
-            {typeof asset.confidence === "number" && (
-              <ConfidenceBar
-                value={asset.confidence}
-                className="min-w-[80px]"
-              />
-            )}
-          </div>
-          {asset.tags?.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {asset.tags.slice(0, 3).map((t) => (
-                <Badge
-                  key={t}
-                  variant="secondary"
-                  className="bg-stone-100 text-stone-600"
-                >
-                  #{t}
-                </Badge>
-              ))}
-              {asset.tags.length > 3 && (
-                <span className="text-[11px] text-stone-400">
-                  +{asset.tags.length - 3}
-                </span>
-              )}
-            </div>
-          )}
+            <EvidenceMark state={evidenceState(asset)} />
+          </span>
         </div>
       </Card>
     </motion.div>
@@ -339,10 +294,9 @@ export function MediaCardSkeleton() {
   return (
     <Card className="h-full overflow-hidden p-0">
       <div className="aspect-video w-full animate-pulse bg-stone-200" />
-      <div className="space-y-2 p-4">
+      <div className="space-y-2 p-3">
         <div className="h-4 w-3/4 animate-pulse rounded bg-stone-200" />
-        <div className="h-3 w-full animate-pulse rounded bg-stone-100" />
-        <div className="h-3 w-1/2 animate-pulse rounded bg-stone-100" />
+        <div className="h-3 w-1/3 animate-pulse rounded bg-stone-100" />
       </div>
     </Card>
   );

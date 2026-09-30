@@ -104,15 +104,7 @@ export function ProjectsTab() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-stone-900">
-            Projects
-          </h1>
-          <p className="text-sm text-stone-500">
-            Organize media, comparisons & reports by sustainability initiative
-          </p>
-        </div>
+      <div className="flex justify-end">
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -158,11 +150,6 @@ export function ProjectsTab() {
         />
       ) : (
         <>
-          {/* Project map view */}
-          <MapView
-            projects={projectsQ.data}
-            onSelect={(p) => setDetailProject(p)}
-          />
           <motion.div
             layout
             className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
@@ -175,6 +162,13 @@ export function ProjectsTab() {
               />
             ))}
           </motion.div>
+          {/* Where the work is: secondary to the project list */}
+          <div className="pt-4">
+            <MapView
+              projects={projectsQ.data}
+              onSelect={(p) => setDetailProject(p)}
+            />
+          </div>
         </>
       )}
 

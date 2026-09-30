@@ -10,9 +10,9 @@ import { formatDate } from "@/lib/format";
 import type { Project } from "@/lib/types";
 
 const STATUS_STYLES: Record<string, string> = {
-  active: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  completed: "bg-stone-200 text-stone-700 border-stone-300",
-  planning: "bg-amber-100 text-amber-800 border-amber-200",
+  active: "bg-white/90 text-stone-800 border-stone-200",
+  completed: "bg-stone-900/80 text-white border-transparent",
+  planning: "bg-white/90 text-stone-600 border-dashed border-stone-300",
 };
 
 function parseSdgGoals(s?: string | null): string[] {
@@ -105,7 +105,7 @@ export function ProjectCard({
             )}
             <span className="inline-flex items-center gap-1">
               <Images className="size-3" />
-              {project.assetCount ?? 0} assets
+              {project.assetCount ?? 0} asset{project.assetCount === 1 ? "" : "s"}
             </span>
           </div>
           {sdgs.length > 0 && (

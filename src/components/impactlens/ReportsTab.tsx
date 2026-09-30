@@ -3,7 +3,6 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import {
-  Sparkles,
   Loader2,
   Copy,
   CopyPlus,
@@ -19,6 +18,8 @@ import {
   Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Thumb } from "@/components/impactlens/Thumb";
+import { EvidenceMark, evidenceState } from "@/components/impactlens/EvidenceMark";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +48,7 @@ import {
 import { reportPdfUrl } from "@/lib/api";
 import { useImpactStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
-import { formatDateTime, timeAgo } from "@/lib/format";
+import { formatDateTime, timeAgo, accessionNo } from "@/lib/format";
 import type { Report } from "@/lib/types";
 
 const REPORT_TYPES = [
@@ -199,15 +200,6 @@ export function ReportsTab() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900">
-          Reports
-        </h1>
-        <p className="text-sm text-stone-500">
-          Generate donor-ready impact reports, summaries & campaign stories
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         {/* Form */}
         <Card className="gap-0 p-4 lg:col-span-2 sm:p-6">
@@ -220,34 +212,23 @@ export function ReportsTab() {
               <Label className="mb-1.5 block text-xs text-stone-500">
                 Report type
               </Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div role="radiogroup" aria-label="Report type" className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-stone-200 bg-stone-200">
                 {REPORT_TYPES.map((t) => (
                   <button
                     key={t.value}
                     type="button"
+                    role="radio"
+                    aria-checked={type === t.value}
+                    title={t.desc}
                     onClick={() => setType(t.value)}
                     className={cn(
-                      "flex flex-col items-start gap-1 rounded-md border p-2.5 text-left transition",
+                      "px-3 py-2 text-left text-sm transition",
                       type === t.value
-                        ? "border-emerald-500 bg-emerald-50"
-                        : "border-stone-200 bg-white hover:border-stone-300"
+                        ? "bg-stone-900 font-medium text-white"
+                        : "bg-white text-stone-700 hover:bg-stone-50"
                     )}
                   >
-                    <span className="flex items-center gap-1.5 text-xs font-semibold text-stone-800">
-                      <span
-                        className={cn(
-                          type === t.value
-                            ? "text-emerald-700"
-                            : "text-stone-500"
-                        )}
-                      >
-                        {t.icon}
-                      </span>
-                      {t.label}
-                    </span>
-                    <span className="text-[10px] leading-tight text-stone-500">
-                      {t.desc}
-                    </span>
+                    {t.label}
                   </button>
                 ))}
               </div>
@@ -349,7 +330,8 @@ export function ReportsTab() {
                     No media available. Try a different project or upload first.
                   </p>
                 ) : (
-                  mediaQ.data.map((a) => {
+                  // Verified evidence first: the report should cite what the org has checked.
+                  [...mediaQ.data].sort((x, y) => Number(y.verified) - Number(x.verified)).map((a) => {
                     const checked = selectedAssetIds.includes(a.id);
                     return (
                       <button
@@ -374,21 +356,18 @@ export function ReportsTab() {
                           {checked && <Check className="size-3" />}
                         </span>
                         <div className="relative size-10 shrink-0 overflow-hidden rounded bg-stone-100">
-                          { }
-                          <img
-                            src={a.thumbnailUrl || a.url}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
+                          <Thumb asset={a} />
                         </div>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-xs font-medium text-stone-800">
                             {a.title || a.aiCaption || "Untitled"}
                           </span>
-                          <span className="block truncate text-[10px] text-stone-400">
-                            {a.location ?? "—"}
+                          <span className="block truncate text-[11px] text-stone-500">
+                            <span className="font-mono text-stone-600">{accessionNo(a.id)}</span>
+                            {a.location ? ` · ${a.location}` : ""}
                           </span>
                         </span>
+                        <EvidenceMark state={evidenceState(a)} />
                       </button>
                     );
                   })
@@ -401,11 +380,7 @@ export function ReportsTab() {
               disabled={create.isPending}
               className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
             >
-              {create.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Sparkles className="size-4" />
-              )}
+              {create.isPending && <Loader2 className="size-4 animate-spin" />}
               Generate report
             </Button>
 
@@ -434,7 +409,7 @@ export function ReportsTab() {
             <EmptyState
               emoji="📄"
               title="No report yet"
-              description="Configure the form on the left and click Generate report. Your AI-generated narrative will appear here."
+              description="Pick the evidence to cite, then generate. Or open a past report below."
             />
           )}
         </div>
@@ -509,19 +484,13 @@ export function ReportsTab() {
 function ReportGenerating() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Sparkles className="size-12 animate-pulse text-emerald-500" />
-      <h3 className="mt-4 text-lg font-semibold text-stone-800">
-        Generating your report…
-      </h3>
-      <p className="mt-1 max-w-sm text-sm text-stone-500">
-        The LLM is analyzing your field evidence and writing donor-ready
-        narrative. This usually takes 8–20 seconds.
-      </p>
+      <h3 className="text-base font-semibold text-stone-800">Writing from your evidence…</h3>
+      <p className="mt-1 text-sm text-stone-500">Usually 8–20 seconds.</p>
       <div className="mt-4 flex gap-1">
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="size-2 rounded-full bg-emerald-500"
+            className="size-1.5 rounded-full bg-stone-400"
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
           />
@@ -596,29 +565,22 @@ function ReportView({
         )}
 
         {report.summary && (
-          <div className="mt-3 rounded-lg border border-stone-200 bg-stone-50 p-3">
-            <p className="text-sm leading-relaxed text-stone-700">
-              {report.summary}
-            </p>
-          </div>
+          <p className="mt-3 max-w-prose text-sm leading-relaxed text-stone-700">
+            {report.summary}
+          </p>
         )}
 
         {metricsEntries.length > 0 && (
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 border-y border-stone-200 py-4 sm:grid-cols-4">
             {metricsEntries.map(([k, v]) => (
-              <div
-                key={k}
-                className="rounded-lg border border-emerald-100 bg-emerald-50/60 p-3"
-              >
-                <p className="text-2xl font-bold tracking-tight text-emerald-800">
+              <div key={k}>
+                <dt className="text-xs capitalize text-stone-500">{k.replace(/[_-]/g, " ")}</dt>
+                <dd className="mt-0.5 text-xl font-semibold tabular-nums tracking-tight text-stone-900">
                   {String(v)}
-                </p>
-                <p className="text-[11px] capitalize text-stone-500">
-                  {k.replace(/[_-]/g, " ")}
-                </p>
+                </dd>
               </div>
             ))}
-          </div>
+          </dl>
         )}
 
         <div className="mt-4">
@@ -626,14 +588,9 @@ function ReportView({
         </div>
 
         {report.callToAction && (
-          <div className="mt-5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-700 p-4 text-white">
-            <div className="flex items-center gap-2">
-              <Megaphone className="size-4" />
-              <span className="text-xs font-semibold uppercase tracking-wide">
-                Call to action
-              </span>
-            </div>
-            <p className="mt-1 text-sm font-medium">{report.callToAction}</p>
+          <div className="mt-6 border-t border-stone-200 pt-4">
+            <p className="text-xs font-medium text-stone-500">Call to action</p>
+            <p className="mt-1 text-base font-medium text-stone-900">{report.callToAction}</p>
           </div>
         )}
       </Card>

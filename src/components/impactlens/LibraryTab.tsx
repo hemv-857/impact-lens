@@ -4,7 +4,6 @@ import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
-  Sparkles,
   Filter,
   Loader2,
   Images,
@@ -87,6 +86,7 @@ export function LibraryTab() {
   const [source, setSource] = React.useState("all");
   const [verifiedOnly, setVerifiedOnly] = React.useState(false);
   const [favoritesOnly, setFavoritesOnly] = React.useState(false);
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [sort, setSort] = React.useState("newest");
   const [limit, setLimit] = React.useState(24);
   const [dateFrom, setDateFrom] = React.useState("");
@@ -198,19 +198,47 @@ export function LibraryTab() {
     }
   };
 
+  const extraFilters =
+    Number(source !== "all") + Number(sort !== "newest") + Number(verifiedOnly) + Number(favoritesOnly) + Number(!!dateFrom) + Number(!!dateTo);
+
   return (
     <div className="space-y-5">
-      {/* Heading */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-stone-900">
-            Media Library
-          </h1>
-          <p className="text-sm text-stone-500">
-            AI-analyzed field media with intelligence, signals & traceability
-          </p>
-        </div>
-        <div className="flex gap-2">
+      {/* Toolbar: search and category stay visible; the rest sits behind Filters */}
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[220px] flex-1">
+            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
+            <Input
+              aria-label="Search media"
+              placeholder="Search caption, tags, location…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-white pl-9"
+            />
+          </div>
+          <Select value={category} onValueChange={setCategory} disabled={selectMode}>
+            <SelectTrigger className="w-[160px] bg-white capitalize" aria-label="Category">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((c) => (
+                <SelectItem key={c} value={c} className="capitalize">
+                  {c === "all" ? "All categories" : c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            onClick={() => setFiltersOpen((o) => !o)}
+            aria-expanded={filtersOpen}
+            className="border-stone-300 text-stone-700"
+          >
+            <Filter className="size-4" />
+            Filters
+            {extraFilters > 0 && <span className="tabular-nums text-stone-500">{extraFilters}</span>}
+          </Button>
+          <div className="ml-auto flex gap-2">
           <Button
             variant={selectMode ? "default" : "outline"}
             onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
@@ -232,48 +260,11 @@ export function LibraryTab() {
             <Download className="size-4" />
             <span className="hidden sm:inline">Export CSV</span>
           </a>
-          <Button
-            onClick={() => setUploadOpen(true)}
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
-          >
-            <Sparkles className="size-4" />
-            Analyze new media
-          </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Filter bar */}
-      <Card className="gap-0 p-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-[200px] flex-1 space-y-1.5">
-            <Label className="text-xs text-stone-500">Search</Label>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
-              <Input
-                placeholder="Search caption, tags, location…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs text-stone-500">Category</Label>
-            <Select value={category} onValueChange={setCategory} disabled={selectMode}>
-              <SelectTrigger className="w-[150px] capitalize">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c} className="capitalize">
-                    {c === "all" ? "All categories" : c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
+        {filtersOpen && (
+          <div className="flex flex-wrap items-end gap-3 border-y border-stone-200 py-3">
           <div className="space-y-1.5">
             <Label className="text-xs text-stone-500">Source</Label>
             <Select value={source} onValueChange={setSource} disabled={selectMode}>
@@ -332,7 +323,7 @@ export function LibraryTab() {
               htmlFor="favorites-only"
               className="cursor-pointer text-xs text-stone-600"
             >
-              ★ Favorites
+              Favorites
             </Label>
           </div>
 
@@ -380,9 +371,10 @@ export function LibraryTab() {
               Reset
             </Button>
           )}
-        </div>
-        <div className="mt-3 flex items-center gap-2 text-xs text-stone-400">
-          <Filter className="size-3.5" />
+          </div>
+        )}
+
+        <p className="flex items-center gap-2 text-xs text-stone-500">
           {mediaQ.isLoading
             ? "Loading…"
             : mediaQ.data
@@ -393,8 +385,8 @@ export function LibraryTab() {
               Select mode · {selected.size} selected
             </Badge>
           )}
-        </div>
-      </Card>
+        </p>
+      </div>
 
       {/* Bulk action toolbar (sticky) */}
       <AnimatePresence>

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { MapPin, Globe2 } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -84,8 +84,7 @@ export function MapView({
   if (mapped.length === 0) {
     return (
       <Card className="gap-0 p-4 sm:p-6">
-        <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-          <Globe2 className="size-4 text-emerald-600" />
+        <h3 className="mb-3 text-sm font-semibold text-stone-900">
           Project map
         </h3>
         <EmptyState
@@ -101,8 +100,7 @@ export function MapView({
     <Card className="gap-0 overflow-hidden p-0">
       <div className="flex items-center justify-between border-b border-stone-100 p-4">
         <div>
-          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-            <Globe2 className="size-4 text-emerald-600" />
+          <h3 className="text-sm font-semibold text-stone-900">
             Project map
           </h3>
           <p className="text-xs text-stone-500">{mapped.length} projects across the globe</p>

@@ -1,5 +1,6 @@
 "use client";
 
+import { accessionNo } from "@/lib/format";
 import * as React from "react";
 import {
   Sparkles,
@@ -165,12 +166,11 @@ export function AssetDrawer() {
         className="w-full gap-0 p-0 sm:max-w-xl md:max-w-2xl"
       >
         <SheetHeader className="border-b border-stone-200 bg-white p-4">
-          <SheetTitle className="flex items-center gap-2 text-base">
-            <Sparkles className="size-4 text-emerald-600" />
+          <SheetTitle className="text-base">
             {asset?.title ?? (isFetching ? "Loading…" : "Asset details")}
           </SheetTitle>
-          <SheetDescription className="text-xs">
-            AI-extracted intelligence & traceability timeline
+          <SheetDescription className="font-mono text-xs">
+            {asset ? accessionNo(asset.id) : ""}
           </SheetDescription>
         </SheetHeader>
 

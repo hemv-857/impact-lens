@@ -9,7 +9,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Sparkles,
   Images,
   X,
   History,
@@ -144,15 +143,6 @@ export function CompareTab() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900">
-          Before / After Compare
-        </h1>
-        <p className="text-sm text-stone-500">
-          Visually verify impact with AI-narrated change detection
-        </p>
-      </div>
-
       {/* Two drop zones */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <DropZone
@@ -207,11 +197,7 @@ export function CompareTab() {
             }
             className="bg-emerald-600 text-white hover:bg-emerald-700"
           >
-            {create.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Sparkles className="size-4" />
-            )}
+            {create.isPending && <Loader2 className="size-4 animate-spin" />}
             Generate comparison
           </Button>
           {result && (
@@ -482,8 +468,7 @@ function ComparisonResultView({
         {/* Narrative */}
         {result.narrative && (
           <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50/60 p-4">
-            <h4 className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-800">
-              <Sparkles className="size-3.5" />
+            <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-800">
               AI narrative
             </h4>
             <p className="text-sm leading-relaxed text-stone-700">

@@ -3,13 +3,9 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import {
-  Clock,
   Filter,
-  Calendar,
   MapPin,
   Loader2,
-  Images,
-  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -86,52 +82,21 @@ export function TimelineTab() {
   return (
     <div className="space-y-5">
       {/* Heading */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-stone-900">
-            <Clock className="size-7 text-emerald-600" />
-            Timeline
-          </h1>
-          <p className="text-sm text-stone-500">
-            Chronological view of all field media, grouped by capture date
-          </p>
-        </div>
-        <Button
-          onClick={() => setUploadOpen(true)}
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
-        >
-          <Images className="size-4" />
-          Analyze new media
-        </Button>
-      </div>
-
-      {/* Stats strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard
-          icon={<Images className="size-4" />}
-          label="Assets"
-          value={assets.length}
-          tint="emerald"
-        />
-        <StatCard
-          icon={<Calendar className="size-4" />}
-          label="Unique days"
-          value={stats.days}
-          tint="amber"
-        />
-        <StatCard
-          icon={<Clock className="size-4" />}
-          label="Time span"
-          value={stats.span}
-          tint="teal"
-        />
-        <StatCard
-          icon={<TrendingUp className="size-4" />}
-          label="Avg confidence"
-          value={`${Math.round(stats.avgConf * 100)}%`}
-          tint="lime"
-        />
-      </div>
+      <dl className="flex flex-wrap gap-x-8 gap-y-3">
+        {(
+          [
+            ["Assets", assets.length],
+            ["Unique days", stats.days],
+            ["Time span", stats.span],
+            ["Avg confidence", `${Math.round(stats.avgConf * 100)}%`],
+          ] as const
+        ).map(([label, value]) => (
+          <div key={label}>
+            <dt className="text-xs text-stone-500">{label}</dt>
+            <dd className="mt-0.5 text-xl font-semibold tabular-nums tracking-tight text-stone-900">{value}</dd>
+          </div>
+        ))}
+      </dl>
 
       {/* Filter bar */}
       <Card className="gap-0 p-4">
@@ -256,37 +221,5 @@ export function TimelineTab() {
         <TimelineView assets={assets} />
       )}
     </div>
-  );
-}
-
-const TINTS: Record<string, { ring: string; bg: string; text: string; icon: string }> = {
-  emerald: { ring: "ring-emerald-100", bg: "bg-emerald-50", text: "text-emerald-800", icon: "bg-emerald-600 text-white" },
-  teal: { ring: "ring-teal-100", bg: "bg-teal-50", text: "text-teal-800", icon: "bg-teal-600 text-white" },
-  amber: { ring: "ring-amber-100", bg: "bg-amber-50", text: "text-amber-800", icon: "bg-amber-500 text-white" },
-  lime: { ring: "ring-lime-100", bg: "bg-lime-50", text: "text-lime-800", icon: "bg-lime-600 text-white" },
-};
-
-function StatCard({
-  icon,
-  label,
-  value,
-  tint,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-  tint: keyof typeof TINTS;
-}) {
-  const t = TINTS[tint];
-  return (
-    <Card className={cn("gap-0 p-4 ring-1", t.ring)}>
-      <div className="flex items-center justify-between">
-        <span className={cn("flex size-8 items-center justify-center rounded-lg shadow-sm", t.icon)}>
-          {icon}
-        </span>
-      </div>
-      <p className="mt-3 text-2xl font-bold tracking-tight text-stone-900 tabular-nums">{value}</p>
-      <p className="text-xs text-stone-500">{label}</p>
-    </Card>
   );
 }

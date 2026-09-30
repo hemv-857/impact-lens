@@ -9,7 +9,6 @@ import {
   TrendingUp,
   Bookmark,
   Trash2,
-  History,
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -94,16 +93,6 @@ export function SearchTab() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-stone-900">
-          Semantic Search
-        </h1>
-        <p className="text-sm text-stone-500">
-          Search your library by meaning — the AI ranks every asset by
-          relevance to your query.
-        </p>
-      </div>
-
       {/* Big search bar */}
       <Card className="gap-0 p-4 sm:p-6">
         <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row">
@@ -258,8 +247,7 @@ export function SearchTab() {
         {/* Saved searches sidebar (1/4) */}
         <aside className="lg:col-span-1">
           <Card className="gap-0 p-4 lg:sticky lg:top-4">
-            <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-              <History className="size-4 text-emerald-600" />
+            <h3 className="mb-3 text-sm font-semibold text-stone-900">
               Saved searches
               {savedQ.data && savedQ.data.length > 0 && (
                 <Badge variant="secondary" className="ml-auto bg-stone-100 text-stone-600">
