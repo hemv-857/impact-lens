@@ -1,0 +1,31 @@
+# ImpactLens on Render — New Blueprint from this file.
+# The app reads SQLite via Prisma; set TURSO_DATABASE_URL/TURSO_AUTH_TOKEN
+# (see README → Deploy) to persist data across deploys. Without them the
+# committed db file is recreated each build (fine for a demo, not for prod).
+services:
+  - type: web
+    name: impact-lens
+    runtime: node
+    plan: free
+    buildCommand: npm ci && mkdir -p db && npx prisma db push --skip-generate && npm run build
+    startCommand: NODE_ENV=production HOSTNAME=0.0.0.0 DATABASE_URL="${DATABASE_URL:-file:$PWD/db/custom.db}" node .next/standalone/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: AI_PROVIDER
+        value: gemini
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+      - key: TURSO_DATABASE_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false

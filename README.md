@@ -55,6 +55,7 @@ npm run test:e2e   # Playwright suite — start the prod server on :3002 first
 npm run db:push    # sync schema to db/custom.db
 bun scripts/ai-smoke.ts      # self-stubbed AI client contract check (no keys)
 bun scripts/notify-smoke.ts  # email + Slack contract check (no network)
+bun scripts/db-smoke.ts      # libSQL/Turso adapter round-trip against a scratch DB
 ```
 
 The e2e suite expects the production server on **http://127.0.0.1:3002** (port 3001 is reserved for another project):
@@ -88,6 +89,34 @@ uploads          local upload fallback (gitignored, private)
 db/custom.db     seeded SQLite database
 AUDIT.md         audit findings + resolution status
 ```
+
+## Deploy
+
+Both targets are stateless apps in front of two services: a database and (for uploads) Cloudinary.
+
+| | Vercel | Render |
+|---|---|---|
+| config | `vercel.json` — build command + daily cron | `render.yaml` — Blueprint (build, start, env, health check) |
+| database | **Turso required** — Vercel's filesystem is read-only, no `db/custom.db` | local `db/custom.db` works; Turso recommended or data resets each deploy |
+| uploads | **Cloudinary required** — `./uploads` fallback can't write | same — set `CLOUDINARY_URL` |
+
+One-time setup:
+
+```bash
+# 1. Turso (free tier) — schema lives in prisma/turso-init.sql, regenerated from schema.prisma
+turso db create impactlens
+turso db shell impactlens < prisma/turso-init.sql
+turso db show impactlens --url            # -> TURSO_DATABASE_URL
+turso db tokens create impactlens         # -> TURSO_AUTH_TOKEN
+```
+
+2. Cloudinary: `CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud>` (uploads go to the CDN; without it uploads 500 on Vercel).
+3. **Vercel**: import the repo, set the env vars below. `vercel.json` schedules `GET /api/cron/reports` daily at 06:00 UTC; Vercel sends `Authorization: Bearer $CRON_SECRET` automatically.
+4. **Render**: New → Blueprint → this repo. `render.yaml` declares the env vars (secrets are `sync: false` or generated).
+
+Environment (both): `NEXTAUTH_SECRET` (required), `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` (required on Vercel), `CLOUDINARY_URL`, `CRON_SECRET`, `AI_PROVIDER` + its key (`GEMINI_API_KEY` / `AI_API_KEY` / ...), optional `EMAIL_*` / `SLACK_WEBHOOK_URL`.
+
+Runtime notes: video analysis needs `ffmpeg` on PATH — not on Vercel, so video uploads succeed but analysis records `failed`. Without Turso on Render the schema is rebuilt at each deploy (`prisma db push` in the build command), so treat that DB as throwaway.
 
 ## Operational notes
 

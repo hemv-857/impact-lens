@@ -121,3 +121,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Request failed" }, { status: 500 });
   }
 }
+
+// Vercel Cron calls the path with GET; the secret check above is method-agnostic.
+export async function GET(req: NextRequest) {
+  return POST(req);
+}

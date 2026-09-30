@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Vercel ignores standalone and (on Next 16.3) breaks on it — standalone is
+  // for Render / self-hosted `node .next/standalone/server.js`.
+  output: process.env.VERCEL ? undefined : "standalone",
   /* config options here */
   typescript: {
     ignoreBuildErrors: false,

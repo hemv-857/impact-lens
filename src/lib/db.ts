@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
+import { PrismaLibSQL } from '@prisma/adapter-libsql'
 import fs from 'node:fs'
 import path from 'node:path'
 import { destroyCloudinary } from './cloudinary'
@@ -7,11 +8,27 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "production" ? ["error"] : ["query", "error"], // no query+params in prod logs
-  })
+/**
+ * TURSO_DATABASE_URL set ⇒ queries run over libSQL (Turso), because Vercel's
+ * filesystem is read-only and can't hold db/custom.db. Unset ⇒ the plain local
+ * SQLite file (dev, Render, e2e) exactly as before. unixepoch-ms keeps
+ * timestamps byte-compatible with the native driver, so a local db/custom.db
+ * restored into Turso reads back unchanged.
+ */
+function makeClient(): PrismaClient {
+  const log: Prisma.PrismaClientOptions["log"] = process.env.NODE_ENV === "production" ? ["error"] : ["query", "error"]; // no query+params in prod logs
+  const url = process.env.TURSO_DATABASE_URL;
+  if (!url) return new PrismaClient({ log });
+  return new PrismaClient({
+    log,
+    adapter: new PrismaLibSQL(
+      { url, authToken: process.env.TURSO_AUTH_TOKEN },
+      { timestampFormat: "unixepoch-ms" }
+    ),
+  });
+}
+
+export const db = globalForPrisma.prisma ?? makeClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 

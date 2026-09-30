@@ -81,3 +81,22 @@ test("PASS: server rejects >10MB inline uploads with 413", async ({ request }) =
   });
   expect(res.status(), `body: ${await res.text()}`).toBe(413);
 });
+
+test("PASS: Vercel config — standalone skipped, Turso adapter wired, daily cron", () => {
+  expect(read("next.config.ts")).toMatch(/process\.env\.VERCEL/);
+  expect(read("src/lib/db.ts")).toMatch(/TURSO_DATABASE_URL/);
+  const vercel = JSON.parse(read("vercel.json")) as { crons?: { path: string }[] };
+  expect(vercel.crons?.[0]?.path).toBe("/api/cron/reports");
+  // Prisma Migrate can't reach libsql:// — the schema ships as SQL instead.
+  expect(read("prisma/turso-init.sql")).toMatch(/CREATE TABLE "Project"/);
+});
+
+test("PASS: Render blueprint runs the standalone server behind a health check", () => {
+  const yaml = read("render.yaml");
+  expect(yaml).toContain("node .next/standalone/server.js");
+  expect(yaml).toContain("healthCheckPath: /api/health");
+});
+
+test("PASS: cron endpoint answers GET (Vercel Cron's method) with the secret guard", async ({ request }) => {
+  expect((await request.get("/api/cron/reports")).status()).toBe(401);
+});
