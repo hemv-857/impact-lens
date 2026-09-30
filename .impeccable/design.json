@@ -1,0 +1,318 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-30T01:24:02.675647+05:30",
+  "title": "Design System: ImpactLens",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "#0d1311",
+          "#16201c",
+          "#222a28",
+          "#333c3a",
+          "#46504e",
+          "#5a6563",
+          "#c4cac9",
+          "#dde1e0"
+        ]
+      },
+      "field-green": {
+        "role": "primary",
+        "displayName": "Field Green",
+        "tonalRamp": [
+          "#0f3a29",
+          "#134832",
+          "#185a3d",
+          "#1f6b4a",
+          "#2f7d56",
+          "#4f9570",
+          "#85b89b",
+          "#d7e8de"
+        ]
+      },
+      "field-green-deep": {
+        "role": "primary",
+        "displayName": "Field Green Deep"
+      },
+      "field-green-wash": {
+        "role": "primary",
+        "displayName": "Field Green Wash"
+      },
+      "archive-blue-grey": {
+        "role": "secondary",
+        "displayName": "Archive-Box Blue-Grey",
+        "tonalRamp": [
+          "#26323b",
+          "#31404b",
+          "#3e4f5c",
+          "#4d6170",
+          "#5f7584",
+          "#7b8f9d",
+          "#c1ccd4",
+          "#f0f3f5"
+        ]
+      },
+      "archive-blue-grey-wash": {
+        "role": "secondary",
+        "displayName": "Archive Blue-Grey Wash"
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "tonalRamp": [
+          "#222a28",
+          "#333c3a",
+          "#46504e",
+          "#5a6563",
+          "#c4cac9",
+          "#dde1e0",
+          "#eceeed",
+          "#f6f7f6"
+        ]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "Sheet"
+      },
+      "shelf": {
+        "role": "neutral",
+        "displayName": "Shelf"
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule"
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Rule Strong"
+      },
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Graphite"
+      },
+      "graphite-soft": {
+        "role": "neutral",
+        "displayName": "Graphite Soft"
+      },
+      "destructive": {
+        "role": "error",
+        "displayName": "Destructive"
+      },
+      "caution": {
+        "role": "warning",
+        "displayName": "Caution"
+      },
+      "dark-paper": {
+        "role": "neutral",
+        "displayName": "Dark Paper"
+      },
+      "dark-sheet": {
+        "role": "neutral",
+        "displayName": "Dark Sheet"
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Dark Ink"
+      },
+      "dark-rule": {
+        "role": "neutral",
+        "displayName": "Dark Rule"
+      },
+      "dark-field-green": {
+        "role": "primary",
+        "displayName": "Dark Field Green"
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section h1 beside the view tabs."
+      },
+      "tally": {
+        "displayName": "Tally",
+        "purpose": "Home running totals strip."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section h2 inside a view."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Row titles, cells, buttons, tabs."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Metadata lines, table headers, tally labels."
+      },
+      "accession": {
+        "displayName": "Accession",
+        "purpose": "Accession numbers, ranks, model ids, shortcut keys only."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "hairline-hover",
+        "value": "border-color 150ms ease, background-color 150ms ease",
+        "purpose": "Hover darkens a rule; nothing lifts."
+      },
+      {
+        "name": "view-fade",
+        "value": "fade-in 200ms",
+        "purpose": "View switch inside a section."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Commit Button",
+      "kind": "button",
+      "refersTo": "button-commit",
+      "description": "The one field-green action per view (Add media).",
+      "html": "<button class=\"ds-btn-commit\">+ Add media</button>",
+      "css": ".ds-btn-commit{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; font-size:14px; font-weight:500; border-radius:4px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition: background-color .15s, border-color .15s; height:32px; padding:0 12px; background:#1f6b4a; color:#fff; border:0;} .ds-btn-commit:hover{background:#185a3d;} .ds-btn-commit:focus-visible{outline:2px solid #2f7d56; outline-offset:2px;}"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Default for every non-commit action.",
+      "html": "<button class=\"ds-btn-outline\">Generate report</button>",
+      "css": ".ds-btn-outline{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; font-size:14px; font-weight:500; border-radius:4px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition: background-color .15s, border-color .15s; height:36px; padding:0 16px; background:#fff; color:#16201c; border:1px solid #dde1e0;} .ds-btn-outline:hover{background:#eceeed;} .ds-btn-outline:focus-visible{outline:2px solid #2f7d56; outline-offset:2px;}"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "White field, rule-strong stroke, green focus ring and caret.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search caption, tags, location…\">",
+      "css": ".ds-input{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; height:36px; width:320px; padding:0 12px; font-size:14px; color:#16201c; background:#fff; border:1px solid #c4cac9; border-radius:4px; caret-color:#1f6b4a;} .ds-input::placeholder{color:#5a6563;} .ds-input:focus-visible{outline:2px solid #2f7d56; outline-offset:2px;}"
+    },
+    {
+      "name": "View Tabs",
+      "kind": "nav",
+      "refersTo": "view-tab",
+      "description": "Section h1 plus underline view tabs on one rule.",
+      "html": "<div class=\"ds-tabs\"><h1>Library</h1><button class=\"ds-tab ds-on\">Media</button><button class=\"ds-tab\">Search</button><button class=\"ds-tab\">Timeline</button></div>",
+      "css": ".ds-tabs{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; display:flex; align-items:flex-end; gap:24px; border-bottom:1px solid #dde1e0;} .ds-tabs h1{margin:0; padding-bottom:10px; font-size:20px; font-weight:600; letter-spacing:-.025em; color:#16201c;} .ds-tab{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; margin-bottom:-1px; margin-right:-20px; padding:4px 10px 10px; font-size:14px; color:#5a6563; background:none; border:0; border-bottom:2px solid transparent; cursor:pointer;} .ds-tab:hover{color:#16201c;} .ds-tab.ds-on{color:#16201c; font-weight:500; border-bottom-color:#16201c;}"
+    },
+    {
+      "name": "Label Tag",
+      "kind": "chip",
+      "refersTo": "label-tag",
+      "description": "Neutral category/status label.",
+      "html": "<span class=\"ds-tag\">Reforestation</span>",
+      "css": ".ds-tag{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; display:inline-flex; padding:2px 8px; font-size:12px; color:#16201c; background:rgba(255,255,255,.9); border:1px solid #dde1e0; border-radius:4px;}"
+    },
+    {
+      "name": "Evidence Marks",
+      "kind": "custom",
+      "description": "Verified stamp, analyzed ring, pending dashed ring.",
+      "html": "<span class=\"ds-marks\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#1f6b4a\"/><path d=\"M4.8 8.2l2.1 2.1 4.3-4.6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg> Verified <svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"6.2\" fill=\"none\" stroke=\"#5a6563\" stroke-width=\"1.6\"/></svg> Analyzed <svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"6.2\" fill=\"none\" stroke=\"#5a6563\" stroke-width=\"1.6\" stroke-dasharray=\"2.2 2.2\"/></svg> Pending</span>",
+      "css": ".ds-marks{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#5a6563;}"
+    },
+    {
+      "name": "Ledger Row",
+      "kind": "custom",
+      "description": "Thumb, title, mono accession line, tabular confidence, mark, action.",
+      "html": "<ol class=\"ds-ledger\"><li><span class=\"ds-thumb\">A·R1G6IG</span><span class=\"ds-main\"><span class=\"ds-t\">Mangrove Restoration Planting</span><span class=\"ds-m\"><code>A·ORNI9S</code> Wetland Restoration · 7d ago</span></span><span class=\"ds-c\">88%</span><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"6.2\" fill=\"none\" stroke=\"#5a6563\" stroke-width=\"1.6\"/></svg><button class=\"ds-act\">Verify</button></li></ol>",
+      "css": ".ds-ledger{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; list-style:none; margin:0; padding:0; border-top:1px solid #dde1e0; border-bottom:1px solid #dde1e0; width:640px;} .ds-ledger li{display:flex; align-items:center; gap:16px; padding:12px 0;} .ds-ledger li:hover{background:rgba(236,238,237,.6);} .ds-thumb{width:80px; height:56px; display:flex; align-items:center; justify-content:center; border:1px dashed #c4cac9; background:#eceeed; border-radius:2px; font-family: var(--font-geist-mono), 'Geist Mono', ui-monospace, monospace; font-size:10px; color:#5a6563;} .ds-main{flex:1; display:flex; flex-direction:column; gap:2px;} .ds-t{font-size:14px; font-weight:500; color:#16201c;} .ds-m{font-size:12px; color:#5a6563;} .ds-m code{font-family: var(--font-geist-mono), 'Geist Mono', ui-monospace, monospace; font-size:11px; color:#46504e; margin-right:6px;} .ds-c{font-size:14px; font-variant-numeric:tabular-nums; color:#333c3a; width:48px; text-align:right;} .ds-act{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; font-size:14px; font-weight:500; border-radius:4px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition: background-color .15s, border-color .15s; height:28px; padding:0 10px; background:#fff; color:#16201c; border:1px solid #dde1e0;} .ds-act:hover{background:#eceeed;}"
+    },
+    {
+      "name": "Media Card",
+      "kind": "card",
+      "refersTo": "media-card",
+      "description": "Photo sheet with neutral tag, footer title, mark, accession.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-ph\"><span class=\"ds-tag2\">Water</span></div><div class=\"ds-ft\"><div class=\"ds-r\"><b>Clean Water Access</b><span>92% <svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#1f6b4a\"/><path d=\"M4.8 8.2l2.1 2.1 4.3-4.6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></div><div class=\"ds-s\"><code>A·ISFRVP</code> rural farmland</div></div></div>",
+      "css": ".ds-card{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; width:280px; background:#fff; border:1px solid #dde1e0; border-radius:4px; overflow:hidden; transition:border-color .15s;} .ds-card:hover{border-color:#c4cac9;} .ds-ph{height:156px; background:#c1ccd4; position:relative;} .ds-tag2{position:absolute; top:8px; left:8px; padding:2px 8px; font-size:12px; background:rgba(255,255,255,.9); border:1px solid #dde1e0; border-radius:4px; color:#16201c;} .ds-ft{padding:12px;} .ds-r{display:flex; justify-content:space-between; align-items:center; font-size:14px; color:#16201c;} .ds-r b{font-weight:500;} .ds-r span{display:inline-flex; gap:6px; align-items:center; font-size:13px; color:#333c3a; font-variant-numeric:tabular-nums;} .ds-s{margin-top:4px; font-size:12px; color:#5a6563;} .ds-s code{font-family: var(--font-geist-mono), 'Geist Mono', ui-monospace, monospace; font-size:11px; margin-right:6px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Accession Register",
+    "overview": "**Creative North Star: \"The Accession Register\"**\n\nThe signed-in app is a working register, not a dashboard. Every field photo is an accessioned item with a number, a provenance line, a confidence figure and a state mark, and the interface is the ledger that holds them. Density is operational: ruled rows, running totals, tables with ranked numbers, one line of metadata under each title. The page reads top to bottom like a register page, never as a grid of KPI cards.\n\nThe material is cool archival paper: a near-white grey-green ground, white sheets only where an item needs a frame (media cards, inputs, menus), and hairline rules doing all structural work. Colour is withheld. Ink and graphite carry text and state; archive-box blue-grey is a quiet secondary neutral; field green is spent only where the user commits (add, verify) and on the verified stamp. The only saturated palette in the product is the UN SDG set, because it is an external standard the evidence is filed against.\n\nMotion is minimal: hairlines darken on hover, views fade in over 200ms, nothing lifts or floats.",
+    "keyCharacteristics": [
+      "Ruled ledger rows (hairline top and bottom rule, 1px dividers) as the primary container.",
+      "Mono accession numbers in the form A·XXXXXX on every item and every missing-image placeholder.",
+      "Tabular figures for every count, percentage and score, right-aligned.",
+      "Evidence state drawn as a mark (filled stamp tick / open ring / dashed ring), never colour alone.",
+      "One commit colour, field green; everything else is ink, graphite and rule.",
+      "Light and dark are both first-class; dark is a deep green-black ground with a lighter field green."
+    ],
+    "rules": [
+      {
+        "name": "The One Commit Colour Rule",
+        "body": "Field green appears only on commit actions and the verified stamp. Categories, statuses, headings, charts of neutral data and decorations stay in ink and graphite. If a screen has more than two green elements that are not verified marks, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The External Hue Rule",
+        "body": "The UN SDG colours (the official 17-goal palette) are the only saturated hues in the product, and they appear only where an SDG goal is being shown as coverage. They are the standard's colours, not ours; never borrow them for anything else.",
+        "section": "colors"
+      },
+      {
+        "name": "The Neutral Label Rule",
+        "body": "Category and project status are labels, not states: ink text on a white tag with a rule border. They never get a hue.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Every number that can be compared (counts, percentages, scores, milliseconds) is set with tabular figures and right-aligned in its column.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mono Is An Identifier Rule",
+        "body": "Geist Mono marks things that are catalogue identifiers: accession numbers, ranks, model names, shortcut keys. Prose, labels and headings never use it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Headings, labels and table headers are sentence case at normal tracking. The register does not shout.",
+        "section": "typography"
+      },
+      {
+        "name": "The Ruled Row Rule",
+        "body": "Lists are rows between rules, not stacked cards: a top and bottom rule on the list, 1px dividers between rows, a faint shelf wash on hover. Reach for a card only when the item is an image.",
+        "section": "layout"
+      },
+      {
+        "name": "The Hairline Not Shadow Rule",
+        "body": "A resting surface never carries a shadow. If something needs to separate, give it a rule; if it needs to respond, darken the rule.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** give every item its accession number in Geist Mono, including when its image is missing.",
+      "**Do** show evidence state with the three marks (stamp tick, open ring, dashed ring) and a text label for assistive tech.",
+      "**Do** set every comparable number in tabular figures, right-aligned.",
+      "**Do** build lists as ruled rows with a top and bottom rule and 1px dividers.",
+      "**Do** keep field green to commit actions and the verified stamp; one green button per view.",
+      "**Do** open every non-Home section with the h1 plus underline view tabs on a single rule.",
+      "**Do** pair every light value with its dark counterpart (dark paper, dark sheet, dark rule, dark field green)."
+    ],
+    "donts": [
+      "**Don't** build KPI cards: no boxed stat tiles, icons over numbers, or trend chips. Totals are a tally strip.",
+      "**Don't** colour categories or statuses; they are neutral ink labels.",
+      "**Don't** use SDG colours outside SDG coverage, or any other saturated hue for decoration.",
+      "**Don't** put shadows on resting surfaces or lift things on hover.",
+      "**Don't** use Geist Mono for prose, labels or headings.",
+      "**Don't** set uppercase tracked micro-labels above headings; headings are sentence case and speak for themselves.",
+      "**Don't** convey state by colour alone."
+    ]
+  }
+}
