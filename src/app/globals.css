@@ -40,6 +40,10 @@
   --color-teal-700: #43494f;
   --color-teal-800: #363b40;
   --color-teal-900: #2a2e32;
+  /* Reading sizes one step up from Tailwind's defaults (12/14/16px). */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
 }
 
 
