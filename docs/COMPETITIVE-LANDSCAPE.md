@@ -159,7 +159,7 @@ Effort: S ≤ 2 days · M ≈ 1 week · L > 2 weeks. Items marked **Decision** n
 
 - **Read (vendor pages, 2026-09-29):** Ecodrive (`/impactiq`, `/pricing`), BNZ Impact, Sopact (`/`, `/pricing`), ReportsAI (`/`; `/pricing` = 404), ImpactDraft, Sealr (UNDP catalogue), engage, Tella, DevResults, TextIt, Cloudinary, Fulcrum, CommCare.
 - **GitHub API:** stars, licence, last push for mirl-aftermath, impact-vision, KoboToolbox, RapidPro, MEInsight, Uwazi; `impact-reporter-ai` = 404.
-- **Not verifiable here:** Chauka, MONIC, Amp Impact, Watershed, Persefoni, Sweep (kept as `Low`, never verified).
+- **Re-researched 2026-09-30 (search tool):** Chauka, MONIC, Amp Impact (from $7,000/yr), Watershed (quote only; third-party estimate ≈ $70k/yr), Persefoni (pricing page read: free Pro, quoted Advanced), Sweep (quote only). All are M&E or carbon tools, not media competitors.
 - **Method limit:** page extraction was summarised by a tool, so exact figures should be re-read on the page before they go in a customer-facing document.
 
 ## 8. Unresolved: exact checks still needed
@@ -171,7 +171,7 @@ Effort: S ≤ 2 days · M ≈ 1 week · L > 2 weeks. Items marked **Decision** n
 | 3 | Prices for BNZ Impact, ReportsAI, engage, Sealr | Sales quote |
 | 4 | Cloudinary AI add-on prices; Cloudinary DAM as a substitute | Cloudinary docs or account manager |
 | 5 | MIRL Aftermath's exact hash algorithm (README uses hash/checksum wording) | Read the source |
-| 6 | Chauka, MONIC, Amp Impact, Watershed, Persefoni, Sweep | Verify or drop; they are the least relevant rows |
+| 6 | Watershed and Sweep list prices (quote only); decide whether to drop the carbon-accounting rows | Sales quote, or drop them |
 | 7 | Missing categories: generic DAMs with AI tagging, nonprofit CRMs adding AI, shared drive + general LLM | Research pass; add rows to the CSV |
 | 8 | Who actually buys: no customer interviews exist | 5–10 calls with program managers and fundraising staff; test the positioning and the price gap |
 | 9 | Real AI cost per unit, Cloudinary plan actually used, tax and payment fees | U4; finance input |
