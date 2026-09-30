@@ -81,8 +81,8 @@ export function AccountMenu() {
           <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
             {initial}
           </span>
-          <span className="truncate text-xs font-medium">{label}</span>
-          <ChevronDown className="size-3.5 shrink-0 text-stone-400" />
+          <span className="hidden truncate text-xs font-medium sm:inline">{label}</span>
+          <ChevronDown className="hidden size-3.5 shrink-0 text-stone-400 sm:block" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">

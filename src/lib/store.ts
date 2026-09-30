@@ -10,7 +10,8 @@ export type ImpactTab =
   | "reports"
   | "search"
   | "campaign"
-  | "timeline";
+  | "timeline"
+  | "insights";
 
 interface ImpactLensState {
   // Navigation

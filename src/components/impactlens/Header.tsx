@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, Leaf, Sparkles, Command, Search, Clock, Sun, Moon } from "lucide-react";
+import { Menu, Plus, Search, Sun, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,22 +15,54 @@ import {
 import { useImpactStore, type ImpactTab } from "@/lib/store";
 import { AccountMenu } from "@/components/impactlens/AccountMenu";
 
-interface NavItem {
-  id: ImpactTab;
+/** Four sections, each answering one question. Views are the tabs inside a section. */
+export const SECTIONS: {
+  id: string;
   label: string;
-  icon: React.ReactNode;
+  views: { id: ImpactTab; label: string }[];
+}[] = [
+  { id: "home", label: "Home", views: [{ id: "overview", label: "Home" }] },
+  {
+    id: "library",
+    label: "Library",
+    views: [
+      { id: "library", label: "Media" },
+      { id: "search", label: "Search" },
+      { id: "timeline", label: "Timeline" },
+    ],
+  },
+  {
+    id: "projects",
+    label: "Projects",
+    views: [
+      { id: "projects", label: "Projects" },
+      { id: "compare", label: "Before / After" },
+      { id: "insights", label: "Insights" },
+    ],
+  },
+  {
+    id: "reports",
+    label: "Reports",
+    views: [
+      { id: "reports", label: "Reports" },
+      { id: "campaign", label: "Campaigns" },
+    ],
+  },
+];
+
+export function sectionOf(tab: ImpactTab) {
+  return SECTIONS.find((s) => s.views.some((v) => v.id === tab)) ?? SECTIONS[0];
 }
 
-const NAV: NavItem[] = [
-  { id: "overview", label: "Overview", icon: <Leaf className="size-4" /> },
-  { id: "library", label: "Media Library", icon: <Sparkles className="size-4" /> },
-  { id: "projects", label: "Projects", icon: <Leaf className="size-4" /> },
-  { id: "compare", label: "Before / After", icon: <Leaf className="size-4" /> },
-  { id: "timeline", label: "Timeline", icon: <Clock className="size-4" /> },
-  { id: "reports", label: "Reports", icon: <Leaf className="size-4" /> },
-  { id: "search", label: "Semantic Search", icon: <Leaf className="size-4" /> },
-  { id: "campaign", label: "Campaign Studio", icon: <Leaf className="size-4" /> },
-];
+export function Mark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 30 30" aria-hidden className={cn("size-7", className)}>
+      <rect width="30" height="30" rx="5" className="fill-stone-900 dark:fill-stone-100" />
+      <circle cx="15" cy="15" r="8" fill="none" strokeWidth="2.2" className="stroke-stone-50 dark:stroke-stone-900" />
+      <circle cx="15" cy="15" r="3" className="fill-emerald-400" />
+    </svg>
+  );
+}
 
 export function Header() {
   const activeTab = useImpactStore((s) => s.activeTab);
@@ -38,6 +70,7 @@ export function Header() {
   const setUploadOpen = useImpactStore((s) => s.setUploadOpen);
   const setPaletteOpen = useImpactStore((s) => s.setPaletteOpen);
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const current = sectionOf(activeTab);
 
   const onPick = (t: ImpactTab) => {
     setTab(t);
@@ -45,121 +78,109 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-stone-200 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        {/* Brand */}
+    <header className="sticky top-0 z-40 w-full border-b border-stone-200 bg-stone-50">
+      <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6 md:gap-6">
         <button
           type="button"
           onClick={() => setTab("overview")}
-          className="flex items-center gap-2.5 text-left"
+          className="flex shrink-0 items-center gap-2"
+          aria-label="ImpactLens home"
         >
-          <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-sm">
-            <Leaf className="size-5" />
-          </span>
-          <span className="flex flex-col">
-            <span className="text-base font-bold tracking-tight text-stone-900">
-              Impact<span className="text-emerald-600">Lens</span>
-            </span>
-            <span className="hidden text-[10px] uppercase tracking-wider text-stone-400 sm:block">
-              AI Sustainability Media
-            </span>
-          </span>
+          <Mark />
+          <span className="text-base font-semibold tracking-tight text-stone-900">ImpactLens</span>
         </button>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-1 lg:flex">
-          {NAV.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onPick(item.id)}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                activeTab === item.id
-                  ? "bg-emerald-50 text-emerald-800"
-                  : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
+        <nav aria-label="Sections" className="hidden h-full items-stretch gap-1 md:flex">
+          {SECTIONS.map((s) => {
+            const active = s.id === current.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                aria-current={active ? "page" : undefined}
+                onClick={() => onPick(s.views[0].id)}
+                className={cn(
+                  "relative px-3 text-sm font-medium transition-colors",
+                  active ? "text-stone-900" : "text-stone-500 hover:text-stone-900"
+                )}
+              >
+                {s.label}
+                <span
+                  className={cn(
+                    "absolute inset-x-3 bottom-0 h-0.5 bg-stone-900 transition-opacity",
+                    active ? "opacity-100" : "opacity-0"
+                  )}
+                />
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Right side: Command palette trigger + CTA + mobile menu */}
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <AccountMenu />
-          {/* Command palette trigger */}
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={() => setPaletteOpen(true)}
-            className="hidden items-center gap-2 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1.5 text-xs text-stone-500 transition hover:border-stone-300 hover:bg-stone-100 md:flex"
-            title="Open command palette (Cmd+K)"
+            className="hidden h-8 w-52 items-center gap-2 rounded-md border border-stone-200 bg-white px-2.5 text-sm text-stone-500 transition hover:border-stone-300 lg:flex"
+            title="Search and commands (⌘K)"
           >
             <Search className="size-3.5" />
-            <span>Quick actions…</span>
-            <kbd className="flex items-center gap-0.5 rounded border border-stone-200 bg-white px-1 py-0.5 text-[9px] font-medium text-stone-400">
-              <Command className="size-2.5" />K
-            </kbd>
+            <span>Jump to…</span>
+            <kbd className="ml-auto font-mono text-[11px] text-stone-400">⌘K</kbd>
           </button>
           <Button
             onClick={() => setUploadOpen(true)}
-            className="hidden bg-emerald-600 text-white hover:bg-emerald-700 sm:inline-flex"
             size="sm"
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
           >
-            <Sparkles className="size-4" />
-            Analyze media
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">Add media</span>
           </Button>
-          {/* Mobile sheet */}
+          <ThemeToggle />
+          <AccountMenu />
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="lg:hidden"
-                aria-label="Open menu"
-              >
+              <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
                 <Menu className="size-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0">
               <SheetHeader className="border-b border-stone-200 p-4">
                 <SheetTitle className="flex items-center gap-2">
-                  <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-700 text-white">
-                    <Leaf className="size-4" />
-                  </span>
+                  <Mark className="size-6" />
                   ImpactLens
                 </SheetTitle>
               </SheetHeader>
-              <nav className="flex flex-col gap-1 p-2">
-                {NAV.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => onPick(item.id)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      activeTab === item.id
-                        ? "bg-emerald-50 text-emerald-800"
-                        : "text-stone-700 hover:bg-stone-100"
-                    )}
-                  >
-                    {item.icon}
-                    {item.label}
-                  </button>
+              <nav className="flex flex-col p-2">
+                {SECTIONS.map((s) => (
+                  <div key={s.id} className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => onPick(s.views[0].id)}
+                      className={cn(
+                        "w-full rounded-md px-3 py-2 text-left text-sm font-semibold",
+                        s.id === current.id ? "text-stone-900" : "text-stone-600"
+                      )}
+                    >
+                      {s.label}
+                    </button>
+                    {s.views.length > 1 &&
+                      s.views.map((v) => (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => onPick(v.id)}
+                          className={cn(
+                            "w-full rounded-md py-1.5 pl-6 pr-3 text-left text-sm",
+                            activeTab === v.id
+                              ? "bg-stone-200/60 text-stone-900"
+                              : "text-stone-500 hover:bg-stone-100"
+                          )}
+                        >
+                          {v.label}
+                        </button>
+                      ))}
+                  </div>
                 ))}
-                <div className="mt-2 border-t border-stone-200 pt-2">
-                  <Button
-                    onClick={() => {
-                      setUploadOpen(true);
-                      setMobileOpen(false);
-                    }}
-                    className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
-                  >
-                    <Sparkles className="size-4" />
-                    Analyze media
-                  </Button>
-                </div>
               </nav>
             </SheetContent>
           </Sheet>
@@ -181,7 +202,7 @@ function ThemeToggle() {
       aria-label="Toggle dark mode"
       title="Toggle dark mode"
       onClick={() => setTheme(dark ? "light" : "dark")}
-      className="rounded-lg border border-stone-200 bg-stone-50 p-2 text-stone-500 transition hover:bg-stone-100"
+      className="hidden size-8 items-center justify-center rounded-md text-stone-500 transition hover:bg-stone-200/60 hover:text-stone-900 sm:flex"
     >
       {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </button>

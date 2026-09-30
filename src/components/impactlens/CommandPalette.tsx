@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  BarChart3,
   Search,
   LayoutDashboard,
   Images,
@@ -12,7 +13,6 @@ import {
   Search as SearchIcon,
   Megaphone,
   Upload,
-  Sparkles,
   CornerDownLeft,
   Command,
   Clock,
@@ -67,19 +67,20 @@ export function CommandPalette() {
 
   const items = React.useMemo<CommandItem[]>(() => {
     const nav: CommandItem[] = [
-      { id: "nav-overview", label: "Overview", hint: "Dashboard home", icon: <LayoutDashboard className="size-4" />, group: "Navigate", keywords: ["home", "dashboard", "stats"], action: () => setTab("overview") },
-      { id: "nav-library", label: "Media Library", hint: "Browse assets", icon: <Images className="size-4" />, group: "Navigate", keywords: ["media", "assets", "photos", "images"], action: () => setTab("library") },
-      { id: "nav-projects", label: "Projects", hint: "Initiatives & map", icon: <FolderKanban className="size-4" />, group: "Navigate", keywords: ["projects", "initiatives", "map"], action: () => setTab("projects") },
-      { id: "nav-compare", label: "Before / After", hint: "Compare media", icon: <GitCompareArrows className="size-4" />, group: "Navigate", keywords: ["compare", "before", "after", "diff"], action: () => setTab("compare") },
-      { id: "nav-timeline", label: "Timeline", hint: "Chronological view", icon: <Clock className="size-4" />, group: "Navigate", keywords: ["timeline", "chronological", "dates", "history"], action: () => setTab("timeline") },
-      { id: "nav-reports", label: "Reports", hint: "Impact reports", icon: <FileText className="size-4" />, group: "Navigate", keywords: ["reports", "impact", "donor"], action: () => setTab("reports") },
-      { id: "nav-search", label: "Semantic Search", hint: "AI search", icon: <SearchIcon className="size-4" />, group: "Navigate", keywords: ["search", "semantic", "ai"], action: () => setTab("search") },
-      { id: "nav-campaign", label: "Campaign Studio", hint: "Social content", icon: <Megaphone className="size-4" />, group: "Navigate", keywords: ["campaign", "social", "instagram", "twitter"], action: () => setTab("campaign") },
+      { id: "nav-overview", label: "Home", hint: "Review queue", icon: <LayoutDashboard className="size-4" />, group: "Navigate", keywords: ["home", "dashboard", "stats"], action: () => setTab("overview") },
+      { id: "nav-library", label: "Media", hint: "Library", icon: <Images className="size-4" />, group: "Navigate", keywords: ["media", "assets", "photos", "images"], action: () => setTab("library") },
+      { id: "nav-projects", label: "Projects", hint: "Projects", icon: <FolderKanban className="size-4" />, group: "Navigate", keywords: ["projects", "initiatives", "map"], action: () => setTab("projects") },
+      { id: "nav-compare", label: "Before / After", hint: "Projects", icon: <GitCompareArrows className="size-4" />, group: "Navigate", keywords: ["compare", "before", "after", "diff"], action: () => setTab("compare") },
+      { id: "nav-timeline", label: "Timeline", hint: "Library", icon: <Clock className="size-4" />, group: "Navigate", keywords: ["timeline", "chronological", "dates", "history"], action: () => setTab("timeline") },
+      { id: "nav-reports", label: "Reports", hint: "Reports", icon: <FileText className="size-4" />, group: "Navigate", keywords: ["reports", "impact", "donor"], action: () => setTab("reports") },
+      { id: "nav-search", label: "Search", hint: "Library", icon: <SearchIcon className="size-4" />, group: "Navigate", keywords: ["search", "semantic", "ai"], action: () => setTab("search") },
+      { id: "nav-campaign", label: "Campaigns", hint: "Reports", icon: <Megaphone className="size-4" />, group: "Navigate", keywords: ["campaign", "social", "instagram", "twitter"], action: () => setTab("campaign") },
+      { id: "nav-insights", label: "Insights", hint: "Projects", icon: <BarChart3 className="size-4" />, group: "Navigate", keywords: ["insights", "analytics", "sdg", "usage", "leaderboard", "stats"], action: () => setTab("insights") },
     ];
     const actions: CommandItem[] = [
       { id: "act-upload", label: "Analyze new media", hint: "Upload or generate", icon: <Upload className="size-4" />, group: "Actions", keywords: ["upload", "analyze", "ingest", "new"], action: () => { setUploadOpen(true); } },
-      { id: "act-report", label: "Generate report", hint: "Jump to Reports", icon: <Sparkles className="size-4" />, group: "Actions", keywords: ["generate", "report", "impact"], action: () => setTab("reports") },
-      { id: "act-campaign", label: "Generate campaign", hint: "Jump to Campaign Studio", icon: <Megaphone className="size-4" />, group: "Actions", keywords: ["generate", "campaign", "social"], action: () => setTab("campaign") },
+      { id: "act-report", label: "Generate report", hint: "Jump to Reports", icon: <FileText className="size-4" />, group: "Actions", keywords: ["generate", "report", "impact"], action: () => setTab("reports") },
+      { id: "act-campaign", label: "Generate campaign", hint: "Jump to Campaigns", icon: <Megaphone className="size-4" />, group: "Actions", keywords: ["generate", "campaign", "social"], action: () => setTab("campaign") },
     ];
     return [...nav, ...actions];
   }, [setTab, setUploadOpen]);

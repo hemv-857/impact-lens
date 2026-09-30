@@ -1,10 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Activity, CheckCircle2, XCircle, Timer } from "lucide-react";
 
 interface UsageItem {
   id: string;
@@ -39,70 +36,45 @@ export function AiUsagePanel() {
 
   return (
     <section data-testid="ai-usage">
-      <div className="mb-3">
-        <h2 className="text-xl font-semibold text-stone-900">AI usage</h2>
-        <p className="text-sm text-stone-500">
-          Model calls made by your organization — most recent 50
-        </p>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="text-base font-semibold text-stone-900">AI usage</h2>
+        <span className="text-sm text-stone-500">Last 50 calls</span>
       </div>
       {q.isLoading ? (
-        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-32 w-full" />
       ) : q.isError ? (
-        <Card className="p-4 text-sm text-stone-500">Could not load usage.</Card>
+        <p className="py-2 text-sm text-stone-500">Could not load usage.</p>
       ) : !q.data || q.data.summary.total === 0 ? (
-        <Card className="p-4 text-sm text-stone-500">
-          No AI calls yet — run an analysis or generate a report.
-        </Card>
+        <p className="py-2 text-sm text-stone-500">No AI calls yet.</p>
       ) : (
-        <Card className="gap-0 p-4">
-          <div className="flex flex-wrap gap-4 border-b border-stone-100 pb-3">
-            <Stat icon={<Activity className="size-3.5" />} label="Total" value={q.data.summary.total} />
-            <Stat icon={<CheckCircle2 className="size-3.5 text-emerald-600" />} label="Succeeded" value={q.data.summary.ok} />
-            <Stat icon={<XCircle className="size-3.5 text-red-500" />} label="Failed" value={q.data.summary.failed} />
-            <Stat icon={<Timer className="size-3.5" />} label="Avg" value={`${q.data.summary.avgMs}ms`} />
-          </div>
+        <div>
+          <p className="text-sm tabular-nums text-stone-700">
+            <span className="font-semibold text-stone-900">{q.data.summary.total}</span> calls ·{" "}
+            {q.data.summary.ok} succeeded ·{" "}
+            <span className={q.data.summary.failed ? "text-red-700" : ""}>{q.data.summary.failed} failed</span> · avg{" "}
+            {q.data.summary.avgMs}ms
+          </p>
           {q.data.summary.byUser.length > 0 && (
-            <div className="mt-3 flex flex-wrap items-center gap-2" data-testid="ai-usage-byuser">
-              <span className="text-xs text-stone-500">By user:</span>
-              {q.data.summary.byUser.map((u) => (
-                <Badge key={u.email} variant="outline" className="font-normal">
-                  {u.email} · {u.count}
-                </Badge>
-              ))}
-            </div>
+            <p className="mt-1 text-sm text-stone-500" data-testid="ai-usage-byuser">
+              {q.data.summary.byUser.map((u) => `${u.email} ${u.count}`).join(" · ")}
+            </p>
           )}
-          <ul className="mt-3 space-y-1.5">
+          <ul className="mt-3 divide-y divide-stone-200 border-y border-stone-200">
             {q.data.items.slice(0, 8).map((it) => (
-              <li key={it.id} className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-2 text-stone-600">
-                  <span
-                    className={`size-1.5 rounded-full ${it.ok ? "bg-emerald-500" : "bg-red-500"}`}
-                    aria-hidden
-                  />
+              <li key={it.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <span className="flex min-w-0 items-center gap-2 text-stone-800">
                   <span className="capitalize">{it.kind}</span>
-                  <span className="text-stone-400">{it.model ?? "—"}</span>
+                  <span className="truncate font-mono text-xs text-stone-500">{it.model ?? "—"}</span>
                 </span>
-                <span className="flex items-center gap-2 text-stone-400">
-                  <span>{it.durationMs}ms</span>
-                  <Badge variant="outline" className={it.ok ? "text-emerald-700" : "text-red-600"}>
-                    {it.ok ? "ok" : "failed"}
-                  </Badge>
+                <span className="flex shrink-0 items-center gap-3 tabular-nums text-stone-600">
+                  {it.durationMs}ms
+                  <span className={it.ok ? "text-stone-600" : "font-medium text-red-700"}>{it.ok ? "ok" : "failed"}</span>
                 </span>
               </li>
             ))}
           </ul>
-        </Card>
+        </div>
       )}
     </section>
-  );
-}
-
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
-  return (
-    <span className="flex items-center gap-1.5 text-sm text-stone-600">
-      {icon}
-      <span className="font-semibold text-stone-900">{value}</span>
-      {label}
-    </span>
   );
 }

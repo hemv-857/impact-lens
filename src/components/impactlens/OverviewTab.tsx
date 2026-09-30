@@ -1,710 +1,355 @@
 "use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Tooltip as RTooltip,
-  Cell,
-} from "recharts";
-import {
-  Sparkles,
-  FileText,
-  Images,
-  FolderKanban,
-  BadgeCheck,
-  TrendingUp,
-  Activity,
-  ArrowRight,
-  Database,
-  Loader2,
-  Leaf,
-  Clock,
-} from "lucide-react";
+import { ArrowRight, Database, Loader2, Plus } from "lucide-react";
+import { Thumb } from "@/components/impactlens/Thumb";
 import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProjectCard } from "@/components/impactlens/ProjectCard";
-import { EmptyState } from "@/components/impactlens/EmptyState";
-import { AnimatedCounter } from "@/components/impactlens/AnimatedCounter";
-import { GeoDistribution } from "@/components/impactlens/GeoDistribution";
-import { ConfidenceDistribution } from "@/components/impactlens/ConfidenceDistribution";
-import { SDGCoverage } from "@/components/impactlens/SDGCoverage";
-import { TopTagsCloud } from "@/components/impactlens/TopTagsCloud";
-import { DateRangeFilter, type DateRangeValue } from "@/components/impactlens/DateRangeFilter";
-import { ProjectLeaderboard } from "@/components/impactlens/ProjectLeaderboard";
-import { FavoritesStrip } from "@/components/impactlens/FavoritesStrip";
-import { AiUsagePanel } from "@/components/impactlens/AiUsagePanel";
-import { ImpactHighlights } from "@/components/impactlens/ImpactHighlights";
-import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
+import { EvidenceMark, evidenceState } from "@/components/impactlens/EvidenceMark";
 import {
   useAnalytics,
+  useAnalyzeMedia,
   useBulkMediaAction,
   useMedia,
   useProjects,
+  useReports,
   useSeedData,
 } from "@/components/impactlens/impact-hooks";
 import { useImpactStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
-import { timeAgo } from "@/lib/format";
-import type { Analytics } from "@/lib/types";
+import { accessionNo, timeAgo } from "@/lib/format";
+import type { MediaAsset } from "@/lib/types";
 
-const CATEGORY_BAR_COLORS = [
-  "#059669",
-  "#d97706",
-  "#0d9488",
-  "#65a30d",
-  "#16a34a",
-  "#ea580c",
-  "#78716c",
-  "#0891b2",
-  "#e11d48",
-  "#ca8a04",
-  "#a8a29e",
-];
-
-const ACTIVITY_ICON: Record<string, React.ReactNode> = {
-  analyze: <Sparkles className="size-3.5 text-emerald-600" />,
-  upload: <Images className="size-3.5 text-amber-600" />,
-  report: <FileText className="size-3.5 text-teal-600" />,
-  compare: <TrendingUp className="size-3.5 text-lime-600" />,
-  project: <FolderKanban className="size-3.5 text-stone-600" />,
-  default: <Activity className="size-3.5 text-stone-500" />,
-};
+const QUEUE_SIZE = 8;
 
 export function OverviewTab() {
   const analyticsQ = useAnalytics();
+  const mediaQ = useMedia({ limit: 200 });
   const projectsQ = useProjects();
-  const [dateRange, setDateRange] = React.useState<DateRangeValue>({ from: "", to: "" });
-  const mediaQ = useMedia({
-    limit: 200,
-    dateFrom: dateRange.from || undefined,
-    dateTo: dateRange.to || undefined,
-  });
+  const reportsQ = useReports();
   const setTab = useImpactStore((s) => s.setTab);
   const setUploadOpen = useImpactStore((s) => s.setUploadOpen);
-  const openAsset = useImpactStore((s) => s.openAsset);
   const { toast } = useToast();
   const seed = useSeedData();
   const bulk = useBulkMediaAction();
 
-  const recentUploads = React.useMemo(
-    () =>
-      (mediaQ.data ?? [])
-        .slice()
-        .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
-        .slice(0, 8),
+  const assets = React.useMemo(
+    () => (mediaQ.data ?? []).slice().sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
     [mediaQ.data]
   );
+  const unverified = assets.filter((a) => !a.verified);
+  const verifiable = unverified.filter((a) => a.analyzedAt);
+  const queue = unverified.slice(0, QUEUE_SIZE);
+  // Fill the column with the newest verified accessions when the queue is short.
+  const recent = assets.filter((a) => a.verified).slice(0, Math.max(3, QUEUE_SIZE - queue.length));
+  const analytics = analyticsQ.data;
+  const loading = analyticsQ.isLoading || mediaQ.isLoading;
+  const isEmpty = !loading && assets.length === 0;
 
-  const onVerifyAllAnalyzed = async () => {
-    const analyzed = (mediaQ.data ?? []).filter((a) => a.analyzedAt && !a.verified);
-    if (analyzed.length === 0) {
-      toast({ title: "Nothing to verify", description: "All analyzed assets are already verified." });
-      return;
-    }
+  const verify = async (ids: string[]) => {
     try {
-      const r = await bulk.mutateAsync({
-        ids: analyzed.map((a) => a.id),
-        action: "verify",
-      });
-      toast({
-        title: "Assets verified",
-        description: `${r.processed} analyzed asset${r.processed === 1 ? "" : "s"} marked as verified evidence.`,
-      });
+      const r = await bulk.mutateAsync({ ids, action: "verify" });
+      toast({ title: `${r.processed} asset${r.processed === 1 ? "" : "s"} verified` });
     } catch (e) {
       toast({
         title: "Verification failed",
-        description: e instanceof Error ? e.message : "Unknown error",
+        description: e instanceof Error ? e.message : "Try again.",
         variant: "destructive",
       });
     }
   };
-
-  const unverifiedAnalyzed = (mediaQ.data ?? []).filter((a) => a.analyzedAt && !a.verified).length;
-
-  const analytics = analyticsQ.data;
-  const isEmpty = analytics ? analytics.totalAssets === 0 : false;
 
   const onSeed = async () => {
     try {
-      toast({
-        title: "Seeding sample data",
-        description: "Generating field media + AI analysis — 1–2 minutes.",
-      });
+      toast({ title: "Loading sample data", description: "This takes a minute or two." });
       const r = await seed.mutateAsync();
-      toast({
-        title: "Sample data loaded",
-        description: `${r.count} items created.`,
-      });
+      toast({ title: `${r.count} sample assets added` });
     } catch (e) {
       toast({
-        title: "Seeding failed",
-        description: e instanceof Error ? e.message : "Unknown error",
+        title: "Sample data failed",
+        description: e instanceof Error ? e.message : "Try again.",
         variant: "destructive",
       });
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <motion.section
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="hero-gradient relative overflow-hidden rounded-2xl p-6 text-white shadow-lg sm:p-10"
-      >
-        <div className="relative z-10 max-w-2xl">
-          <Badge className="mb-3 border-white/20 bg-white/10 text-emerald-50 backdrop-blur">
-            <Leaf className="size-3" /> AI-Powered Impact Media
-          </Badge>
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            Turn field media into measurable impact.
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-emerald-50/90 sm:text-base">
-            ImpactLens ingests your sustainability photos and videos, uses
-            computer-vision AI to extract intelligence, organizes evidence by
-            project, and produces donor-ready reports & campaigns.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Button
-              onClick={() => setUploadOpen(true)}
-              className="bg-white text-emerald-800 hover:bg-emerald-50"
-            >
-              <Sparkles className="size-4" />
-              Analyze new media
-            </Button>
-            <Button
-              onClick={() => setTab("reports")}
-              variant="outline"
-              className="border-white/40 bg-white/10 text-white hover:bg-white/20"
-            >
-              <FileText className="size-4" />
-              Generate report
-            </Button>
-          </div>
-        </div>
-        {/* Decorative leaf */}
-        <Leaf
-          className="absolute -right-4 -top-4 size-44 rotate-12 text-white/10"
-          aria-hidden
-        />
-      </motion.section>
-
-      {/* Impact highlights carousel */}
-      <ImpactHighlights />
-
-      {/* Empty state CTA */}
-      {isEmpty && !analyticsQ.isLoading && (
-        <Card className="border-dashed border-emerald-200 bg-emerald-50/50 p-6">
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-stone-900">
-                Your library is empty
-              </h3>
-              <p className="mt-1 text-sm text-stone-600">
-                Load sample field media with full AI analysis pre-populated to
-                explore every feature in seconds.
-              </p>
-            </div>
-            <Button
-              onClick={onSeed}
-              disabled={seed.isPending}
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-            >
-              {seed.isPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Database className="size-4" />
-              )}
-              Load sample data
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      {/* Date range filter for dashboard scoping */}
-      <DateRangeFilter value={dateRange} onChange={setDateRange} />
-
-      {/* KPIs */}
-      <section>
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-stone-900">
-              Platform at a glance
-            </h2>
-            <p className="text-sm text-stone-500">
-              Real-time aggregates across your media library
-            </p>
-          </div>
-        </div>
-        {analyticsQ.isLoading ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-24 rounded-xl" />
-            ))}
-          </div>
-        ) : analytics ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <KpiCard
-              icon={<Images className="size-4" />}
-              label="Assets in range"
-              value={mediaQ.data?.length ?? analytics.totalAssets}
-              tint="emerald"
-              animate
-            />
-            <KpiCard
-              icon={<Sparkles className="size-4" />}
-              label="Analyzed"
-              value={mediaQ.data?.filter((a) => a.analyzedAt).length ?? analytics.analyzedAssets}
-              tint="teal"
-              animate
-            />
-            <KpiCard
-              icon={<FolderKanban className="size-4" />}
-              label="Active projects"
-              value={analytics.activeProjects}
-              tint="amber"
-              animate
-            />
-            <KpiCard
-              icon={<FileText className="size-4" />}
-              label="Reports"
-              value={analytics.totalReports}
-              tint="lime"
-              animate
-            />
-            <KpiCard
-              icon={<BadgeCheck className="size-4" />}
-              label="Verified"
-              value={mediaQ.data?.filter((a) => a.verified).length ?? analytics.verifiedAssets}
-              tint="green"
-              animate
-            />
-            <KpiCard
-              icon={<TrendingUp className="size-4" />}
-              label="Avg confidence"
-              value={(() => {
-                const confs = (mediaQ.data ?? []).filter((a) => typeof a.confidence === "number").map((a) => a.confidence!);
-                if (confs.length === 0) return formatAvgImpact(analytics);
-                return `${Math.round((confs.reduce((s, c) => s + c, 0) / confs.length) * 100)}%`;
-              })()}
-              tint="orange"
-            />
-          </div>
-        ) : (
-          <EmptyState
-            title="Couldn't load analytics"
-            description="Check that /api/analytics is available."
-          />
-        )}
-      </section>
-
-      {/* Two-col: chart + activity */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <Card className="lg:col-span-3 gap-0 p-4 sm:p-6">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-stone-900">
-                Media by category
-              </h3>
-              <p className="text-xs text-stone-500">
-                Distribution of analyzed assets
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-emerald-700"
-              onClick={() => setTab("library")}
-            >
-              View library <ArrowRight className="size-3.5" />
-            </Button>
-          </div>
-          {analyticsQ.isLoading ? (
-            <Skeleton className="h-64 w-full" />
-          ) : (
-            <CategoryChart analytics={analytics} />
-          )}
-        </Card>
-
-        <Card className="lg:col-span-2 gap-0 p-4 sm:p-6">
-          <h3 className="mb-3 text-sm font-semibold text-stone-900">
-            Recent activity
-          </h3>
-          {analyticsQ.isLoading ? (
-            <div className="space-y-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : analytics?.recentActivity?.length ? (
-            <ul className="scrollbar-thin max-h-80 space-y-1 overflow-y-auto pr-1">
-              {analytics.recentActivity
-                .slice()
-                .sort((a, b) => +new Date(b.at) - +new Date(a.at))
-                .map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex items-start gap-3 rounded-md p-2 transition hover:bg-stone-50"
-                    title={a.label}
-                  >
-                    <span className="mt-0.5 flex size-7 items-center justify-center rounded-full bg-stone-100">
-                      {ACTIVITY_ICON[a.kind] ?? ACTIVITY_ICON.default}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-stone-800" title={a.label}>{a.label}</p>
-                      <p className="text-[11px] text-stone-400">
-                        {timeAgo(a.at)} · {a.kind}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-            </ul>
-          ) : (
-            <EmptyState
-              emoji="📭"
-              title="No activity yet"
-              description="Analyze media or generate reports to populate this feed."
-            />
-          )}
-        </Card>
-      </section>
-
-      {/* Insights row: geographic + confidence distribution */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <GeoDistribution projects={projectsQ.data ?? []} />
-        <ConfidenceDistribution assets={mediaQ.data ?? []} />
-      </section>
-
-      {/* SDG coverage + Top tags cloud */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <SDGCoverage projects={projectsQ.data ?? []} />
-        <TopTagsCloud assets={mediaQ.data ?? []} />
-      </section>
-
-      {/* Recent uploads strip + quick verify */}
-      {recentUploads.length > 0 && (
-        <section>
-          <Card className="gap-0 p-4 sm:p-6">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <h3 className="flex items-center gap-1.5 text-sm font-semibold text-stone-900">
-                  <Clock className="size-4 text-emerald-600" />
-                  Recent uploads
-                </h3>
-                <p className="text-xs text-stone-500">Latest media added to your library</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {unverifiedAnalyzed > 0 && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={onVerifyAllAnalyzed}
-                    disabled={bulk.isPending}
-                    className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                  >
-                    {bulk.isPending ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <BadgeCheck className="size-3.5" />
-                    )}
-                    Verify {unverifiedAnalyzed} analyzed
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setTab("library")}
-                  className="text-emerald-700"
-                >
-                  View all <ArrowRight className="size-3.5" />
-                </Button>
-              </div>
-            </div>
-            <div className="scrollbar-thin flex gap-3 overflow-x-auto pb-2">
-              {recentUploads.map((a) => (
-                <button
-                  key={a.id}
-                  onClick={() => openAsset(a.id)}
-                  className="group relative w-40 shrink-0 overflow-hidden rounded-lg border border-stone-200 bg-white text-left transition hover:border-emerald-300 hover:shadow-md"
-                >
-                  <div className="relative aspect-video w-full overflow-hidden bg-stone-100">
-                    <img
-                      src={a.thumbnailUrl || a.url}
-                      alt={a.title || a.aiCaption || "media"}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition group-hover:scale-105"
-                    />
-                    <div className="absolute left-1 top-1">
-                      <CategoryBadge category={a.category} compact />
-                    </div>
-                    {a.verified && (
-                      <div className="absolute right-1 top-1">
-                        <Badge variant="outline" className="bg-white/90 text-emerald-700 border-emerald-200 px-1 py-0 text-[9px]">
-                          <BadgeCheck className="size-2.5" />
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2">
-                    <p className="line-clamp-1 text-[11px] font-medium text-stone-800">
-                      {a.title || a.aiCaption || "Untitled"}
-                    </p>
-                    <p className="mt-0.5 text-[9px] text-stone-400">{timeAgo(a.createdAt)}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </Card>
-        </section>
-      )}
-
-      {/* Project leaderboard */}
-      <section>
-        <ProjectLeaderboard limit={5} />
-      </section>
-
-      {/* Favorites strip */}
-      <section>
-        <FavoritesStrip />
-      </section>
-
-      {/* AI usage meter */}
-      <AiUsagePanel />
-
-      {/* Active projects preview */}
-      <section>
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-stone-900">
-              Active projects
-            </h2>
-            <p className="text-sm text-stone-500">
-              Top projects by activity — click to open
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setTab("projects")}
-          >
-            All projects <ArrowRight className="size-3.5" />
+  if (isEmpty) {
+    return (
+      <section className="mx-auto max-w-xl py-20 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
+          Start your evidence register
+        </h1>
+        <p className="mx-auto mt-2 max-w-md text-stone-600">
+          Add photos or video from the field. Each one is captioned, tagged and scored, ready to cite in a report.
+        </p>
+        <div className="mt-6 flex justify-center gap-2">
+          <Button onClick={() => setUploadOpen(true)} className="bg-emerald-600 text-white hover:bg-emerald-700">
+            <Plus className="size-4" />
+            Add media
+          </Button>
+          <Button variant="outline" onClick={onSeed} disabled={seed.isPending}>
+            {seed.isPending ? <Loader2 className="size-4 animate-spin" /> : <Database className="size-4" />}
+            Load sample data
           </Button>
         </div>
-        {projectsQ.isLoading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-56 w-full rounded-xl" />
-            ))}
-          </div>
-        ) : projectsQ.data && projectsQ.data.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {projectsQ.data
-              .filter((p) => p.status === "active")
-              .slice(0, 3)
-              .map((p) => (
-                <ProjectCard
-                  key={p.id}
-                  project={p}
-                  onClick={() => setTab("projects")}
-                />
-              ))}
-          </div>
-        ) : (
-          <EmptyState
-            emoji="🌍"
-            title="No projects yet"
-            description="Create your first project to organize media, comparisons, and reports."
-            actionLabel="Create project"
-            onAction={() => setTab("projects")}
-          />
-        )}
       </section>
-    </div>
-  );
-}
-
-function formatAvgImpact(a: Analytics): string {
-  // Defensive: backend may expose avgImpactScore; otherwise derive a proxy.
-  const any = a as unknown as { avgImpactScore?: number };
-  if (typeof any.avgImpactScore === "number") {
-    return `${Math.round(any.avgImpactScore * 100)}%`;
-  }
-  if (a.totalAssets === 0) return "—";
-  const ratio = a.verifiedAssets / a.totalAssets;
-  return `${Math.round(ratio * 100)}%`;
-}
-
-function CategoryChart({ analytics }: { analytics?: Analytics }) {
-  const data = React.useMemo(() => {
-    if (!analytics?.byCategory) return [];
-    return Object.entries(analytics.byCategory)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [analytics]);
-
-  if (!analytics || data.length === 0) {
-    return (
-      <EmptyState
-        emoji="📊"
-        title="No category data yet"
-        description="Analyze media to populate the category breakdown."
-      />
     );
   }
 
-  const max = Math.max(...data.map((d) => d.value), 1);
+  const tally: [string, number | undefined][] = [
+    ["Assets", analytics?.totalAssets],
+    ["To review", loading ? undefined : unverified.length],
+    ["Verified", analytics?.verifiedAssets],
+    ["Projects", analytics?.activeProjects],
+    ["Reports", analytics?.totalReports],
+  ];
+
+  const activeProjects = (projectsQ.data ?? []).filter((p) => p.status === "active").slice(0, 5);
+  const latestReports = (reportsQ.data ?? [])
+    .slice()
+    .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+    .slice(0, 4);
 
   return (
-    <div style={{ width: "100%", height: 280 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          layout="vertical"
-          margin={{ top: 4, right: 16, bottom: 4, left: 8 }}
-        >
-          <XAxis
-            type="number"
-            tick={{ fontSize: 11, fill: "#78716c" }}
-            axisLine={false}
-            tickLine={false}
-            allowDecimals={false}
-          />
-          <YAxis
-            type="category"
-            dataKey="name"
-            tick={{ fontSize: 11, fill: "#44403c" }}
-            axisLine={false}
-            tickLine={false}
-            width={104}
-          />
-          <RTooltip
-            cursor={{ fill: "#f5f5f4" }}
-            contentStyle={{
-              borderRadius: 8,
-              border: "1px solid #e7e5e4",
-              fontSize: 12,
-              background: "#ffffff",
-            }}
-          />
-          <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={26}>
-            {data.map((_, i) => (
-              <Cell
-                key={i}
-                fill={CATEGORY_BAR_COLORS[i % CATEGORY_BAR_COLORS.length]}
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-      {/* Legend chips */}
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {data.map((d, i) => (
-          <span
-            key={d.name}
-            className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-[11px] text-stone-600"
-          >
-            <span
-              className="size-2 rounded-full"
-              style={{
-                background:
-                  CATEGORY_BAR_COLORS[i % CATEGORY_BAR_COLORS.length],
-              }}
-            />
-            {d.name}: {d.value}
-          </span>
-        ))}
+    <div className="space-y-10">
+      <h1 className="sr-only">Home</h1>
+      {/* Tally: the register's running totals */}
+      <section aria-label="Totals" className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
+        <dl className="grid w-full grid-cols-5 gap-3 border-y border-stone-200 py-3 sm:flex sm:w-auto sm:gap-8 sm:border-0 sm:py-0">
+          {tally.map(([label, value]) => (
+            <div key={label} className="sm:min-w-16" title={label === "Projects" ? "Active projects" : undefined}>
+              <dt className="text-[11px] leading-tight text-stone-500 sm:text-xs">{label}</dt>
+              <dd className="text-lg font-semibold tabular-nums tracking-tight text-stone-900 sm:mt-0.5 sm:text-2xl">
+                {value === undefined ? <Skeleton className="mt-1 h-7 w-12" /> : value.toLocaleString()}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <Button variant="outline" onClick={() => setTab("reports")} className="hidden sm:inline-flex">
+          Generate report
+        </Button>
+      </section>
+
+      <div className="grid grid-cols-1 gap-x-10 gap-y-10 lg:grid-cols-12">
+        {/* Review queue: the high-dwell area */}
+        <div className="space-y-10 lg:col-span-8">
+          {(loading || queue.length > 0) && (
+            <section aria-labelledby="queue-h">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <h2 id="queue-h" className="text-base font-semibold text-stone-900">
+                  Awaiting review
+                  <span className="ml-2 font-normal tabular-nums text-stone-500">{unverified.length}</span>
+                </h2>
+                {verifiable.length > 1 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => verify(verifiable.map((a) => a.id))}
+                    disabled={bulk.isPending}
+                    className="text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                  >
+                    {bulk.isPending && <Loader2 className="size-3.5 animate-spin" />}
+                    Verify all {verifiable.length} analyzed
+                  </Button>
+                )}
+              </div>
+              {loading ? (
+                <RowsSkeleton />
+              ) : (
+                <ol className="divide-y divide-stone-200 border-y border-stone-200">
+                  {queue.map((a) => (
+                    <QueueRow key={a.id} asset={a} onVerify={() => verify([a.id])} busy={bulk.isPending} />
+                  ))}
+                </ol>
+              )}
+              {unverified.length > QUEUE_SIZE && (
+                <MoreLink onClick={() => setTab("library")}>All {unverified.length} in the library</MoreLink>
+              )}
+            </section>
+          )}
+
+          {!loading && recent.length > 0 && (
+            <section aria-labelledby="recent-h">
+              <h2 id="recent-h" className="mb-2 text-base font-semibold text-stone-900">
+                {queue.length === 0 ? "All caught up · latest accessions" : "Recently verified"}
+              </h2>
+              <ol className="divide-y divide-stone-200 border-y border-stone-200">
+                {recent.map((a) => (
+                  <QueueRow key={a.id} asset={a} onVerify={() => verify([a.id])} busy={bulk.isPending} />
+                ))}
+              </ol>
+              <MoreLink onClick={() => setTab("library")}>Open the library</MoreLink>
+            </section>
+          )}
+        </div>
+
+        <aside className="space-y-10 lg:col-span-4">
+          <section aria-labelledby="projects-h">
+            <SideHeading id="projects-h" onMore={() => setTab("projects")}>
+              Active projects
+            </SideHeading>
+            {projectsQ.isLoading ? (
+              <Skeleton className="h-40 w-full" />
+            ) : activeProjects.length === 0 ? (
+              <p className="py-3 text-sm text-stone-500">No active projects.</p>
+            ) : (
+              <ul className="divide-y divide-stone-200 border-y border-stone-200">
+                {activeProjects.map((p) => (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      onClick={() => setTab("projects")}
+                      className="flex w-full items-baseline justify-between gap-3 py-2.5 text-left hover:bg-stone-100/60"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-stone-900">{p.name}</span>
+                        {p.location && <span className="block truncate text-xs text-stone-500">{p.location}</span>}
+                      </span>
+                      <span className="shrink-0 text-sm tabular-nums text-stone-600">
+                        {p.assetCount ?? 0}
+                        <span className="sr-only"> assets</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section aria-labelledby="reports-h">
+            <SideHeading id="reports-h" onMore={() => setTab("reports")}>
+              Latest reports
+            </SideHeading>
+            {reportsQ.isLoading ? (
+              <Skeleton className="h-32 w-full" />
+            ) : latestReports.length === 0 ? (
+              <p className="py-3 text-sm text-stone-500">None yet.</p>
+            ) : (
+              <ul className="divide-y divide-stone-200 border-y border-stone-200">
+                {latestReports.map((r) => (
+                  <li key={r.id}>
+                    <button
+                      type="button"
+                      onClick={() => setTab("reports")}
+                      className="w-full py-2.5 text-left hover:bg-stone-100/60"
+                    >
+                      <span className="line-clamp-1 text-sm font-medium text-stone-900">{r.title}</span>
+                      <span className="text-xs text-stone-500">
+                        <span className="capitalize">{r.type}</span> · {timeAgo(r.createdAt)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </aside>
       </div>
-      <span className="sr-only">Max value: {max}</span>
     </div>
   );
 }
 
-const TINTS: Record<
-  string,
-  { ring: string; bg: string; text: string; icon: string }
-> = {
-  emerald: {
-    ring: "ring-emerald-100",
-    bg: "bg-emerald-50",
-    text: "text-emerald-800",
-    icon: "bg-emerald-600 text-white",
-  },
-  teal: {
-    ring: "ring-teal-100",
-    bg: "bg-teal-50",
-    text: "text-teal-800",
-    icon: "bg-teal-600 text-white",
-  },
-  amber: {
-    ring: "ring-amber-100",
-    bg: "bg-amber-50",
-    text: "text-amber-800",
-    icon: "bg-amber-500 text-white",
-  },
-  lime: {
-    ring: "ring-lime-100",
-    bg: "bg-lime-50",
-    text: "text-lime-800",
-    icon: "bg-lime-600 text-white",
-  },
-  green: {
-    ring: "ring-green-100",
-    bg: "bg-green-50",
-    text: "text-green-800",
-    icon: "bg-green-600 text-white",
-  },
-  orange: {
-    ring: "ring-orange-100",
-    bg: "bg-orange-50",
-    text: "text-orange-800",
-    icon: "bg-orange-500 text-white",
-  },
-};
-
-function KpiCard({
-  icon,
-  label,
-  value,
-  tint,
-  animate,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-  tint: keyof typeof TINTS;
-  animate?: boolean;
-}) {
-  const t = TINTS[tint];
-  const isNumeric = typeof value === "number";
+function RowsSkeleton() {
   return (
-    <Card className={cn("gap-0 p-4 ring-1 transition hover:shadow-md", t.ring)}>
-      <div className="flex items-center justify-between">
-        <span
-          className={cn(
-            "flex size-8 items-center justify-center rounded-lg shadow-sm",
-            t.icon
-          )}
-        >
-          {icon}
+    <div className="divide-y divide-stone-200 border-y border-stone-200">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex gap-4 py-3">
+          <Skeleton className="h-14 w-20 rounded" />
+          <div className="flex-1 space-y-2 pt-1">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MoreLink({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-stone-600 hover:text-stone-900"
+    >
+      {children} <ArrowRight className="size-3.5" />
+    </button>
+  );
+}
+
+function SideHeading({ id, children, onMore }: { id: string; children: React.ReactNode; onMore: () => void }) {
+  return (
+    <div className="mb-2 flex items-center justify-between">
+      <h2 id={id} className="text-base font-semibold text-stone-900">
+        {children}
+      </h2>
+      <button
+        type="button"
+        onClick={onMore}
+        className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-900"
+      >
+        All <ArrowRight className="size-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function QueueRow({ asset: a, onVerify, busy }: { asset: MediaAsset; onVerify: () => void; busy: boolean }) {
+  const openAsset = useImpactStore((s) => s.openAsset);
+  const analyze = useAnalyzeMedia();
+  const state = evidenceState(a);
+  const conf = typeof a.confidence === "number" ? Math.round(a.confidence * 100) : null;
+
+  return (
+    <li className="group flex items-center gap-3 py-3 sm:gap-4">
+      <button
+        type="button"
+        onClick={() => openAsset(a.id)}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-4"
+      >
+        <span className="relative h-12 w-16 shrink-0 overflow-hidden rounded bg-stone-200 sm:h-14 sm:w-20">
+          <Thumb asset={a} />
         </span>
-      </div>
-      <p className="mt-3 text-2xl font-bold tracking-tight text-stone-900 tabular-nums">
-        {isNumeric && animate ? (
-          <AnimatedCounter value={value} />
-        ) : (
-          value
+        <span className="min-w-0 flex-1">
+          <span className="line-clamp-1 text-sm font-medium text-stone-900 group-hover:underline group-hover:underline-offset-2">
+            {a.title || a.aiCaption || "Untitled"}
+          </span>
+          <span className="mt-0.5 flex items-center gap-2 text-xs text-stone-500">
+            <span className="font-mono text-[11px] text-stone-600">{accessionNo(a.id)}</span>
+            {a.projectName && <span className="hidden truncate sm:inline">{a.projectName}</span>}
+            <span className="shrink-0">{timeAgo(a.createdAt)}</span>
+          </span>
+        </span>
+      </button>
+      <span
+        className={cn(
+          "hidden w-12 text-right text-sm tabular-nums sm:block",
+          conf === null ? "text-stone-400" : conf < 60 ? "text-amber-700" : "text-stone-700"
         )}
-      </p>
-      <p className="text-xs text-stone-500">{label}</p>
-    </Card>
+        title="AI confidence"
+      >
+        {conf === null ? "—" : `${conf}%`}
+      </span>
+      <EvidenceMark state={state} />
+      <span className="w-16 text-right sm:w-20">
+        {state === "analyzed" && (
+          <Button size="sm" variant="outline" onClick={onVerify} disabled={busy} className="h-7 px-2.5">
+            Verify
+          </Button>
+        )}
+        {state === "pending" && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => analyze.mutate(a.id)}
+            disabled={analyze.isPending}
+            className="h-7 px-2.5"
+          >
+            {analyze.isPending ? <Loader2 className="size-3.5 animate-spin" /> : "Analyze"}
+          </Button>
+        )}
+      </span>
+    </li>
   );
 }

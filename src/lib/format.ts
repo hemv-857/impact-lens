@@ -84,3 +84,8 @@ export function initials(name: string): string {
     .map((w) => w[0]?.toUpperCase() ?? "")
     .join("");
 }
+
+/** Short, stable accession number for an asset, e.g. "A·3F9K2C". */
+export function accessionNo(id: string): string {
+  return `A·${id.slice(-6).toUpperCase()}`;
+}
