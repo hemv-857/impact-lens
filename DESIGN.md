@@ -1,46 +1,69 @@
 ---
 name: ImpactLens
-description: An accession register for field evidence. Every photo numbered, provenanced, verified, citable.
+description: A dark field register. The org's own verified photos lead, and the next item to review gets the most space.
 colors:
-  ink: "#16201c"
-  field-green: "#1f6b4a"
-  field-green-deep: "#185a3d"
-  field-green-wash: "#eef5f1"
-  archive-blue-grey: "#5f7584"
-  archive-blue-grey-wash: "#f0f3f5"
-  paper: "#f6f7f6"
-  sheet: "#ffffff"
-  shelf: "#eceeed"
-  rule: "#dde1e0"
-  rule-strong: "#c4cac9"
-  graphite: "#5a6563"
-  graphite-soft: "#6c7775"
-  destructive: "#b3261e"
-  caution: "#b07a2a"
-  dark-paper: "#0f1412"
-  dark-sheet: "#161d1b"
-  dark-ink: "#eef1f0"
-  dark-rule: "#2c3533"
-  dark-field-green: "#6fbf93"
+  ember: "#ef8a4a"
+  ember-hover: "#f79b5f"
+  ember-ink: "#1c0f06"
+  ember-text: "#f5a771"
+  ember-glow: "#f39d66"
+  ember-wash: "#2a1a10"
+  ember-rule: "#5a3620"
+  ground: "#14110e"
+  rail: "#110e0c"
+  panel: "#1b1714"
+  raised: "#231e1a"
+  rule: "#2a241f"
+  rule-strong: "#3a322b"
+  bone: "#f5eee6"
+  bone-soft: "#cfc3b4"
+  ash: "#b3a697"
+  ash-soft: "#9c8f80"
+  ash-faint: "#8a7e70"
+  bar-neutral: "#6b6055"
+  slate-tag: "#22252a"
+  slate-tag-text: "#c6cbd0"
+  caution: "#e3b85c"
+  destructive: "#f08a7a"
+  light-ground: "#f6f3ef"
+  light-sheet: "#ffffff"
+  light-raised: "#ede8e2"
+  light-rule: "#e2dbd3"
+  light-ink: "#1a1510"
+  light-ash: "#62574d"
+  light-ember: "#b9541b"
+  light-ember-hover: "#9a4413"
 typography:
+  display:
+    fontFamily: "Public Sans, system-ui, sans-serif"
+    fontSize: "clamp(3rem, 7vw, 4.5rem)"
+    fontWeight: 600
+    lineHeight: 1.02
+    letterSpacing: "-0.025em"
   headline:
     fontFamily: "Public Sans, system-ui, sans-serif"
-    fontSize: "1.25rem"
+    fontSize: "2.25rem"
     fontWeight: 600
-    lineHeight: 1.4
+    lineHeight: 1.1
     letterSpacing: "-0.025em"
-  tally:
+  section:
     fontFamily: "Public Sans, system-ui, sans-serif"
     fontSize: "1.5rem"
     fontWeight: 600
     lineHeight: 1.33
     letterSpacing: "-0.025em"
+  tally:
+    fontFamily: "Public Sans, system-ui, sans-serif"
+    fontSize: "1.875rem"
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: "-0.025em"
     fontFeature: "\"tnum\" 1"
   title:
     fontFamily: "Public Sans, system-ui, sans-serif"
-    fontSize: "1rem"
+    fontSize: "1.125rem"
     fontWeight: 600
-    lineHeight: 1.5
+    lineHeight: 1.55
   body:
     fontFamily: "Public Sans, system-ui, sans-serif"
     fontSize: "0.875rem"
@@ -57,211 +80,232 @@ typography:
     fontWeight: 400
     lineHeight: 1.45
 rounded:
-  sm: "2px"
-  md: "4px"
-  lg: "6px"
+  control: "8px"
+  tag: "6px"
+  media: "12px"
+  panel: "16px"
   full: "9999px"
 spacing:
-  row-y: "10px"
-  row-y-media: "12px"
-  gap: "16px"
-  section: "40px"
-  gutter: "24px"
+  row-y: "12px"
+  panel-pad: "24px"
+  panel-pad-sm: "20px"
+  gap: "32px"
+  gutter: "40px"
+  rail: "240px"
 components:
   button-commit:
-    backgroundColor: "{colors.field-green}"
-    textColor: "{colors.sheet}"
-    rounded: "{rounded.md}"
-    height: "32px"
-    padding: "0 12px"
-  button-commit-hover:
-    backgroundColor: "{colors.field-green-deep}"
-  button-outline:
-    backgroundColor: "{colors.sheet}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    height: "36px"
+    backgroundColor: "{colors.ember}"
+    textColor: "{colors.ember-ink}"
+    rounded: "{rounded.control}"
     padding: "0 16px"
-  button-row-action:
-    backgroundColor: "{colors.sheet}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    height: "28px"
+    height: "40px"
+  button-commit-hover:
+    backgroundColor: "{colors.ember-hover}"
+  button-outline:
+    backgroundColor: "{colors.ground}"
+    textColor: "{colors.bone}"
+    rounded: "{rounded.control}"
     padding: "0 10px"
-  input-field:
-    backgroundColor: "{colors.sheet}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    height: "36px"
-  label-tag:
-    backgroundColor: "{colors.sheet}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    padding: "2px 8px"
+    height: "28px"
+  button-ghost-accent:
+    backgroundColor: "transparent"
+    textColor: "{colors.ember-text}"
+    rounded: "{rounded.control}"
+  panel:
+    backgroundColor: "{colors.panel}"
+    textColor: "{colors.bone}"
+    rounded: "{rounded.panel}"
+    padding: "24px"
   media-card:
-    backgroundColor: "{colors.sheet}"
-    rounded: "{rounded.md}"
-  view-tab:
-    textColor: "{colors.graphite}"
-    typography: "{typography.body}"
-    padding: "4px 10px 10px"
-  view-tab-active:
-    textColor: "{colors.ink}"
+    backgroundColor: "{colors.panel}"
+    rounded: "{rounded.media}"
+  nav-item:
+    textColor: "{colors.ash-soft}"
+    rounded: "{rounded.control}"
+    height: "40px"
+    padding: "0 12px"
+  nav-item-active:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.bone}"
+  count-badge:
+    backgroundColor: "{colors.ember-wash}"
+    textColor: "{colors.ember-text}"
+    rounded: "{rounded.tag}"
+    padding: "0 6px"
+  tag:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.ash}"
+    rounded: "{rounded.tag}"
+    padding: "2px 8px"
+  sdg-tag:
+    backgroundColor: "{colors.slate-tag}"
+    textColor: "{colors.slate-tag-text}"
+    rounded: "{rounded.tag}"
+  search-field:
+    backgroundColor: "{colors.panel}"
+    textColor: "{colors.ash-faint}"
+    rounded: "{rounded.control}"
+    height: "40px"
+    padding: "0 12px"
 ---
 
 # Design System: ImpactLens
 
 ## Overview
 
-**Creative North Star: "The Accession Register"**
+**Creative North Star: "The Field Register"**
 
-The signed-in app is a working register, not a dashboard. Every field photo is an accessioned item with a number, a provenance line, a confidence figure and a state mark, and the interface is the ledger that holds them. Density is operational: ruled rows, running totals, tables with ranked numbers, one line of metadata under each title. The page reads top to bottom like a register page, never as a grid of KPI cards.
+ImpactLens is a register of field evidence set on a warm near-black ground. The org's own photographs are the brightest things on the screen; everything else is tonal: panels one step lighter than the ground, hairline edges, bone text in five steps of warmth. One ember accent is spent where something is committed or selected, and nowhere else.
 
-The material is cool archival paper: a near-white grey-green ground, white sheets only where an item needs a frame (media cards, inputs, menus), and hairline rules doing all structural work. Colour is withheld. Ink and graphite carry text and state; archive-box blue-grey is a quiet secondary neutral; field green is spent only where the user commits (add, verify) and on the verified stamp. The only saturated palette in the product is the UN SDG set, because it is an external standard the evidence is filed against.
+Evidence leads. Home opens on a photo hero carrying one sentence of state ("1 asset is waiting for review.") and four running totals, then gives the widest column to the next item to review, drawn large enough to check the photo against the AI's reading of it. Every asset carries an accession number in mono and one of three evidence marks. Numbers are tabular so columns of confidence and counts line up like a ledger.
 
-Motion is minimal: hairlines darken on hover, views fade in over 200ms, nothing lifts or floats.
+Dark is the default theme (`next-themes`, `defaultTheme="dark"`). A light theme is derived from the same roles: warm paper ground, white sheets, a deeper ember that holds contrast on white. The system refuses the icon-KPI-card dashboard: totals are set as plain type over the evidence, not as tiles with icons.
 
 **Key Characteristics:**
-- Ruled ledger rows (hairline top and bottom rule, 1px dividers) as the primary container.
-- Mono accession numbers in the form A·XXXXXX on every item and every missing-image placeholder.
-- Tabular figures for every count, percentage and score, right-aligned.
-- Evidence state drawn as a mark (filled stamp tick / open ring / dashed ring), never colour alone.
-- One commit colour, field green; everything else is ink, graphite and rule.
-- Light and dark are both first-class; dark is a deep green-black ground with a lighter field green.
+- Warm near-black ground with tonal panels a step up; depth from tone and hairlines, not shadow.
+- One ember accent, rationed to commit actions, selection, focus, and the verified stamp.
+- Real field photographs as the hero material; no illustration, no stock gradients standing in for evidence.
+- Accession numbers (`A·XXXXXX`) in Geist Mono; everything else in Public Sans.
+- Tabular figures on every count, percentage, and score.
+- Generous rounding on containers (16px panels, 12px media) over square controls-sized corners (8px).
 
 ## Colors
 
-Cool archival neutrals with a single committed green; hue is a spend, not a decoration.
+A warm-neutral register with a single ember accent; hue beyond that appears only as external data (UN SDG identity colours).
 
 ### Primary
-- **Field Green** (field-green): the one commit colour. The header's Add media button, the empty-state primary action, the verified stamp, the text of the bulk "Verify all" action, the input caret, and the focus ring (at its lighter 500 step). Hover deepens to Field Green Deep. In dark mode it becomes Dark Field Green.
-- **Field Green Wash** (field-green-wash): hover wash behind green ghost actions and the text selection background. Never a card fill.
-
-### Secondary
-- **Archive-Box Blue-Grey** (archive-blue-grey): the remapped teal scale. A second, cooler neutral for filed-away material: SDG goal labels on project cards (wash background, 800-step text) and the second chart series. Reads as a box label, not an accent.
+- **Ember** (`ember`): the one accent. Fills the commit button (Add media, Verify, Get started), the active tab underline, the active nav icon, the focus ring, the Mark tile, and the verified evidence stamp. Text on it is **Ember Ink** (`ember-ink`) because white on ember fails AA.
+- **Ember Hover** (`ember-hover`): the commit button's hover fill.
+- **Ember Text** (`ember-text`): ember when it has to be read as text on dark: count badges, the "Verify all analyzed" ghost action, in-text links.
+- **Ember Glow** (`ember-glow`): the single highlighted figure or phrase in a hero headline (the waiting count, "evidence of impact."). Only over the photo hero.
+- **Ember Wash / Ember Rule** (`ember-wash`, `ember-rule`): the tinted ground and edge of count badges and selected choices.
+- **Light Ember** (`light-ember`, hover `light-ember-hover`): the same role in the light theme, deepened to hold contrast on white.
 
 ### Neutral
-- **Ink** (ink): all primary text, headings, active nav and view-tab underline, the logo tile, and the default primary button in shadcn surfaces.
-- **Paper** (paper): the app ground. Header sits on paper too, separated by a rule, not by a fill.
-- **Sheet** (sheet): white, only for framed items: media cards, inputs, outline buttons, menus, label tags on photos.
-- **Shelf** (shelf): muted fills, skeletons, row hover wash (at 60% opacity), missing-thumbnail placeholder, the empty track of bar rows.
-- **Rule** (rule): every hairline, divider and card border.
-- **Rule Strong** (rule-strong): input strokes, table header rule, dashed empty cells, hover state of a hairline.
-- **Graphite** (graphite): secondary text, metadata lines, inactive tabs, unverified state marks. Graphite Soft is the lowest-emphasis text still meeting contrast.
-- **Caution** (caution): chart series 4 and low-confidence figures (amber 700 in rows under 60%). **Destructive** (destructive): failed calls, destructive actions.
+- **Ground** (`ground`): the page and the photo hero's base; the photo fades into it.
+- **Rail** (`rail`): the left navigation rail, a half-step darker than the ground so the rail recedes.
+- **Panel** (`panel`): cards, panels, media cards, the search field.
+- **Raised** (`raised`): active nav item, tags, hover rows, thumbnail placeholders, skeletons.
+- **Rule / Rule Strong** (`rule`, `rule-strong`): hairline edges and row dividers; strong rules for table heads and input borders.
+- **Bone** (`bone`): primary text and headings. **Bone Soft** (`bone-soft`) for secondary body copy; **Ash** (`ash`) for captions and meta; **Ash Soft** (`ash-soft`) for inactive nav and quiet meta; **Ash Faint** (`ash-faint`) for placeholders and chevrons.
+- **Bar Neutral** (`bar-neutral`): project verified-share bars and category bars. Progress is neutral, not ember.
+- **Slate Tag** (`slate-tag`, text `slate-tag-text`): the quiet slate used for SDG and archive labels, the one cool note in a warm system.
+- **Caution** (`caution`): AI confidence below 60%. **Destructive** (`destructive`): errors and destructive actions.
+- **Light theme**: `light-ground` page, `light-sheet` panels, `light-raised` tags and hovers, `light-rule` hairlines, `light-ink` text, `light-ash` muted text.
 
 ### Named Rules
-**The One Commit Colour Rule.** Field green appears only on commit actions and the verified stamp. Categories, statuses, headings, charts of neutral data and decorations stay in ink and graphite. If a screen has more than two green elements that are not verified marks, one of them is wrong.
+**The Ember Budget Rule.** Ember is spent on exactly four things: commit actions, selection (active nav icon, active tab underline, review count badge), the focus ring, and the verified stamp. Progress bars, charts of volume, decorative icons and headings stay neutral. If a screen has two ember buttons, one of them is wrong.
 
-**The External Hue Rule.** The UN SDG colours (the official 17-goal palette) are the only saturated hues in the product, and they appear only where an SDG goal is being shown as coverage. They are the standard's colours, not ours; never borrow them for anything else.
+**The Evidence Is The Colour Rule.** The only saturated hues on screen besides ember are the org's photographs and the fixed UN SDG identity colours in SDG coverage. No other hue is introduced as decoration.
 
-**The Neutral Label Rule.** Category and project status are labels, not states: ink text on a white tag with a rule border. They never get a hue.
+**The Dark Ink On Ember Rule.** Text and glyphs on an ember fill use Ember Ink, never white.
 
 ## Typography
 
-**UI Font:** Public Sans (with system-ui, sans-serif)
-**Mono Font:** Geist Mono (with ui-monospace, monospace)
+**Display Font:** Public Sans (with system-ui, sans-serif)
+**Body Font:** Public Sans
+**Label/Mono Font:** Geist Mono, for accession numbers and keyboard hints only
 
-**Character:** Public Sans is a civic workhorse built for forms and registers; it sets everything, headings included, with weight and size doing hierarchy. Geist Mono is the catalogue stamp, reserved for identifiers.
+**Character:** Public Sans is a civic workhorse built for forms and registers; set semibold with tight tracking it carries headlines without a second display face. Mono is reserved for identifiers, so an accession number is recognisable at a glance.
 
 ### Hierarchy
-- **Headline** (600, 1.25rem, tight tracking): the section h1 (Library, Projects, Reports) that sits left of the view tabs. Empty-state titles go one step up (1.5rem).
-- **Tally** (600, 1.5rem, tabular, tight tracking): the running totals strip on Home. 1.125rem on mobile.
-- **Title** (600, 1rem): section h2s inside a view (Awaiting review, Project health, SDG coverage), with an optional graphite count or note set right or inline.
-- **Body** (400 or 500, 0.875rem): row titles (500), table cells, buttons, tabs, paragraphs.
-- **Label** (400, 0.75rem): metadata lines under row titles, table header cells (500, graphite), tally labels (11px on mobile).
-- **Accession** (Geist Mono 400, 11px): accession numbers, rank numbers (01, 02), AI model identifiers, keyboard hints. Nothing else.
+- **Display** (600, 48px to 72px, line-height 1.02, tracking -0.025em): the landing claim only.
+- **Headline** (600, 30px to 36px, tight tracking, balanced wrap): the Home state sentence over the photo hero.
+- **Section** (600, 24px, tight tracking): the section h1 (Library, Projects, Reports) sitting on the tab rule; landing section heads at 24px to 30px.
+- **Tally** (600, 30px, tabular figures): the four hero totals and similar standalone counts. Confidence beside a featured asset uses the same treatment at 24px.
+- **Title** (600, 18px): panel headings (Awaiting review, Active projects); 20px for the featured asset's title.
+- **Body** (400, 14px, line-height 1.43; relaxed 1.625 for AI readings and prose): rows, descriptions, form copy. Landing lede at 18px, max 44ch.
+- **Label** (400, 12px): meta lines, table heads, tag text, "confidence" captions.
+- **Accession** (Geist Mono 400, 11px): `A·` plus the last six id characters, uppercase. Next to titles, in rows, on hero captions and thumbnail placeholders.
 
 ### Named Rules
-**The Tabular Figures Rule.** Every number that can be compared (counts, percentages, scores, milliseconds) is set with tabular figures and right-aligned in its column.
+**The Mono Means Identifier Rule.** Geist Mono is only for accession numbers and key hints. Never for headings, labels, or numbers that are measurements.
 
-**The Mono Is An Identifier Rule.** Geist Mono marks things that are catalogue identifiers: accession numbers, ranks, model names, shortcut keys. Prose, labels and headings never use it.
+**The Ledger Figures Rule.** Every count, percentage, score and rank is set with tabular figures so stacked values align.
 
-**The Sentence Case Rule.** Headings, labels and table headers are sentence case at normal tracking. The register does not shout.
+**The Sentence Case Rule.** Headings, labels and buttons are sentence case at their natural tracking. Hierarchy comes from size and weight, not from uppercase tracked micro-labels.
 
 ## Layout
 
-A single centred column, max 80rem (1280px) with 16px side padding (24px from sm). The sticky 56px header carries the logo, four section links (Home, Library, Projects, Reports), a Jump to command field, the one green Add media button, theme toggle and account menu.
+A fixed 240px left rail (from `lg`) holds the brand, four section links (Home, Library, Projects, Reports) and the account menu. A sticky 64px top bar carries the command-palette search field (max 448px) and, at the far right, the one ember button. Content sits in a centred column capped at 1440px with 16px / 24px / 40px gutters across breakpoints.
 
-Each non-Home section opens with a heading bar: the section h1 and its underline view tabs on one baseline, sitting on a rule, 24px above the content. Home has no visible h1; it opens with the tally strip.
+Sections with more than one view open with the section h1 and an underline tab row sharing one hairline rule. Home runs a 12-column grid: the review panel takes 8 columns and the aside of projects and latest reports takes 4; panels stack with a 32px gap. Below `lg` the rail moves into a left sheet opened from the top bar and the grid collapses to one column. The featured review item switches from stacked to side-by-side at a container width (container query), not a viewport breakpoint.
 
-Home is a 12-column split on large screens: an 8-column review queue of ledger rows and a 4-column aside of Active projects and Latest reports lists. Sections are separated by 40px (48px on Insights). Rows use 10px vertical padding for text-only rows and 12px for rows with a thumbnail. The Library is a 4-column media card grid (fewer at narrow widths) with a toolbar of search, category select and outline actions above it.
-
-Below md the section links collapse into a left sheet; the tally becomes a five-column grid framed by top and bottom rules; secondary columns (project name, per-column counts) hide rather than wrap.
-
-### Named Rules
-**The Ruled Row Rule.** Lists are rows between rules, not stacked cards: a top and bottom rule on the list, 1px dividers between rows, a faint shelf wash on hover. Reach for a card only when the item is an image.
+Rows are generous: 12px vertical padding, 48px to 64px tall thumbnails at 3:2-ish crops, hairline dividers between rows. Panels pad 20px on small screens and 24px up.
 
 ## Elevation & Depth
 
-Flat. Depth comes from the paper/sheet step and from hairline rules, not from shadows. Hover darkens a hairline (rule to rule-strong over 150ms) or washes a row with shelf; nothing lifts. The only shadows in the app shell belong to floating layers the platform stacks above the page (command palette, dialogs, popovers from shadcn), and to the drag handle on the before/after slider where a white line has to separate from a photo.
+Flat and tonal. Depth is conveyed by stepping surfaces up in lightness (ground, panel, raised) and by 1px hairline edges; resting surfaces carry no shadow, and hover on a card darkens its hairline instead of lifting it. Shadows exist only on true overlays that sit above the page (command palette, shortcut help, comparison dialog, the floating bulk-action bar).
+
+### Shadow Vocabulary
+- **Overlay** (Tailwind `shadow-2xl`, `0 25px 50px -12px rgb(0 0 0 / 0.25)`): modal-like overlays only.
 
 ### Named Rules
-**The Hairline Not Shadow Rule.** A resting surface never carries a shadow. If something needs to separate, give it a rule; if it needs to respond, darken the rule.
+**The Nothing Floats Rule.** At rest, nothing on the page casts a shadow. Hover changes an edge or a tone, never elevation.
+
+**The Photo Carries Light Rule.** The brightest pixels on a screen belong to field photographs; the hero fades its photo into the ground with gradients so text always sits on the dark side, never over the image's detail.
 
 ## Shapes
 
-Small, square-shouldered corners: 4px on buttons, inputs, tags and media cards, 6px on generic cards, 2px on SDG tiles and thumbnails. Full rounding only for the state marks, avatars and scrollbar thumbs. Rules are 1px; the active nav and view-tab underline is 2px ink. Dashed strokes mean absence or pending: the pending mark's ring, an uncovered SDG cell, a missing-image placeholder.
+Soft containers, crisp contents. Panels and cards round at 16px, media frames and media cards at 12px, controls (buttons, nav items, inputs, thumbnails in rows) at 8px, tags and badges at 6px. Avatars and the scroll thumb are fully round. The Mark is an ember tile rounded to about a quarter of its size, with an aperture ring and a focal point. Borders are 1px hairlines everywhere; the only heavier strokes are the 2px active tab underline and the 2px focus outline.
 
 ## Components
 
 ### Buttons
-Plain and utilitarian; the colour is the message.
-- **Shape:** gently squared (4px).
-- **Commit:** field green with white text, 32px tall in the header. One per view at most; in the header it is Add media.
-- **Outline:** white sheet, rule border, ink text, 36px. The default for every non-commit action (Generate report, Filters, Select, Export CSV).
-- **Row action:** a 28px outline button at the end of a ledger row (Verify, Analyze).
-- **Ghost:** transparent; green text only when the action commits (Verify all N analyzed).
-- **Focus:** 2px ring in field green (500 step) with 2px offset on every interactive element.
+- **Shape:** control corners (8px), 40px tall in the top bar and hero, 28px inline in rows.
+- **Commit:** ember fill, ember-ink text, semibold, 16px horizontal padding. Used for Add media, Verify on the featured item, Get started, Generate. At most one per view.
+- **Hover / Focus:** hover lightens to ember-hover; focus is a 2px ember outline offset 2px on every interactive element.
+- **Outline:** hairline border on ground, bone text; the row-level Verify and Analyze actions.
+- **Ghost accent:** transparent with ember-text, ember-wash on hover; secondary bulk actions ("Verify all 3 analyzed").
+- **On-photo:** over the hero, a translucent white fill (10%) with a 25% white edge, so the action reads without competing with ember.
 
-### Evidence Mark (signature)
-A 16px state glyph that ends every item row and card footer, always paired with its accessible label.
-- **Verified:** filled field-green disc with a white tick (the stamp).
-- **Analyzed, not verified:** open graphite ring, 1.6px stroke.
-- **Awaiting analysis:** dashed graphite ring.
-It sits immediately right of the confidence percentage.
-
-### Ledger Row (signature)
-Thumbnail (64x48, 80x56 from sm, 2px radius) · title (500 body, underlines on hover) over a metadata line (accession number in mono, project, relative time) · right-aligned confidence percentage (tabular; caution colour under 60%) · evidence mark · a fixed-width action slot.
-
-### Accession Number
-`A·` plus the last six characters of the id, uppercase, in the accession style. Appears in every row, every card footer, and fills the missing-image placeholder (a dashed rule-strong box on shelf) so an item without a photo still has an identity.
+### Chips
+- **Tags:** raised fill, ash text, 6px corners, 12px type. AI tags on assets.
+- **SDG tags:** slate-tag fill and edge with slate text, reading as archive labels.
+- **Count badge:** ember-wash with ember-text, tabular semibold; beside "Awaiting review" and on the Home nav item.
 
 ### Cards / Containers
-- **Media card:** white sheet, 4px corners, rule border, no padding around the photo, no shadow. The photo carries a neutral category tag top-left; the footer holds title, confidence and evidence mark, then accession number and location in one line. Hover darkens the border.
-- **Generic card (shadcn):** 6px corners, rule border, 24px padding. Used for forms and panels, not for lists.
-
-### Chips / Tags
-- **Label tag:** white at 90%, rule border, ink text, normal weight, capitalised. Category and status both use it.
-- **SDG label on project cards:** archive blue-grey wash with 800-step text.
+- **Corner Style:** panels 16px, media cards 12px.
+- **Background:** panel on ground.
+- **Shadow Strategy:** none at rest (see Elevation).
+- **Border:** 1px rule; hover strengthens it to rule-strong.
+- **Internal Padding:** 20px to 24px; media cards are full-bleed image with a padded caption.
 
 ### Inputs / Fields
-White sheet, rule-strong stroke, 4px corners, 36px tall, leading icon in graphite. Focus is the field-green ring; the caret is field green.
+- **Style:** 1px rule-strong border, panel or translucent fill, 8px corners, 36px to 40px tall. Caret is ember.
+- **Focus:** ember border with an ember ring.
+- **Search field:** in the top bar, panel fill, ash-faint placeholder, a mono `⌘K` key hint at the right.
 
 ### Navigation
-- **Section links:** body 500, graphite, ink when active, with a 2px ink underline pinned to the header's bottom rule.
-- **View tabs:** body size, graphite, active tab ink 500 with a 2px ink bottom border sitting on the heading bar's rule.
-- **Mobile:** section links move into a 288px left sheet.
+- **Left rail:** rail fill, 40px items with 18px line icons at 1.75 stroke. Inactive items are ash-soft; hover takes a panel tone; the active item takes the raised tone with bone text and an ember icon. Home carries the review count badge.
+- **View tabs:** text tabs on the section's hairline rule; the active tab gets a 2px ember underline and medium weight, inactive tabs are ash and turn bone on hover.
+- **Mobile:** the same nav in a left sheet from a menu button; the brand moves into the top bar.
 
-### Data Rows
-Tables and bar rows follow the ledger: rule-strong header rule, rule dividers, mono rank numbers, tabular right-aligned figures, score column in 600 ink. Bar rows are a 6px graphite bar on a shelf track; bars stay neutral. SDG coverage is 17 square 2px-cornered tiles in the official goal colours, dashed empty cells for uncovered goals.
+### Evidence Mark (signature)
+A 16px to 20px SVG mark that carries evidence state by shape, never by colour alone, each with an accessible label: **Verified** is a filled ember disc with a tick; **Analyzed, not verified** is an open ring in ash; **Awaiting analysis** is a dashed ring in ash. It sits beside confidence figures in rows, on media cards and in the featured review.
+
+### Photo Hero (signature)
+A 16px-rounded panel on the ground with a verified landscape photo occupying the right 62% on desktop, masked to fade leftward into the ground. The left column holds the state sentence (ember-glow on the count), a one-line age note, and four tallies in 65% white labels over bone figures. A caption with the photo's title and accession number sits bottom right beside the on-photo action.
+
+### Review Row
+Thumbnail (8px corners), title (medium, underlines on hover), a meta line of accession number, project and age; then a right-aligned tabular confidence (caution below 60%), the evidence mark, and an outline Verify or Analyze action while unverified.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** give every item its accession number in Geist Mono, including when its image is missing.
-- **Do** show evidence state with the three marks (stamp tick, open ring, dashed ring) and a text label for assistive tech.
-- **Do** set every comparable number in tabular figures, right-aligned.
-- **Do** build lists as ruled rows with a top and bottom rule and 1px dividers.
-- **Do** keep field green to commit actions and the verified stamp; one green button per view.
-- **Do** open every non-Home section with the h1 plus underline view tabs on a single rule.
-- **Do** pair every light value with its dark counterpart (dark paper, dark sheet, dark rule, dark field green).
+- **Do** keep ember to commit actions, selection, the focus ring and the verified stamp; one ember button per view.
+- **Do** put text on ember in ember-ink (`#1c0f06`), never white.
+- **Do** build depth from ground, panel and raised tones with 1px hairlines; strengthen the hairline on hover.
+- **Do** show an accession number (`A·XXXXXX`, Geist Mono 11px) wherever an asset is named.
+- **Do** mark evidence state with the three Evidence Marks, each with its text label for assistive tech.
+- **Do** set every count, percentage and score in tabular figures.
+- **Do** lead with the org's own verified photographs; fade them into the ground so text sits on dark.
+- **Do** round panels 16px, media 12px, controls 8px, tags 6px.
 
 ### Don't:
-- **Don't** build KPI cards: no boxed stat tiles, icons over numbers, or trend chips. Totals are a tally strip.
-- **Don't** colour categories or statuses; they are neutral ink labels.
-- **Don't** use SDG colours outside SDG coverage, or any other saturated hue for decoration.
-- **Don't** put shadows on resting surfaces or lift things on hover.
-- **Don't** use Geist Mono for prose, labels or headings.
-- **Don't** set uppercase tracked micro-labels above headings; headings are sentence case and speak for themselves.
-- **Don't** convey state by colour alone.
+- **Don't** fill progress bars, volume charts or decorative icons with ember; they use bar-neutral.
+- **Don't** set totals as icon-topped KPI cards; set them as plain type in a row.
+- **Don't** introduce hues other than ember, caution, destructive and the fixed UN SDG colours.
+- **Don't** use mono for headings, labels or measurements.
+- **Don't** add shadows to resting panels or cards, or lift on hover.
+- **Don't** put uppercase tracked micro-labels or eyebrows above headings.

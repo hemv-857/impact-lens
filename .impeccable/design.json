@@ -1,167 +1,531 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-30T01:24:02.675647+05:30",
+  "generatedAt": "2026-09-30T11:10:31.497503+00:00",
   "title": "Design System: ImpactLens",
   "extensions": {
     "colorMeta": {
-      "ink": {
-        "role": "neutral",
-        "displayName": "Ink",
-        "tonalRamp": [
-          "#0d1311",
-          "#16201c",
-          "#222a28",
-          "#333c3a",
-          "#46504e",
-          "#5a6563",
-          "#c4cac9",
-          "#dde1e0"
-        ]
-      },
-      "field-green": {
+      "ember": {
         "role": "primary",
-        "displayName": "Field Green",
+        "displayName": "Ember",
+        "canonical": "#ef8a4a",
         "tonalRamp": [
-          "#0f3a29",
-          "#134832",
-          "#185a3d",
-          "#1f6b4a",
-          "#2f7d56",
-          "#4f9570",
-          "#85b89b",
-          "#d7e8de"
+          "#381707",
+          "#5f2a0d",
+          "#7c3710",
+          "#9a4413",
+          "#b9541b",
+          "#cc6427",
+          "#e6975f",
+          "#f8dcc8"
         ]
       },
-      "field-green-deep": {
+      "ember-hover": {
         "role": "primary",
-        "displayName": "Field Green Deep"
+        "displayName": "Ember Hover",
+        "canonical": "#f79b5f",
+        "tonalRamp": [
+          "#381707",
+          "#5f2a0d",
+          "#7c3710",
+          "#9a4413",
+          "#b9541b",
+          "#cc6427",
+          "#e6975f",
+          "#f8dcc8"
+        ]
       },
-      "field-green-wash": {
+      "ember-ink": {
         "role": "primary",
-        "displayName": "Field Green Wash"
-      },
-      "archive-blue-grey": {
-        "role": "secondary",
-        "displayName": "Archive-Box Blue-Grey",
+        "displayName": "Ember Ink",
+        "canonical": "#1c0f06",
         "tonalRamp": [
-          "#26323b",
-          "#31404b",
-          "#3e4f5c",
-          "#4d6170",
-          "#5f7584",
-          "#7b8f9d",
-          "#c1ccd4",
-          "#f0f3f5"
+          "#381707",
+          "#5f2a0d",
+          "#7c3710",
+          "#9a4413",
+          "#b9541b",
+          "#cc6427",
+          "#e6975f",
+          "#f8dcc8"
         ]
       },
-      "archive-blue-grey-wash": {
-        "role": "secondary",
-        "displayName": "Archive Blue-Grey Wash"
-      },
-      "paper": {
-        "role": "neutral",
-        "displayName": "Paper",
+      "ember-text": {
+        "role": "primary",
+        "displayName": "Ember Text",
+        "canonical": "#f5a771",
         "tonalRamp": [
-          "#222a28",
-          "#333c3a",
-          "#46504e",
-          "#5a6563",
-          "#c4cac9",
-          "#dde1e0",
-          "#eceeed",
-          "#f6f7f6"
+          "#381707",
+          "#5f2a0d",
+          "#7c3710",
+          "#9a4413",
+          "#b9541b",
+          "#cc6427",
+          "#e6975f",
+          "#f8dcc8"
         ]
       },
-      "sheet": {
-        "role": "neutral",
-        "displayName": "Sheet"
+      "ember-glow": {
+        "role": "primary",
+        "displayName": "Ember Glow",
+        "canonical": "#f39d66",
+        "tonalRamp": [
+          "#381707",
+          "#5f2a0d",
+          "#7c3710",
+          "#9a4413",
+          "#b9541b",
+          "#cc6427",
+          "#e6975f",
+          "#f8dcc8"
+        ]
       },
-      "shelf": {
+      "ember-wash": {
+        "role": "primary",
+        "displayName": "Ember Wash",
+        "canonical": "#2a1a10",
+        "tonalRamp": [
+          "#381707",
+          "#5f2a0d",
+          "#7c3710",
+          "#9a4413",
+          "#b9541b",
+          "#cc6427",
+          "#e6975f",
+          "#f8dcc8"
+        ]
+      },
+      "ember-rule": {
+        "role": "primary",
+        "displayName": "Ember Rule",
+        "canonical": "#5a3620",
+        "tonalRamp": [
+          "#381707",
+          "#5f2a0d",
+          "#7c3710",
+          "#9a4413",
+          "#b9541b",
+          "#cc6427",
+          "#e6975f",
+          "#f8dcc8"
+        ]
+      },
+      "ground": {
         "role": "neutral",
-        "displayName": "Shelf"
+        "displayName": "Ground",
+        "canonical": "#14110e",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "rail": {
+        "role": "neutral",
+        "displayName": "Rail",
+        "canonical": "#110e0c",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel",
+        "canonical": "#1b1714",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "Raised",
+        "canonical": "#231e1a",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
       },
       "rule": {
         "role": "neutral",
-        "displayName": "Rule"
+        "displayName": "Rule",
+        "canonical": "#2a241f",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
       },
       "rule-strong": {
         "role": "neutral",
-        "displayName": "Rule Strong"
+        "displayName": "Rule Strong",
+        "canonical": "#3a322b",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
       },
-      "graphite": {
+      "bone": {
         "role": "neutral",
-        "displayName": "Graphite"
+        "displayName": "Bone",
+        "canonical": "#f5eee6",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
       },
-      "graphite-soft": {
+      "bone-soft": {
         "role": "neutral",
-        "displayName": "Graphite Soft"
+        "displayName": "Bone Soft",
+        "canonical": "#cfc3b4",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "ash": {
+        "role": "neutral",
+        "displayName": "Ash",
+        "canonical": "#b3a697",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "ash-soft": {
+        "role": "neutral",
+        "displayName": "Ash Soft",
+        "canonical": "#9c8f80",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "ash-faint": {
+        "role": "neutral",
+        "displayName": "Ash Faint",
+        "canonical": "#8a7e70",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "bar-neutral": {
+        "role": "neutral",
+        "displayName": "Bar Neutral",
+        "canonical": "#6b6055",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "slate-tag": {
+        "role": "neutral",
+        "displayName": "Slate Tag",
+        "canonical": "#22252a",
+        "tonalRamp": [
+          "#2a2e32",
+          "#363b40",
+          "#43494f",
+          "#535a61",
+          "#808890",
+          "#a2a9b0",
+          "#c6cbd0",
+          "#f1f2f3"
+        ]
+      },
+      "slate-tag-text": {
+        "role": "neutral",
+        "displayName": "Slate Tag Text",
+        "canonical": "#c6cbd0",
+        "tonalRamp": [
+          "#2a2e32",
+          "#363b40",
+          "#43494f",
+          "#535a61",
+          "#808890",
+          "#a2a9b0",
+          "#c6cbd0",
+          "#f1f2f3"
+        ]
+      },
+      "caution": {
+        "role": "neutral",
+        "displayName": "Caution",
+        "canonical": "#e3b85c",
+        "tonalRamp": [
+          "#41300b",
+          "#6d5013",
+          "#98701a",
+          "#c49022",
+          "#e0af48",
+          "#e9c67c",
+          "#f2dfb5",
+          "#fbf6e9"
+        ]
       },
       "destructive": {
         "role": "error",
-        "displayName": "Destructive"
+        "displayName": "Destructive",
+        "canonical": "#f08a7a",
+        "tonalRamp": [
+          "#451008",
+          "#731b0d",
+          "#a02512",
+          "#ce3017",
+          "#e9563f",
+          "#ef8676",
+          "#f6bab1",
+          "#fcebe8"
+        ]
       },
-      "caution": {
-        "role": "warning",
-        "displayName": "Caution"
-      },
-      "dark-paper": {
+      "light-ground": {
         "role": "neutral",
-        "displayName": "Dark Paper"
+        "displayName": "Light Ground",
+        "canonical": "#f6f3ef",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
       },
-      "dark-sheet": {
+      "light-sheet": {
         "role": "neutral",
-        "displayName": "Dark Sheet"
+        "displayName": "Light Sheet",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
       },
-      "dark-ink": {
+      "light-raised": {
         "role": "neutral",
-        "displayName": "Dark Ink"
+        "displayName": "Light Raised",
+        "canonical": "#ede8e2",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
       },
-      "dark-rule": {
+      "light-rule": {
         "role": "neutral",
-        "displayName": "Dark Rule"
+        "displayName": "Light Rule",
+        "canonical": "#e2dbd3",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
       },
-      "dark-field-green": {
+      "light-ink": {
+        "role": "neutral",
+        "displayName": "Light Ink",
+        "canonical": "#1a1510",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "light-ash": {
+        "role": "neutral",
+        "displayName": "Light Ash",
+        "canonical": "#62574d",
+        "tonalRamp": [
+          "#0f0c09",
+          "#1a1510",
+          "#372f28",
+          "#4b4239",
+          "#62574d",
+          "#cbc2b7",
+          "#e2dbd3",
+          "#f6f3ef"
+        ]
+      },
+      "light-ember": {
         "role": "primary",
-        "displayName": "Dark Field Green"
+        "displayName": "Light Ember",
+        "canonical": "#b9541b",
+        "tonalRamp": [
+          "#381707",
+          "#5f2a0d",
+          "#7c3710",
+          "#9a4413",
+          "#b9541b",
+          "#cc6427",
+          "#e6975f",
+          "#f8dcc8"
+        ]
+      },
+      "light-ember-hover": {
+        "role": "primary",
+        "displayName": "Light Ember Hover",
+        "canonical": "#9a4413",
+        "tonalRamp": [
+          "#381707",
+          "#5f2a0d",
+          "#7c3710",
+          "#9a4413",
+          "#b9541b",
+          "#cc6427",
+          "#e6975f",
+          "#f8dcc8"
+        ]
       }
     },
     "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing claim only."
+      },
       "headline": {
         "displayName": "Headline",
-        "purpose": "Section h1 beside the view tabs."
+        "purpose": "Home state sentence over the photo hero."
+      },
+      "section": {
+        "displayName": "Section",
+        "purpose": "Section h1 on the tab rule; landing section heads."
       },
       "tally": {
         "displayName": "Tally",
-        "purpose": "Home running totals strip."
+        "purpose": "Hero totals and standalone counts, tabular."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Section h2 inside a view."
+        "purpose": "Panel headings; 20px for the featured asset."
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Row titles, cells, buttons, tabs."
+        "purpose": "Rows, descriptions, forms."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Metadata lines, table headers, tally labels."
+        "purpose": "Meta lines, table heads, tags."
       },
       "accession": {
         "displayName": "Accession",
-        "purpose": "Accession numbers, ranks, model ids, shortcut keys only."
+        "purpose": "A·XXXXXX asset identifiers only."
       }
     },
-    "shadows": [],
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "0 25px 50px -12px rgb(0 0 0 / 0.25)",
+        "purpose": "Command palette, shortcut help, comparison dialog, floating bulk bar. Never on resting surfaces."
+      }
+    ],
     "motion": [
       {
-        "name": "hairline-hover",
-        "value": "border-color 150ms ease, background-color 150ms ease",
-        "purpose": "Hover darkens a rule; nothing lifts."
+        "name": "state",
+        "value": "150ms ease",
+        "purpose": "Hover border and background transitions (lift-on-hover, nav, rows)."
       },
       {
-        "name": "view-fade",
-        "value": "fade-in 200ms",
-        "purpose": "View switch inside a section."
+        "name": "view-enter",
+        "value": "200ms fade-in",
+        "purpose": "View swap inside a section."
+      },
+      {
+        "name": "card-enter",
+        "value": "200ms, opacity 0 to 1, translateY 8px to 0",
+        "purpose": "Media cards entering a grid."
       }
     ],
     "breakpoints": [
@@ -175,7 +539,13 @@
       },
       {
         "name": "lg",
-        "value": "1024px"
+        "value": "1024px",
+        "note": "Left rail appears; Home grid goes 8/4."
+      },
+      {
+        "name": "max",
+        "value": "1440px",
+        "note": "Content column cap."
       }
     ]
   },
@@ -184,135 +554,153 @@
       "name": "Commit Button",
       "kind": "button",
       "refersTo": "button-commit",
-      "description": "The one field-green action per view (Add media).",
-      "html": "<button class=\"ds-btn-commit\">+ Add media</button>",
-      "css": ".ds-btn-commit{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; font-size:14px; font-weight:500; border-radius:4px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition: background-color .15s, border-color .15s; height:32px; padding:0 12px; background:#1f6b4a; color:#fff; border:0;} .ds-btn-commit:hover{background:#185a3d;} .ds-btn-commit:focus-visible{outline:2px solid #2f7d56; outline-offset:2px;}"
+      "description": "The one ember action per view: Add media, Verify, Generate.",
+      "html": "<button class=\"ds-btn-commit\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>Add media</button>",
+      "css": ".ds-btn-commit{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border:0;border-radius:8px;background:#ef8a4a;color:#1c0f06;font:600 14px/1 'Public Sans',system-ui,sans-serif;cursor:pointer;transition:background-color .15s}.ds-btn-commit:hover{background:#f79b5f}.ds-btn-commit:focus-visible{outline:2px solid #ef8a4a;outline-offset:2px}"
     },
     {
       "name": "Outline Button",
       "kind": "button",
       "refersTo": "button-outline",
-      "description": "Default for every non-commit action.",
-      "html": "<button class=\"ds-btn-outline\">Generate report</button>",
-      "css": ".ds-btn-outline{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; font-size:14px; font-weight:500; border-radius:4px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition: background-color .15s, border-color .15s; height:36px; padding:0 16px; background:#fff; color:#16201c; border:1px solid #dde1e0;} .ds-btn-outline:hover{background:#eceeed;} .ds-btn-outline:focus-visible{outline:2px solid #2f7d56; outline-offset:2px;}"
+      "description": "Row-level Verify and Analyze actions.",
+      "html": "<button class=\"ds-btn-outline\">Verify</button>",
+      "css": ".ds-btn-outline{height:28px;padding:0 10px;border:1px solid #3a322b;border-radius:8px;background:rgba(58,50,43,.3);color:#f5eee6;font:500 14px/1 'Public Sans',system-ui,sans-serif;cursor:pointer;transition:background-color .15s}.ds-btn-outline:hover{background:rgba(58,50,43,.5)}.ds-btn-outline:focus-visible{outline:2px solid #ef8a4a;outline-offset:2px}"
     },
     {
-      "name": "Search Input",
+      "name": "Ghost Accent Button",
+      "kind": "button",
+      "refersTo": "button-ghost-accent",
+      "description": "Secondary bulk action in ember text.",
+      "html": "<button class=\"ds-btn-ghost\">Verify all 3 analyzed</button>",
+      "css": ".ds-btn-ghost{height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;color:#f5a771;font:500 14px/1 'Public Sans',system-ui,sans-serif;cursor:pointer}.ds-btn-ghost:hover{background:#2a1a10}.ds-btn-ghost:focus-visible{outline:2px solid #ef8a4a;outline-offset:2px}"
+    },
+    {
+      "name": "Search Field",
       "kind": "input",
-      "refersTo": "input-field",
-      "description": "White field, rule-strong stroke, green focus ring and caret.",
-      "html": "<input class=\"ds-input\" placeholder=\"Search caption, tags, location…\">",
-      "css": ".ds-input{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; height:36px; width:320px; padding:0 12px; font-size:14px; color:#16201c; background:#fff; border:1px solid #c4cac9; border-radius:4px; caret-color:#1f6b4a;} .ds-input::placeholder{color:#5a6563;} .ds-input:focus-visible{outline:2px solid #2f7d56; outline-offset:2px;}"
+      "refersTo": "search-field",
+      "description": "Top-bar command palette trigger with a mono key hint.",
+      "html": "<button class=\"ds-search\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/></svg><span>Search assets, projects, reports…</span><kbd>⌘K</kbd></button>",
+      "css": ".ds-search{display:flex;align-items:center;gap:10px;width:360px;height:40px;padding:0 12px;border:1px solid #2a241f;border-radius:8px;background:#1b1714;color:#8a7e70;font:400 14px 'Public Sans',system-ui,sans-serif;cursor:pointer;transition:border-color .15s}.ds-search:hover{border-color:#4a4038}.ds-search:focus-visible{outline:2px solid #ef8a4a;outline-offset:2px}.ds-search kbd{margin-left:auto;padding:0 6px;border:1px solid #2a241f;border-radius:4px;font:11px 'Geist Mono',ui-monospace,monospace}"
+    },
+    {
+      "name": "Rail Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Left rail sections; active item raised with an ember icon, Home carries the review count.",
+      "html": "<nav class=\"ds-rail\"><a class=\"ds-nav on\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\"><path d=\"M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg>Home<span class=\"ds-count\">1</span></a><a class=\"ds-nav\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><circle cx=\"9\" cy=\"9\" r=\"2\"/><path d=\"m21 15-5-5L5 21\"/></svg>Library</a></nav>",
+      "css": ".ds-rail{display:flex;flex-direction:column;gap:2px;width:216px;padding:12px;background:#110e0c}.ds-nav{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:8px;color:#9c8f80;font:500 14px 'Public Sans',system-ui,sans-serif;text-decoration:none;transition:background-color .15s,color .15s}.ds-nav svg{color:#6b6055}.ds-nav:hover{background:#1b1714;color:#f5eee6}.ds-nav.on{background:#231e1a;color:#f5eee6}.ds-nav.on svg{color:#ef8a4a}.ds-nav:focus-visible{outline:2px solid #ef8a4a;outline-offset:2px}.ds-count{margin-left:auto;padding:0 6px;border-radius:6px;background:#2a1a10;color:#f5a771;font-size:12px;font-weight:600;line-height:20px;font-variant-numeric:tabular-nums}"
     },
     {
       "name": "View Tabs",
       "kind": "nav",
-      "refersTo": "view-tab",
-      "description": "Section h1 plus underline view tabs on one rule.",
-      "html": "<div class=\"ds-tabs\"><h1>Library</h1><button class=\"ds-tab ds-on\">Media</button><button class=\"ds-tab\">Search</button><button class=\"ds-tab\">Timeline</button></div>",
-      "css": ".ds-tabs{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; display:flex; align-items:flex-end; gap:24px; border-bottom:1px solid #dde1e0;} .ds-tabs h1{margin:0; padding-bottom:10px; font-size:20px; font-weight:600; letter-spacing:-.025em; color:#16201c;} .ds-tab{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; margin-bottom:-1px; margin-right:-20px; padding:4px 10px 10px; font-size:14px; color:#5a6563; background:none; border:0; border-bottom:2px solid transparent; cursor:pointer;} .ds-tab:hover{color:#16201c;} .ds-tab.ds-on{color:#16201c; font-weight:500; border-bottom-color:#16201c;}"
+      "refersTo": "nav-item-active",
+      "description": "Section h1 and underline tabs on one hairline; ember underline marks the active view.",
+      "html": "<div class=\"ds-tabs\"><h1>Library</h1><button class=\"on\">Media</button><button>Search</button><button>Timeline</button></div>",
+      "css": ".ds-tabs{display:flex;align-items:flex-end;gap:4px;border-bottom:1px solid #2a241f;font-family:'Public Sans',system-ui,sans-serif}.ds-tabs h1{margin:0 28px 0 0;padding-bottom:12px;font-size:24px;font-weight:600;letter-spacing:-.025em;color:#f5eee6}.ds-tabs button{margin-bottom:-1px;padding:4px 12px 12px;border:0;border-bottom:2px solid transparent;background:none;color:#9c8f80;font-size:14px;cursor:pointer}.ds-tabs button:hover{color:#f5eee6}.ds-tabs button.on{border-color:#ef8a4a;color:#f5eee6;font-weight:500}.ds-tabs button:focus-visible{outline:2px solid #ef8a4a;outline-offset:2px}"
     },
     {
-      "name": "Label Tag",
+      "name": "Tag",
       "kind": "chip",
-      "refersTo": "label-tag",
-      "description": "Neutral category/status label.",
-      "html": "<span class=\"ds-tag\">Reforestation</span>",
-      "css": ".ds-tag{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; display:inline-flex; padding:2px 8px; font-size:12px; color:#16201c; background:rgba(255,255,255,.9); border:1px solid #dde1e0; border-radius:4px;}"
+      "refersTo": "tag",
+      "description": "AI tags on assets; SDG tags use the slate variant.",
+      "html": "<span class=\"ds-tag\">reforestation</span> <span class=\"ds-tag ds-sdg\">SDG 13</span>",
+      "css": ".ds-tag{display:inline-block;padding:2px 8px;border-radius:6px;background:#231e1a;color:#b3a697;font:400 12px/1.33 'Public Sans',system-ui,sans-serif}.ds-sdg{background:#22252a;border:1px solid #363b40;color:#c6cbd0}"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Tonal panel with a hairline edge and a title row.",
+      "html": "<section class=\"ds-panel\"><div class=\"ds-panel-h\"><h2>Active projects</h2><a href=\"#\">All →</a></div><p>Mangrove Restoration<br><small>Sundarbans, Bangladesh</small></p></section>",
+      "css": ".ds-panel{width:320px;padding:24px;border:1px solid #2a241f;border-radius:16px;background:#1b1714;color:#f5eee6;font-family:'Public Sans',system-ui,sans-serif;transition:border-color .15s}.ds-panel:hover{border-color:#3a322b}.ds-panel-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.ds-panel h2{margin:0;font-size:18px;font-weight:600}.ds-panel-h a{color:#9c8f80;font-size:14px;text-decoration:none}.ds-panel-h a:hover{color:#f5eee6}.ds-panel p{margin:0;font-size:14px;font-weight:500}.ds-panel small{color:#9c8f80;font-size:12px;font-weight:400}"
+    },
+    {
+      "name": "Review Row",
+      "kind": "custom",
+      "refersTo": "media-card",
+      "description": "Accession number in mono, tabular confidence, evidence mark, outline Verify.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-thumb\"></span><span class=\"ds-meta\"><b>Mangrove Restoration Planting</b><small><code>A·ORNI9S</code> Wetland Restoration · 7d ago</small></span><span class=\"ds-conf\">88%</span><svg viewBox=\"0 0 16 16\" width=\"20\" height=\"20\" role=\"img\" aria-label=\"Analyzed, not verified\"><circle cx=\"8\" cy=\"8\" r=\"6.2\" fill=\"none\" stroke=\"#85796c\" stroke-width=\"1.6\"/></svg><button class=\"ds-btn-outline\">Verify</button></div>",
+      "css": ".ds-row{display:flex;align-items:center;gap:16px;width:560px;padding:12px 0;border-bottom:1px solid #2a241f;color:#f5eee6;font-family:'Public Sans',system-ui,sans-serif}.ds-thumb{width:112px;height:64px;border-radius:8px;background:#231e1a;flex-shrink:0}.ds-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.ds-meta b{font-size:16px;font-weight:500}.ds-meta small{color:#9c8f80;font-size:12px}.ds-meta code{font:11px 'Geist Mono',ui-monospace,monospace;color:#b3a697;margin-right:8px}.ds-conf{font-size:16px;font-weight:500;font-variant-numeric:tabular-nums;color:#cfc3b4}.ds-btn-outline{height:28px;padding:0 10px;border:1px solid #3a322b;border-radius:8px;background:rgba(58,50,43,.3);color:#f5eee6;font:500 14px 'Public Sans',sans-serif;cursor:pointer}.ds-btn-outline:hover{background:rgba(58,50,43,.5)}"
     },
     {
       "name": "Evidence Marks",
       "kind": "custom",
-      "description": "Verified stamp, analyzed ring, pending dashed ring.",
-      "html": "<span class=\"ds-marks\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#1f6b4a\"/><path d=\"M4.8 8.2l2.1 2.1 4.3-4.6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg> Verified <svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"6.2\" fill=\"none\" stroke=\"#5a6563\" stroke-width=\"1.6\"/></svg> Analyzed <svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"6.2\" fill=\"none\" stroke=\"#5a6563\" stroke-width=\"1.6\" stroke-dasharray=\"2.2 2.2\"/></svg> Pending</span>",
-      "css": ".ds-marks{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#5a6563;}"
-    },
-    {
-      "name": "Ledger Row",
-      "kind": "custom",
-      "description": "Thumb, title, mono accession line, tabular confidence, mark, action.",
-      "html": "<ol class=\"ds-ledger\"><li><span class=\"ds-thumb\">A·R1G6IG</span><span class=\"ds-main\"><span class=\"ds-t\">Mangrove Restoration Planting</span><span class=\"ds-m\"><code>A·ORNI9S</code> Wetland Restoration · 7d ago</span></span><span class=\"ds-c\">88%</span><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"6.2\" fill=\"none\" stroke=\"#5a6563\" stroke-width=\"1.6\"/></svg><button class=\"ds-act\">Verify</button></li></ol>",
-      "css": ".ds-ledger{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; list-style:none; margin:0; padding:0; border-top:1px solid #dde1e0; border-bottom:1px solid #dde1e0; width:640px;} .ds-ledger li{display:flex; align-items:center; gap:16px; padding:12px 0;} .ds-ledger li:hover{background:rgba(236,238,237,.6);} .ds-thumb{width:80px; height:56px; display:flex; align-items:center; justify-content:center; border:1px dashed #c4cac9; background:#eceeed; border-radius:2px; font-family: var(--font-geist-mono), 'Geist Mono', ui-monospace, monospace; font-size:10px; color:#5a6563;} .ds-main{flex:1; display:flex; flex-direction:column; gap:2px;} .ds-t{font-size:14px; font-weight:500; color:#16201c;} .ds-m{font-size:12px; color:#5a6563;} .ds-m code{font-family: var(--font-geist-mono), 'Geist Mono', ui-monospace, monospace; font-size:11px; color:#46504e; margin-right:6px;} .ds-c{font-size:14px; font-variant-numeric:tabular-nums; color:#333c3a; width:48px; text-align:right;} .ds-act{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; font-size:14px; font-weight:500; border-radius:4px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition: background-color .15s, border-color .15s; height:28px; padding:0 10px; background:#fff; color:#16201c; border:1px solid #dde1e0;} .ds-act:hover{background:#eceeed;}"
-    },
-    {
-      "name": "Media Card",
-      "kind": "card",
-      "refersTo": "media-card",
-      "description": "Photo sheet with neutral tag, footer title, mark, accession.",
-      "html": "<div class=\"ds-card\"><div class=\"ds-ph\"><span class=\"ds-tag2\">Water</span></div><div class=\"ds-ft\"><div class=\"ds-r\"><b>Clean Water Access</b><span>92% <svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#1f6b4a\"/><path d=\"M4.8 8.2l2.1 2.1 4.3-4.6\" fill=\"none\" stroke=\"#fff\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span></div><div class=\"ds-s\"><code>A·ISFRVP</code> rural farmland</div></div></div>",
-      "css": ".ds-card{font-family: var(--font-ui), 'Public Sans', system-ui, sans-serif; width:280px; background:#fff; border:1px solid #dde1e0; border-radius:4px; overflow:hidden; transition:border-color .15s;} .ds-card:hover{border-color:#c4cac9;} .ds-ph{height:156px; background:#c1ccd4; position:relative;} .ds-tag2{position:absolute; top:8px; left:8px; padding:2px 8px; font-size:12px; background:rgba(255,255,255,.9); border:1px solid #dde1e0; border-radius:4px; color:#16201c;} .ds-ft{padding:12px;} .ds-r{display:flex; justify-content:space-between; align-items:center; font-size:14px; color:#16201c;} .ds-r b{font-weight:500;} .ds-r span{display:inline-flex; gap:6px; align-items:center; font-size:13px; color:#333c3a; font-variant-numeric:tabular-nums;} .ds-s{margin-top:4px; font-size:12px; color:#5a6563;} .ds-s code{font-family: var(--font-geist-mono), 'Geist Mono', ui-monospace, monospace; font-size:11px; margin-right:6px;}"
+      "refersTo": "button-commit",
+      "description": "Verified stamp, analyzed ring, pending dashed ring: state by shape, not colour alone.",
+      "html": "<span class=\"ds-marks\"><svg viewBox=\"0 0 16 16\" width=\"20\" height=\"20\" role=\"img\" aria-label=\"Verified\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#ef8a4a\"/><path d=\"M4.8 8.2l2.1 2.1 4.3-4.6\" fill=\"none\" stroke=\"#1c0f06\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>Verified<svg viewBox=\"0 0 16 16\" width=\"20\" height=\"20\" role=\"img\" aria-label=\"Analyzed, not verified\"><circle cx=\"8\" cy=\"8\" r=\"6.2\" fill=\"none\" stroke=\"#85796c\" stroke-width=\"1.6\"/></svg>Analyzed<svg viewBox=\"0 0 16 16\" width=\"20\" height=\"20\" role=\"img\" aria-label=\"Awaiting analysis\"><circle cx=\"8\" cy=\"8\" r=\"6.2\" fill=\"none\" stroke=\"#85796c\" stroke-width=\"1.6\" stroke-dasharray=\"2.2 2.2\"/></svg>Pending</span>",
+      "css": ".ds-marks{display:inline-flex;align-items:center;gap:8px;color:#b3a697;font:400 12px 'Public Sans',system-ui,sans-serif}.ds-marks svg{margin-left:8px}"
     }
   ],
   "narrative": {
-    "northStar": "The Accession Register",
-    "overview": "**Creative North Star: \"The Accession Register\"**\n\nThe signed-in app is a working register, not a dashboard. Every field photo is an accessioned item with a number, a provenance line, a confidence figure and a state mark, and the interface is the ledger that holds them. Density is operational: ruled rows, running totals, tables with ranked numbers, one line of metadata under each title. The page reads top to bottom like a register page, never as a grid of KPI cards.\n\nThe material is cool archival paper: a near-white grey-green ground, white sheets only where an item needs a frame (media cards, inputs, menus), and hairline rules doing all structural work. Colour is withheld. Ink and graphite carry text and state; archive-box blue-grey is a quiet secondary neutral; field green is spent only where the user commits (add, verify) and on the verified stamp. The only saturated palette in the product is the UN SDG set, because it is an external standard the evidence is filed against.\n\nMotion is minimal: hairlines darken on hover, views fade in over 200ms, nothing lifts or floats.",
+    "northStar": "The Field Register",
+    "overview": "ImpactLens is a register of field evidence set on a warm near-black ground. The org's own photographs are the brightest things on the screen; everything else is tonal: panels one step lighter than the ground, hairline edges, bone text in five steps of warmth. One ember accent is spent where something is committed or selected, and nowhere else.\n\nEvidence leads. Home opens on a photo hero carrying one sentence of state (\"1 asset is waiting for review.\") and four running totals, then gives the widest column to the next item to review, drawn large enough to check the photo against the AI's reading of it. Every asset carries an accession number in mono and one of three evidence marks. Numbers are tabular so columns of confidence and counts line up like a ledger.\n\nDark is the default theme (`next-themes`, `defaultTheme=\"dark\"`). A light theme is derived from the same roles: warm paper ground, white sheets, a deeper ember that holds contrast on white. The system refuses the icon-KPI-card dashboard: totals are set as plain type over the evidence, not as tiles with icons.",
     "keyCharacteristics": [
-      "Ruled ledger rows (hairline top and bottom rule, 1px dividers) as the primary container.",
-      "Mono accession numbers in the form A·XXXXXX on every item and every missing-image placeholder.",
-      "Tabular figures for every count, percentage and score, right-aligned.",
-      "Evidence state drawn as a mark (filled stamp tick / open ring / dashed ring), never colour alone.",
-      "One commit colour, field green; everything else is ink, graphite and rule.",
-      "Light and dark are both first-class; dark is a deep green-black ground with a lighter field green."
+      "Warm near-black ground with tonal panels a step up; depth from tone and hairlines, not shadow.",
+      "One ember accent, rationed to commit actions, selection, focus, and the verified stamp.",
+      "Real field photographs as the hero material; no illustration, no stock gradients standing in for evidence.",
+      "Accession numbers (`A·XXXXXX`) in Geist Mono; everything else in Public Sans.",
+      "Tabular figures on every count, percentage, and score.",
+      "Generous rounding on containers (16px panels, 12px media) over square controls-sized corners (8px)."
     ],
     "rules": [
       {
-        "name": "The One Commit Colour Rule",
-        "body": "Field green appears only on commit actions and the verified stamp. Categories, statuses, headings, charts of neutral data and decorations stay in ink and graphite. If a screen has more than two green elements that are not verified marks, one of them is wrong.",
+        "name": "The Ember Budget Rule",
+        "body": "Ember is spent on exactly four things: commit actions, selection (active nav icon, active tab underline, review count badge), the focus ring, and the verified stamp. Progress bars, charts of volume, decorative icons and headings stay neutral. If a screen has two ember buttons, one of them is wrong.",
         "section": "colors"
       },
       {
-        "name": "The External Hue Rule",
-        "body": "The UN SDG colours (the official 17-goal palette) are the only saturated hues in the product, and they appear only where an SDG goal is being shown as coverage. They are the standard's colours, not ours; never borrow them for anything else.",
+        "name": "The Evidence Is The Colour Rule",
+        "body": "The only saturated hues on screen besides ember are the org's photographs and the fixed UN SDG identity colours in SDG coverage. No other hue is introduced as decoration.",
         "section": "colors"
       },
       {
-        "name": "The Neutral Label Rule",
-        "body": "Category and project status are labels, not states: ink text on a white tag with a rule border. They never get a hue.",
+        "name": "The Dark Ink On Ember Rule",
+        "body": "Text and glyphs on an ember fill use Ember Ink, never white.",
         "section": "colors"
       },
       {
-        "name": "The Tabular Figures Rule",
-        "body": "Every number that can be compared (counts, percentages, scores, milliseconds) is set with tabular figures and right-aligned in its column.",
+        "name": "The Mono Means Identifier Rule",
+        "body": "Geist Mono is only for accession numbers and key hints. Never for headings, labels, or numbers that are measurements.",
         "section": "typography"
       },
       {
-        "name": "The Mono Is An Identifier Rule",
-        "body": "Geist Mono marks things that are catalogue identifiers: accession numbers, ranks, model names, shortcut keys. Prose, labels and headings never use it.",
+        "name": "The Ledger Figures Rule",
+        "body": "Every count, percentage, score and rank is set with tabular figures so stacked values align.",
         "section": "typography"
       },
       {
         "name": "The Sentence Case Rule",
-        "body": "Headings, labels and table headers are sentence case at normal tracking. The register does not shout.",
+        "body": "Headings, labels and buttons are sentence case at their natural tracking. Hierarchy comes from size and weight, not from uppercase tracked micro-labels.",
         "section": "typography"
       },
       {
-        "name": "The Ruled Row Rule",
-        "body": "Lists are rows between rules, not stacked cards: a top and bottom rule on the list, 1px dividers between rows, a faint shelf wash on hover. Reach for a card only when the item is an image.",
-        "section": "layout"
+        "name": "The Nothing Floats Rule",
+        "body": "At rest, nothing on the page casts a shadow. Hover changes an edge or a tone, never elevation.",
+        "section": "elevation"
       },
       {
-        "name": "The Hairline Not Shadow Rule",
-        "body": "A resting surface never carries a shadow. If something needs to separate, give it a rule; if it needs to respond, darken the rule.",
+        "name": "The Photo Carries Light Rule",
+        "body": "The brightest pixels on a screen belong to field photographs; the hero fades its photo into the ground with gradients so text always sits on the dark side, never over the image's detail.",
         "section": "elevation"
       }
     ],
     "dos": [
-      "**Do** give every item its accession number in Geist Mono, including when its image is missing.",
-      "**Do** show evidence state with the three marks (stamp tick, open ring, dashed ring) and a text label for assistive tech.",
-      "**Do** set every comparable number in tabular figures, right-aligned.",
-      "**Do** build lists as ruled rows with a top and bottom rule and 1px dividers.",
-      "**Do** keep field green to commit actions and the verified stamp; one green button per view.",
-      "**Do** open every non-Home section with the h1 plus underline view tabs on a single rule.",
-      "**Do** pair every light value with its dark counterpart (dark paper, dark sheet, dark rule, dark field green)."
+      "Do keep ember to commit actions, selection, the focus ring and the verified stamp; one ember button per view.",
+      "Do put text on ember in ember-ink (`#1c0f06`), never white.",
+      "Do build depth from ground, panel and raised tones with 1px hairlines; strengthen the hairline on hover.",
+      "Do show an accession number (`A·XXXXXX`, Geist Mono 11px) wherever an asset is named.",
+      "Do mark evidence state with the three Evidence Marks, each with its text label for assistive tech.",
+      "Do set every count, percentage and score in tabular figures.",
+      "Do lead with the org's own verified photographs; fade them into the ground so text sits on dark.",
+      "Do round panels 16px, media 12px, controls 8px, tags 6px."
     ],
     "donts": [
-      "**Don't** build KPI cards: no boxed stat tiles, icons over numbers, or trend chips. Totals are a tally strip.",
-      "**Don't** colour categories or statuses; they are neutral ink labels.",
-      "**Don't** use SDG colours outside SDG coverage, or any other saturated hue for decoration.",
-      "**Don't** put shadows on resting surfaces or lift things on hover.",
-      "**Don't** use Geist Mono for prose, labels or headings.",
-      "**Don't** set uppercase tracked micro-labels above headings; headings are sentence case and speak for themselves.",
-      "**Don't** convey state by colour alone."
+      "Don't fill progress bars, volume charts or decorative icons with ember; they use bar-neutral.",
+      "Don't set totals as icon-topped KPI cards; set them as plain type in a row.",
+      "Don't introduce hues other than ember, caution, destructive and the fixed UN SDG colours.",
+      "Don't use mono for headings, labels or measurements.",
+      "Don't add shadows to resting panels or cards, or lift on hover.",
+      "Don't put uppercase tracked micro-labels or eyebrows above headings."
     ]
   }
 }
