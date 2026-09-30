@@ -98,7 +98,7 @@ export function MediaCard({
           }
         }}
         className={cn(
-          "lift-on-hover group relative h-full cursor-pointer gap-0 overflow-hidden rounded-md p-0 shadow-none",
+          "lift-on-hover group relative h-full cursor-pointer gap-0 overflow-hidden rounded-xl p-0 shadow-none",
           selected && "ring-2 ring-emerald-500 ring-offset-1",
           selectable && !selected && "ring-1 ring-stone-200"
         )}

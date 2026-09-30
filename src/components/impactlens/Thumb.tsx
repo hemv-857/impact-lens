@@ -32,7 +32,7 @@ export function Thumb({
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
+     
     <img
       src={asset.thumbnailUrl || asset.url}
       alt={alt}

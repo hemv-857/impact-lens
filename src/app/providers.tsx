@@ -28,7 +28,7 @@ function getBrowserClient() {
 export function Providers({ children }: { children: React.ReactNode }) {
   const client = getBrowserClient();
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="impactlens-theme">
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="impactlens-theme">
       <SessionProvider>
         <QueryClientProvider client={client}>{children}</QueryClientProvider>
       </SessionProvider>

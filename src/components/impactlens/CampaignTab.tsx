@@ -177,7 +177,7 @@ export function CampaignTab() {
         {/* Form */}
         <Card className="gap-0 p-4 lg:col-span-2 sm:p-6">
           <h3 className="mb-3 text-sm font-semibold text-stone-800">
-            Configure campaign
+            New campaign
           </h3>
 
           <div className="space-y-4">

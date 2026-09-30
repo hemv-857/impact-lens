@@ -3,7 +3,6 @@
 import * as React from "react";
 import { motion } from "framer-motion";
 import {
-  FolderKanban,
   Plus,
   Loader2,
   MapPin,
@@ -85,12 +84,6 @@ const CATEGORIES = [
 
 const STATUSES = ["active", "planning", "completed"] as const;
 
-const STATUS_STYLES: Record<string, string> = {
-  active: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  completed: "bg-stone-200 text-stone-700 border-stone-300",
-  planning: "bg-amber-100 text-amber-800 border-amber-200",
-};
-
 export function ProjectsTab() {
   const projectsQ = useProjects();
   const create = useCreateProject();
@@ -101,6 +94,16 @@ export function ProjectsTab() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [detailProject, setDetailProject] = React.useState<Project | null>(null);
   const [compareOpen, setCompareOpen] = React.useState(false);
+
+  const openProjectId = useImpactStore((s) => s.openProjectId);
+  const setOpenProjectId = useImpactStore((s) => s.setOpenProjectId);
+  React.useEffect(() => {
+    const p = openProjectId && projectsQ.data?.find((x) => x.id === openProjectId);
+    if (p) {
+      setDetailProject(p);
+      setOpenProjectId(null);
+    }
+  }, [openProjectId, projectsQ.data, setOpenProjectId]);
 
   return (
     <div className="space-y-5">
@@ -163,7 +166,7 @@ export function ProjectsTab() {
             ))}
           </motion.div>
           {/* Where the work is: secondary to the project list */}
-          <div className="pt-4">
+          <div className="pt-6">
             <MapView
               projects={projectsQ.data}
               onSelect={(p) => setDetailProject(p)}
@@ -252,10 +255,7 @@ function NewProjectDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FolderKanban className="size-5 text-emerald-600" />
-            New project
-          </DialogTitle>
+          <DialogTitle>New project</DialogTitle>
           <DialogDescription>
             Group related media, comparisons and reports under a single
             initiative.
@@ -469,12 +469,9 @@ function ProjectDetailSheet({
         {project && (
           <>
             <SheetHeader className="border-b border-stone-200 bg-white p-4">
-              <SheetTitle className="flex items-center gap-2 text-base">
-                <FolderKanban className="size-4 text-emerald-600" />
-                {project.name}
-              </SheetTitle>
-              <SheetDescription className="text-xs">
-                {project.description ?? "No description provided."}
+              <SheetTitle className="text-base">{project.name}</SheetTitle>
+              <SheetDescription className={cn("text-xs", !project.description && "sr-only")}>
+                {project.description ?? project.name}
               </SheetDescription>
             </SheetHeader>
 
@@ -485,13 +482,7 @@ function ProjectDetailSheet({
                     {project.category}
                   </Badge>
                 )}
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "capitalize",
-                    STATUS_STYLES[project.status] ?? STATUS_STYLES.active
-                  )}
-                >
+                <Badge variant="outline" className="capitalize">
                   {project.status}
                 </Badge>
                 {project.location && (
@@ -507,7 +498,7 @@ function ProjectDetailSheet({
                 )}
                 <span className="inline-flex items-center gap-1">
                   <Images className="size-3" />
-                  {project.assetCount ?? 0} assets
+                  {project.assetCount ?? 0} asset{project.assetCount === 1 ? "" : "s"}
                 </span>
               </div>
 
@@ -551,7 +542,7 @@ function ProjectDetailSheet({
                       className={cn(
                         "flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
                         view === "grid"
-                          ? "bg-emerald-100 text-emerald-800"
+                          ? "bg-stone-900 text-white"
                           : "text-stone-500 hover:text-stone-800"
                       )}
                       title="Grid view"
@@ -563,7 +554,7 @@ function ProjectDetailSheet({
                       className={cn(
                         "flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition",
                         view === "timeline"
-                          ? "bg-emerald-100 text-emerald-800"
+                          ? "bg-stone-900 text-white"
                           : "text-stone-500 hover:text-stone-800"
                       )}
                       title="Timeline view"

@@ -3,11 +3,12 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Leaf, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import { Mark } from "@/components/impactlens/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
 type Mode = "signin" | "signup";
@@ -54,30 +55,42 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-stone-50 px-4 py-10">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <span className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-sm">
-            <Leaf className="size-6" />
-          </span>
-          <h1 className="text-xl font-bold tracking-tight text-stone-900">
-            Impact<span className="text-emerald-600">Lens</span>
-          </h1>
-          <p className="text-sm text-stone-500">
-            {mode === "signin"
-              ? "Sign in to your workspace"
-              : "Create an account and workspace"}
+    <div className="grid min-h-screen bg-stone-50 text-stone-900 lg:grid-cols-2">
+      {/* The work itself, not a pattern: one verified field photo */}
+      <aside className="relative isolate hidden overflow-hidden bg-[#14110e] text-white lg:block">
+        { }
+        <img src="/field-media/mangrove_restore.jpg" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-70" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-[#14110e] via-[#14110e]/30 to-[#14110e]/60" />
+        <div className="flex h-full flex-col justify-between p-10">
+          <Link href="/" className="flex items-center gap-2.5">
+            <Mark />
+            <span className="text-base font-semibold tracking-tight">ImpactLens</span>
+          </Link>
+          <p className="max-w-md text-3xl font-semibold leading-tight tracking-tight">
+            Every field photo is <span className="text-[#f39d66]">evidence of impact.</span>
           </p>
         </div>
+      </aside>
 
-        <Card className="gap-0 p-6">
+      <main className="flex flex-col px-4 py-6 sm:px-6">
+        <Link href="/" className="flex items-center gap-2.5 lg:hidden">
+          <Mark />
+          <span className="text-base font-semibold tracking-tight">ImpactLens</span>
+        </Link>
+      <div className="m-auto w-full max-w-sm py-12">
+        <h1 className="mb-8 text-3xl font-semibold tracking-tight">
+          {mode === "signin" ? "Sign in" : "Create a workspace"}
+        </h1>
+
+        <div>
           <form onSubmit={onSubmit} className="space-y-4">
             {mode === "signup" && (
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-xs text-stone-500">
+                <Label htmlFor="name" className="text-sm text-stone-600">
                   Your name
                 </Label>
                 <Input
+                  className="h-11 rounded-lg"
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -88,10 +101,11 @@ export default function AuthPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs text-stone-500">
+              <Label htmlFor="email" className="text-sm text-stone-600">
                 Email
               </Label>
               <Input
+                  className="h-11 rounded-lg"
                 id="email"
                 type="email"
                 required
@@ -103,10 +117,11 @@ export default function AuthPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs text-stone-500">
+              <Label htmlFor="password" className="text-sm text-stone-600">
                 Password
               </Label>
               <Input
+                  className="h-11 rounded-lg"
                 id="password"
                 type="password"
                 required
@@ -120,13 +135,14 @@ export default function AuthPage() {
 
             {mode === "signup" && (
               <div className="space-y-1.5">
-                <Label htmlFor="org" className="text-xs text-stone-500">
+                <Label htmlFor="org" className="text-sm text-stone-600">
                   Organization
                   <span className="ml-1.5 font-normal text-stone-400">
                     new name creates one, existing name joins with an invite code
                   </span>
                 </Label>
                 <Input
+                  className="h-11 rounded-lg"
                   id="org"
                   value={orgName}
                   onChange={(e) => setOrgName(e.target.value)}
@@ -137,13 +153,14 @@ export default function AuthPage() {
 
             {mode === "signup" && (
               <div className="space-y-1.5">
-                <Label htmlFor="invite" className="text-xs text-stone-500">
+                <Label htmlFor="invite" className="text-sm text-stone-600">
                   Invite code
                   <span className="ml-1.5 font-normal text-stone-400">
                     only needed to join an existing workspace
                   </span>
                 </Label>
                 <Input
+                  className="h-11 rounded-lg"
                   id="invite"
                   value={invite}
                   onChange={(e) => setInvite(e.target.value)}
@@ -156,7 +173,7 @@ export default function AuthPage() {
             <Button
               type="submit"
               disabled={pending}
-              className="w-full bg-emerald-600 text-white hover:bg-emerald-700"
+              className="h-11 w-full rounded-lg bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
             >
               {pending ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -167,19 +184,20 @@ export default function AuthPage() {
               )}
             </Button>
           </form>
-        </Card>
+        </div>
 
-        <p className="text-center text-sm text-stone-500">
+        <p className="mt-6 text-sm text-stone-500">
           {mode === "signin" ? "No account yet?" : "Already have an account?"}{" "}
           <button
             type="button"
-            className="font-medium text-emerald-600 hover:text-emerald-700"
+            className="font-semibold text-emerald-700 hover:underline hover:underline-offset-4"
             onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
           >
             {mode === "signin" ? "Create one" : "Sign in"}
           </button>
         </p>
       </div>
+      </main>
     </div>
   );
 }

@@ -30,7 +30,7 @@ export function EvidenceMark({ state, className }: { state: EvidenceState; class
       {state === "verified" ? (
         <>
           <circle cx="8" cy="8" r="7" fill="currentColor" />
-          <path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M4.8 8.2l2.1 2.1 4.3-4.6" fill="none" className="stroke-white dark:stroke-[#1c0f06]" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </>
       ) : (
         <circle

@@ -3,43 +3,43 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Accession Register palette. The app's components use Tailwind's stone /
-   emerald / teal utilities; remapping the scales here re-skins every screen
-   at once: stone = archival neutrals, emerald = field green (the one commit
-   colour), teal = archive-box blue-grey. */
+/* Field Register palette. Components use Tailwind's stone / emerald / teal
+   utilities; remapping the scales re-skins every screen at once:
+   stone = warm neutrals, emerald = ember (the one accent family),
+   teal = a quiet slate for secondary chart series and SDG labels. */
 @theme {
-  --color-stone-50: #f6f7f6;
-  --color-stone-100: #eceeed;
-  --color-stone-200: #dde1e0;
-  --color-stone-300: #c4cac9;
-  --color-stone-400: #6c7775;
-  --color-stone-500: #5a6563;
-  --color-stone-600: #46504e;
-  --color-stone-700: #333c3a;
-  --color-stone-800: #222a28;
-  --color-stone-900: #16201c;
-  --color-stone-950: #0d1311;
-  --color-emerald-50: #eef5f1;
-  --color-emerald-100: #d7e8de;
-  --color-emerald-200: #b3d3c0;
-  --color-emerald-300: #85b89b;
-  --color-emerald-400: #4f9570;
-  --color-emerald-500: #2f7d56;
-  --color-emerald-600: #1f6b4a;
-  --color-emerald-700: #185a3d;
-  --color-emerald-800: #134832;
-  --color-emerald-900: #0f3a29;
-  --color-emerald-950: #08231a;
-  --color-teal-50: #f0f3f5;
-  --color-teal-100: #dde4e9;
-  --color-teal-200: #c1ccd4;
-  --color-teal-300: #9daebb;
-  --color-teal-400: #7b8f9d;
-  --color-teal-500: #5f7584;
-  --color-teal-600: #4d6170;
-  --color-teal-700: #3e4f5c;
-  --color-teal-800: #31404b;
-  --color-teal-900: #26323b;
+  --color-stone-50: #f6f3ef;
+  --color-stone-100: #ede8e2;
+  --color-stone-200: #e2dbd3;
+  --color-stone-300: #cbc2b7;
+  --color-stone-400: #7a6f64;
+  --color-stone-500: #62574d;
+  --color-stone-600: #4b4239;
+  --color-stone-700: #372f28;
+  --color-stone-800: #251f1a;
+  --color-stone-900: #1a1510;
+  --color-stone-950: #0f0c09;
+  --color-emerald-50: #fcf0e7;
+  --color-emerald-100: #f8dcc8;
+  --color-emerald-200: #f0bd98;
+  --color-emerald-300: #e6975f;
+  --color-emerald-400: #dc7a3a;
+  --color-emerald-500: #cc6427;
+  --color-emerald-600: #b9541b;
+  --color-emerald-700: #9a4413;
+  --color-emerald-800: #7c3710;
+  --color-emerald-900: #5f2a0d;
+  --color-emerald-950: #381707;
+  --color-teal-50: #f1f2f3;
+  --color-teal-100: #e0e3e6;
+  --color-teal-200: #c6cbd0;
+  --color-teal-300: #a2a9b0;
+  --color-teal-400: #808890;
+  --color-teal-500: #666e76;
+  --color-teal-600: #535a61;
+  --color-teal-700: #43494f;
+  --color-teal-800: #363b40;
+  --color-teal-900: #2a2e32;
 }
 
 
@@ -84,72 +84,86 @@
 }
 
 :root {
-  --radius: 0.375rem;
-  --background: #f6f7f6;
-  --foreground: #16201c;
+  --radius: 0.625rem;
+  --background: #f6f3ef;
+  --foreground: #1a1510;
   --card: #ffffff;
-  --card-foreground: #16201c;
+  --card-foreground: #1a1510;
   --popover: #ffffff;
-  --popover-foreground: #16201c;
-  --primary: #16201c;
-  --primary-foreground: #f6f7f6;
-  --secondary: #eceeed;
-  --secondary-foreground: #16201c;
-  --muted: #eceeed;
-  --muted-foreground: #5a6563;
-  --accent: #eceeed;
-  --accent-foreground: #16201c;
+  --popover-foreground: #1a1510;
+  --primary: #1a1510;
+  --primary-foreground: #f6f3ef;
+  --secondary: #ede8e2;
+  --secondary-foreground: #1a1510;
+  --muted: #ede8e2;
+  --muted-foreground: #62574d;
+  --accent: #ede8e2;
+  --accent-foreground: #1a1510;
   --destructive: #b3261e;
-  --border: #dde1e0;
-  --input: #c4cac9;
-  --ring: #2f7d56;
-  --chart-1: #1f6b4a;
-  --chart-2: #5f7584;
-  --chart-3: #9aa5a3;
-  --chart-4: #b07a2a;
-  --chart-5: #333c3a;
-  --sidebar: #eceeed;
-  --sidebar-foreground: #16201c;
-  --sidebar-primary: #1f6b4a;
+  --border: #e2dbd3;
+  --input: #cbc2b7;
+  --ring: #cc6427;
+  --chart-1: #b9541b;
+  --chart-2: #666e76;
+  --chart-3: #a2998e;
+  --chart-4: #b08a2a;
+  --chart-5: #372f28;
+  --sidebar: #efebe6;
+  --sidebar-foreground: #1a1510;
+  --sidebar-primary: #b9541b;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #dde1e0;
-  --sidebar-accent-foreground: #16201c;
-  --sidebar-border: #dde1e0;
-  --sidebar-ring: #2f7d56;
+  --sidebar-accent: #e2dbd3;
+  --sidebar-accent-foreground: #1a1510;
+  --sidebar-border: #e2dbd3;
+  --sidebar-ring: #cc6427;
 }
 
+/* Dark is the primary world: warm near-black ground, tonal panels a step up,
+   bone text, one ember accent (near-black text on it). */
 .dark {
-  --background: #0f1412;
-  --foreground: #eef1f0;
-  --card: #161d1b;
-  --card-foreground: #eef1f0;
-  --popover: #161d1b;
-  --popover-foreground: #eef1f0;
-  --primary: #eef1f0;
-  --primary-foreground: #16201c;
-  --secondary: #222a28;
-  --secondary-foreground: #eef1f0;
-  --muted: #222a28;
-  --muted-foreground: #a3adab;
-  --accent: #222a28;
-  --accent-foreground: #eef1f0;
-  --destructive: #f2877e;
-  --border: #2c3533;
-  --input: #3a4442;
-  --ring: #6fbf93;
-  --chart-1: #6fbf93;
-  --chart-2: #8fa6b4;
-  --chart-3: #5a6563;
-  --chart-4: #d7a55a;
-  --chart-5: #c4cac9;
-  --sidebar: #161d1b;
-  --sidebar-foreground: #eef1f0;
-  --sidebar-primary: #6fbf93;
-  --sidebar-primary-foreground: #0f1412;
-  --sidebar-accent: #222a28;
-  --sidebar-accent-foreground: #eef1f0;
-  --sidebar-border: #2c3533;
-  --sidebar-ring: #6fbf93;
+  --background: #14110e;
+  --foreground: #f5eee6;
+  --card: #1b1714;
+  --card-foreground: #f5eee6;
+  --popover: #1f1a17;
+  --popover-foreground: #f5eee6;
+  --primary: #f5eee6;
+  --primary-foreground: #1b1714;
+  --secondary: #231e1a;
+  --secondary-foreground: #f5eee6;
+  --muted: #231e1a;
+  --muted-foreground: #b3a697;
+  --accent: #231e1a;
+  --accent-foreground: #f5eee6;
+  --destructive: #f08a7a;
+  --border: #2a241f;
+  --input: #3a322b;
+  --ring: #ef8a4a;
+  --chart-1: #ef8a4a;
+  --chart-2: #9aa3ab;
+  --chart-3: #6b6055;
+  --chart-4: #e3b85c;
+  --chart-5: #cfc3b4;
+  --sidebar: #110e0c;
+  --sidebar-foreground: #f5eee6;
+  --sidebar-primary: #ef8a4a;
+  --sidebar-primary-foreground: #1c0f06;
+  --sidebar-accent: #231e1a;
+  --sidebar-accent-foreground: #f5eee6;
+  --sidebar-border: #221d19;
+  --sidebar-ring: #ef8a4a;
+  /* Scale steps drawn as fills/strokes (bars, marks, dots), not flipped below. */
+  --color-stone-300: #3a322b;
+  --color-stone-400: #6b6055;
+  --color-stone-500: #85796c;
+  --color-stone-600: #a0937f;
+  --color-emerald-300: #b8612d;
+  --color-emerald-400: #f39d66;
+  --color-emerald-500: #ef8a4a;
+  --color-emerald-600: #ef8a4a;
+  --color-teal-400: #7d858d;
+  --color-teal-500: #9aa3ab;
+  --color-teal-600: #b9c0c6;
 }
 
 @layer base {
@@ -165,8 +179,8 @@
     color: var(--color-emerald-900);
   }
   .dark ::selection {
-    background: #24493a;
-    color: #eef1f0;
+    background: #5a3620;
+    color: #f5eee6;
   }
   input,
   textarea {
@@ -204,6 +218,9 @@ nextjs-portal,
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-stone-400);
 }
+
+/* Hairline grid: gap-px children over an ink ground draw the rule lines. */
+.rule-ink { background-color: var(--color-stone-900); }
 
 /* Hover lift: a hairline darkens, nothing floats. */
 .lift-on-hover {
@@ -278,39 +295,53 @@ textarea:focus-visible,
    specificity, so this one block flips the whole shell without touching
    every component. Accents (emerald/amber/red) and mid grays (stone-400..600
    bars, skeletons, avatars) intentionally stay as-is. */
-.dark .bg-white { background-color: #161d1b; }
-.dark .hover\:bg-white:hover { background-color: #222a28; }
-.dark .bg-stone-50 { background-color: #0f1412; }
-.dark .hover\:bg-stone-50:hover { background-color: #1b2321; }
-.dark .bg-stone-100 { background-color: #222a28; }
-.dark .hover\:bg-stone-100:hover { background-color: #2c3533; }
-.dark .bg-stone-200 { background-color: #2c3533; }
-.dark .bg-stone-800 { background-color: #2c3533; }
-.dark .hover\:bg-stone-900:hover { background-color: #3a4442; }
-.dark .bg-stone-900 { background-color: #2c3533; }
-.dark .hover\:bg-stone-700:hover { background-color: #3a4442; }
-.dark .border-stone-50 { border-color: #1b2321; }
-.dark .border-stone-100 { border-color: #222a28; }
-.dark .border-stone-200 { border-color: #2c3533; }
-.dark .border-stone-300 { border-color: #3a4442; }
-.dark .ring-stone-50 { --tw-ring-color: #222a28; }
-.dark .ring-stone-200 { --tw-ring-color: #2c3533; }
-.dark .text-stone-900 { color: #eef1f0; }
-.dark .text-stone-800 { color: #dde1e0; }
-.dark .text-stone-700 { color: #c4cac9; }
-.dark .text-stone-600 { color: #a3adab; }
-.dark .text-stone-500 { color: #95a09e; }
-.dark .text-stone-400 { color: #7f8a88; }
+.dark .bg-white { background-color: #1b1714; }
+.dark .bg-white\/90 { background-color: rgb(27 23 20 / 0.9); }
+.dark .hover\:bg-white:hover { background-color: #231e1a; }
+.dark .bg-stone-50 { background-color: #14110e; }
+.dark .hover\:bg-stone-50:hover { background-color: #1f1a17; }
+.dark .bg-stone-100 { background-color: #231e1a; }
+.dark .hover\:bg-stone-100:hover { background-color: #2b2520; }
+.dark .bg-stone-200 { background-color: #2f2822; }
+.dark .bg-stone-800 { background-color: #3a322b; }
+.dark .hover\:bg-stone-900:hover { background-color: #463d35; }
+.dark .bg-stone-900 { background-color: #3a322b; }
+.dark .hover\:bg-stone-700:hover { background-color: #463d35; }
+.dark .border-stone-50 { border-color: #1f1a17; }
+.dark .border-stone-100 { border-color: #221d19; }
+.dark .border-stone-200 { border-color: #2a241f; }
+.dark .border-stone-300 { border-color: #3a322b; }
+.dark .hover\:border-stone-300:hover { border-color: #4a4038; }
+.dark .ring-stone-50 { --tw-ring-color: #231e1a; }
+.dark .ring-stone-200 { --tw-ring-color: #2a241f; }
+.dark .text-stone-900 { color: #f5eee6; }
+.dark .text-stone-800 { color: #e6dccf; }
+.dark .text-stone-700 { color: #cfc3b4; }
+.dark .text-stone-600 { color: #b3a697; }
+.dark .text-stone-500 { color: #9c8f80; }
+.dark .text-stone-400 { color: #8a7e70; }
 .dark .hover\:text-stone-700:hover,
 .dark .hover\:text-stone-800:hover,
-.dark .hover\:text-stone-900:hover { color: #dde1e0; }
-/* Field-green tints: pale washes become deep green panels in the dark. */
+.dark .hover\:text-stone-900:hover { color: #f5eee6; }
+/* Accent: ember with near-black text (white on it fails AA). */
+.dark .bg-emerald-600 { background-color: #ef8a4a; color: #1c0f06; }
+.dark .hover\:bg-emerald-700:hover { background-color: #f79b5f; }
 .dark .bg-emerald-50,
-.dark .hover\:bg-emerald-50:hover { background-color: #13261d; }
-.dark .bg-emerald-100 { background-color: #173226; }
+.dark .hover\:bg-emerald-50:hover { background-color: #2a1a10; }
+.dark .bg-emerald-100 { background-color: #352014; }
 .dark .border-emerald-200,
-.dark .border-emerald-300 { border-color: #24493a; }
+.dark .border-emerald-300 { border-color: #5a3620; }
 .dark .text-emerald-900,
 .dark .text-emerald-800,
-.dark .text-emerald-700 { color: #8fd1ab; }
-.dark .divide-stone-200 > * { border-color: #2c3533; }
+.dark .text-emerald-700 { color: #f5a771; }
+.dark .text-amber-700 { color: #e3b85c; }
+/* SDG / archive labels: a quiet slate tag. */
+.dark .bg-teal-50 { background-color: #22252a; }
+.dark .border-teal-200 { border-color: #363b40; }
+.dark .text-teal-700,
+.dark .text-teal-800 { color: #c6cbd0; }
+.dark .divide-stone-200 > * { border-color: #2a241f; }
+.dark .divide-stone-100 > * { border-color: #221d19; }
+/* Ink rules (active tab underline, print-style grid lines) read as bone in the dark. */
+.dark .border-stone-900 { border-color: #f5eee6; }
+.dark .rule-ink { background-color: #3a322b; }

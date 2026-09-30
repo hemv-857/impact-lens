@@ -142,8 +142,7 @@ export function SearchTab() {
           {!query && (
             <EmptyState
               emoji="🔍"
-              title="Search your media library"
-              description="Type a natural-language query above. Results are ranked by AI-computed relevance, not just keyword match."
+              title="Search by what's in the photo, not its filename"
             />
           )}
 

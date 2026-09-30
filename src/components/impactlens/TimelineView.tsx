@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { Calendar, MapPin, Image as ImageIcon, ArrowDown } from "lucide-react";
+import { Calendar, MapPin, Image as ImageIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,17 +53,12 @@ export function TimelineView({ assets }: { assets: MediaAsset[] }) {
   }
 
   return (
-    <Card className="gap-0 p-4 sm:p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-stone-900">
-            Media timeline
-          </h3>
-          <p className="text-xs text-stone-500">
-            {assets.length} assets across {grouped.length} day{grouped.length === 1 ? "" : "s"}
-          </p>
-        </div>
-        <ArrowDown className="size-4 text-stone-300" />
+    <section>
+      <div className="mb-5 flex items-baseline gap-3">
+        <h3 className="text-lg font-semibold text-stone-900">Media timeline</h3>
+        <p className="text-sm tabular-nums text-stone-500">
+          {assets.length} assets across {grouped.length} day{grouped.length === 1 ? "" : "s"}
+        </p>
       </div>
 
       <div className="relative">
@@ -98,7 +93,7 @@ export function TimelineView({ assets }: { assets: MediaAsset[] }) {
                   <button
                     key={asset.id}
                     onClick={() => openAsset(asset.id)}
-                    className="group flex items-start gap-3 rounded-lg border border-stone-200 bg-white p-2 text-left transition hover:border-emerald-300 hover:shadow-sm"
+                    className="group flex items-start gap-3 rounded-lg p-2 text-left transition-colors hover:bg-stone-100"
                   >
                     <div className="relative size-16 shrink-0 overflow-hidden rounded-md bg-stone-100">
                       <img
@@ -140,6 +135,6 @@ export function TimelineView({ assets }: { assets: MediaAsset[] }) {
           ))}
         </ol>
       </div>
-    </Card>
+    </section>
   );
 }

@@ -38,6 +38,12 @@ interface ImpactLensState {
   reportsComparisonId: string | null;
   setReportsComparisonId: (id: string | null) => void;
 
+  // Home → open this specific record; the owning tab consumes and clears it
+  openReportId: string | null;
+  setOpenReportId: (id: string | null) => void;
+  openProjectId: string | null;
+  setOpenProjectId: (id: string | null) => void;
+
   // Compare tab: preselected before/after assets
   compareBeforeId: string | null;
   compareAfterId: string | null;
@@ -62,6 +68,11 @@ export const useImpactStore = create<ImpactLensState>((set) => ({
 
   reportsComparisonId: null,
   setReportsComparisonId: (id) => set({ reportsComparisonId: id }),
+
+  openReportId: null,
+  setOpenReportId: (id) => set({ openReportId: id }),
+  openProjectId: null,
+  setOpenProjectId: (id) => set({ openProjectId: id }),
 
   compareBeforeId: null,
   compareAfterId: null,

@@ -16,7 +16,7 @@ import {
 import { fetchOrgs } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-export function AccountMenu() {
+export function AccountMenu({ wide = false }: { wide?: boolean }) {
   const { data: session, update } = useSession();
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -73,19 +73,35 @@ export function AccountMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="max-w-[190px] gap-1.5 border-stone-200 bg-white text-stone-700 hover:bg-stone-50"
-        >
-          <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
-            {initial}
-          </span>
-          <span className="hidden truncate text-xs font-medium sm:inline">{label}</span>
-          <ChevronDown className="hidden size-3.5 shrink-0 text-stone-400 sm:block" />
-        </Button>
+        {wide ? (
+          <button
+            type="button"
+            className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-stone-100 dark:hover:bg-[#1b1714]"
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white">
+              {initial}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium text-stone-900">{label}</span>
+              <span className="block truncate text-xs text-stone-500">{session.user?.email}</span>
+            </span>
+            <ChevronDown className="size-4 shrink-0 text-stone-400" />
+          </button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="max-w-[190px] gap-1.5 border-stone-200 bg-white text-stone-700 hover:bg-stone-50"
+          >
+            <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+              {initial}
+            </span>
+            <span className="hidden truncate text-xs font-medium sm:inline">{label}</span>
+            <ChevronDown className="hidden size-3.5 shrink-0 text-stone-400 sm:block" />
+          </Button>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
+      <DropdownMenuContent align={wide ? "start" : "end"} side={wide ? "top" : "bottom"} className="w-64">
         <DropdownMenuLabel className="truncate text-xs text-stone-500">
           {session.user?.email}
         </DropdownMenuLabel>

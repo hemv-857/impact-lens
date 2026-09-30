@@ -94,7 +94,7 @@ export function InsightsTab() {
             <tbody className="divide-y divide-stone-200">
               {boardQ.data.map((e) => (
                 <tr key={e.project.id} onClick={() => setTab("projects")} className="cursor-pointer hover:bg-stone-100/60">
-                  <td className="py-2.5 font-mono text-xs text-stone-500">{String(e.rank).padStart(2, "0")}</td>
+                  <td className="py-2.5 text-xs tabular-nums text-stone-500">{String(e.rank).padStart(2, "0")}</td>
                   <td className="py-2.5">
                     <span className="font-medium text-stone-900">{e.project.name}</span>
                     {e.project.location && <span className="ml-2 text-xs text-stone-500">{e.project.location}</span>}

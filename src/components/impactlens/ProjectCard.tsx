@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MapPin, CalendarDays, Images, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,8 +8,8 @@ import { CategoryBadge } from "@/components/impactlens/CategoryBadge";
 import { formatDate } from "@/lib/format";
 import type { Project } from "@/lib/types";
 
+// Active is the norm; only the exceptions earn a tag.
 const STATUS_STYLES: Record<string, string> = {
-  active: "bg-white/90 text-stone-800 border-stone-200",
   completed: "bg-stone-900/80 text-white border-transparent",
   planning: "bg-white/90 text-stone-600 border-dashed border-stone-300",
 };
@@ -51,7 +50,7 @@ export function ProjectCard({
             onClick?.();
           }
         }}
-        className="lift-on-hover group h-full cursor-pointer gap-0 overflow-hidden p-0"
+        className="group h-full cursor-pointer gap-0 overflow-hidden p-0 transition-colors hover:border-stone-300"
       >
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-stone-200">
           {project.coverUrl ? (
@@ -60,24 +59,18 @@ export function ProjectCard({
               src={project.coverUrl}
               alt={`Cover image for ${project.name}`}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-100 via-teal-50 to-amber-50">
-              <Target className="size-10 text-emerald-300" aria-hidden />
-            </div>
+            <div className="h-full w-full bg-stone-100" />
           )}
           <div className="absolute inset-x-0 top-0 flex items-start justify-between p-2">
             <CategoryBadge category={project.category} />
-            <Badge
-              variant="outline"
-              className={cn(
-                "capitalize",
-                STATUS_STYLES[project.status] ?? STATUS_STYLES.active
-              )}
-            >
-              {project.status}
-            </Badge>
+            {STATUS_STYLES[project.status] && (
+              <Badge variant="outline" className={cn("capitalize", STATUS_STYLES[project.status])}>
+                {project.status}
+              </Badge>
+            )}
           </div>
         </div>
         <div className="flex flex-col gap-3 p-4">
@@ -85,28 +78,16 @@ export function ProjectCard({
             <h3 className="line-clamp-1 text-base font-semibold text-stone-900">
               {project.name}
             </h3>
-            {project.description && (
-              <p className="mt-1 line-clamp-2 text-xs text-stone-500">
-                {project.description}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-stone-500">
-            {project.location && (
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="size-3" /> {project.location}
-              </span>
-            )}
-            {(project.startDate || project.endDate) && (
-              <span className="inline-flex items-center gap-1">
-                <CalendarDays className="size-3" />
-                {formatDate(project.startDate)} → {formatDate(project.endDate)}
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1">
-              <Images className="size-3" />
-              {project.assetCount ?? 0} asset{project.assetCount === 1 ? "" : "s"}
-            </span>
+            <p className="mt-0.5 truncate text-xs text-stone-500">
+              {[
+                project.location,
+                `${project.assetCount ?? 0} asset${project.assetCount === 1 ? "" : "s"}`,
+                (project.startDate || project.endDate) &&
+                  `${formatDate(project.startDate)} → ${formatDate(project.endDate)}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
           </div>
           {sdgs.length > 0 && (
             <div className="flex flex-wrap gap-1">

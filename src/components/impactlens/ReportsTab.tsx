@@ -7,7 +7,7 @@ import {
   Copy,
   CopyPlus,
   Download,
-  History,
+  ArrowLeft,
   Megaphone,
   FileBarChart,
   FileDiff,
@@ -34,7 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EmptyState } from "@/components/impactlens/EmptyState";
 import { MarkdownRenderer } from "@/components/impactlens/MarkdownRenderer";
 import { ReportSchedules } from "@/components/impactlens/ReportSchedules";
 import { ShareDialog } from "@/components/impactlens/ShareDialog";
@@ -84,6 +83,8 @@ export function ReportsTab() {
   const reportsProjectId = useImpactStore((s) => s.reportsProjectId);
   const setReportsProjectId = useImpactStore((s) => s.setReportsProjectId);
   const reportsComparisonId = useImpactStore((s) => s.reportsComparisonId);
+  const openReportId = useImpactStore((s) => s.openReportId);
+  const setOpenReportId = useImpactStore((s) => s.setOpenReportId);
 
   const [type, setType] = React.useState<
     "impact" | "summary" | "campaign" | "comparison"
@@ -115,6 +116,14 @@ export function ReportsTab() {
       setReportsProjectId(null);
     }
   }, [reportsProjectId, setReportsProjectId]);
+
+  React.useEffect(() => {
+    if (openReportId) {
+      setActiveReportId(openReportId);
+      setResult(null);
+      setOpenReportId(null);
+    }
+  }, [openReportId, setOpenReportId]);
 
   // Comparison reports: auto-switch type
   React.useEffect(() => {
@@ -200,11 +209,11 @@ export function ReportsTab() {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
         {/* Form */}
         <Card className="gap-0 p-4 lg:col-span-2 sm:p-6">
-          <h3 className="mb-3 text-sm font-semibold text-stone-800">
-            Configure report
+          <h3 className="mb-4 text-lg font-semibold text-stone-900">
+            New report
           </h3>
 
           <div className="space-y-4">
@@ -281,10 +290,7 @@ export function ReportsTab() {
 
             <div className="space-y-1.5">
               <Label className="text-xs text-stone-500">
-                Report variants
-                <span className="ml-1.5 font-normal text-stone-400">
-                  each gets a different angle
-                </span>
+                Variants
               </Label>
               <Select
                 value={String(variantCount)}
@@ -393,82 +399,85 @@ export function ReportsTab() {
           </div>
         </Card>
 
-        {/* Result */}
-        <div className="lg:col-span-3">
+        {/* Result, or the register of past reports when nothing is open */}
+        <div className={cn("lg:col-span-3", activeReport && "order-first lg:order-none")}>
           {create.isPending && !activeReport ? (
             <Card className="p-6">
               <ReportGenerating />
             </Card>
           ) : activeReport ? (
-            <ReportView
-              report={activeReport}
-              onCopy={() => onCopy(activeReport)}
-              onDownload={() => onDownload(activeReport)}
-            />
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveReportId(null);
+                  setResult(null);
+                }}
+                className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-900"
+              >
+                <ArrowLeft className="size-3.5" /> Past reports
+              </button>
+              <ReportView
+                report={activeReport}
+                onCopy={() => onCopy(activeReport)}
+                onDownload={() => onDownload(activeReport)}
+                onShare={() => setShareOpenId(activeReport.id)}
+              />
+            </div>
           ) : (
-            <EmptyState
-              emoji="📄"
-              title="No report yet"
-              description="Pick the evidence to cite, then generate. Or open a past report below."
-            />
+            <section>
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h2 className="text-lg font-semibold text-stone-900">Past reports</h2>
+                {reportsQ.data && reportsQ.data.length > 0 && (
+                  <span className="text-sm tabular-nums text-stone-500">{reportsQ.data.length}</span>
+                )}
+              </div>
+              {reportsQ.isLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : !reportsQ.data || reportsQ.data.length === 0 ? (
+                <p className="border-y border-stone-200 py-6 text-sm text-stone-500">
+                  Pick the evidence to cite, then generate your first report.
+                </p>
+              ) : (
+                <ul className="divide-y divide-stone-200">
+                  {reportsQ.data
+                    .slice()
+                    .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+                    .map((r) => (
+                      <PastReportRow
+                        key={r.id}
+                        report={r}
+                        onOpen={() => {
+                          setActiveReportId(r.id);
+                          setResult(null);
+                        }}
+                        onClone={async () => {
+                          try {
+                            const cloned = await cloneMut.mutateAsync(r.id);
+                            toast({ title: "Report cloned", description: cloned.title });
+                            setActiveReportId(cloned.id);
+                          } catch (e) {
+                            toast({
+                              title: "Clone failed",
+                              description: e instanceof Error ? e.message : "Unknown error",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        cloning={cloneMut.isPending}
+                        onShare={() => setShareOpenId(r.id)}
+                      />
+                    ))}
+                </ul>
+              )}
+            </section>
           )}
         </div>
       </div>
-
-      {/* Past reports */}
-      <section>
-        <div className="mb-3 flex items-center gap-2">
-          <History className="size-4 text-stone-500" />
-          <h2 className="text-base font-semibold text-stone-900">
-            Past reports
-          </h2>
-        </div>
-        {reportsQ.isLoading ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 w-full rounded-xl" />
-            ))}
-          </div>
-        ) : !reportsQ.data || reportsQ.data.length === 0 ? (
-          <EmptyState
-            emoji="🗂️"
-            title="No reports yet"
-            description="Generate your first report above to see it here."
-          />
-        ) : (
-          <div className="scrollbar-thin grid max-h-96 grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
-            {reportsQ.data
-              .slice()
-              .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
-              .map((r) => (
-                <PastReportCard
-                  key={r.id}
-                  report={r}
-                  active={r.id === activeReportId}
-                  onOpen={() => {
-                    setActiveReportId(r.id);
-                    setResult(null);
-                  }}
-                  onClone={async () => {
-                    try {
-                      const cloned = await cloneMut.mutateAsync(r.id);
-                      toast({ title: "Report cloned", description: cloned.title });
-                      setActiveReportId(cloned.id);
-                    } catch (e) {
-                      toast({
-                        title: "Clone failed",
-                        description: e instanceof Error ? e.message : "Unknown error",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                  cloning={cloneMut.isPending}
-                  onShare={() => setShareOpenId(r.id)}
-                />
-              ))}
-          </div>
-        )}
-      </section>
 
       <ShareDialog
         reportId={shareOpenId}
@@ -504,10 +513,12 @@ function ReportView({
   report,
   onCopy,
   onDownload,
+  onShare,
 }: {
   report: Report;
   onCopy: () => void;
   onDownload: () => void;
+  onShare: () => void;
 }) {
   const metricsEntries = React.useMemo(() => {
     if (!report.metrics) return [];
@@ -522,10 +533,7 @@ function ReportView({
       <Card className="gap-0 p-4 sm:p-6">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className="bg-emerald-50 text-emerald-800 border-emerald-200 capitalize"
-            >
+            <Badge variant="outline" className="capitalize">
               {report.type}
             </Badge>
             {report.tone && (
@@ -538,6 +546,9 @@ function ReportView({
             </span>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onShare}>
+              <Share2 className="size-3.5" /> Share
+            </Button>
             <Button variant="outline" size="sm" onClick={onCopy}>
               <Copy className="size-3.5" /> Copy
             </Button>
@@ -559,7 +570,7 @@ function ReportView({
           {report.title}
         </h2>
         {report.headline && (
-          <p className="mt-1 text-base font-medium text-emerald-800">
+          <p className="mt-1 text-base font-medium text-stone-700">
             {report.headline}
           </p>
         )}
@@ -598,91 +609,47 @@ function ReportView({
   );
 }
 
-function PastReportCard({
+function PastReportRow({
   report,
-  active,
   onOpen,
   onClone,
   cloning,
   onShare,
 }: {
   report: Report;
-  active: boolean;
   onOpen: () => void;
-  onClone?: () => void;
-  cloning?: boolean;
-  onShare?: () => void;
+  onClone: () => void;
+  cloning: boolean;
+  onShare: () => void;
 }) {
+  const iconBtn =
+    "rounded p-1.5 text-stone-400 opacity-0 transition hover:bg-stone-100 hover:text-stone-900 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-50";
   return (
-    <Card
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      className={cn(
-        "lift-on-hover group cursor-pointer gap-0 p-4",
-        active && "ring-2 ring-emerald-500"
-      )}
-    >
-      <div className="flex items-center justify-between">
-        <Badge
-          variant="outline"
-          className="bg-emerald-50 text-emerald-800 border-emerald-200 capitalize"
-        >
-          {report.type}
-        </Badge>
-        <div className="flex items-center gap-1">
-          {onShare && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onShare();
-              }}
-              className="rounded p-1 text-stone-400 opacity-0 transition hover:bg-stone-100 hover:text-emerald-700 group-hover:opacity-100 focus-visible:opacity-100"
-              title="Share options (read-only link)"
-              aria-label="Share report"
-            >
-              <Share2 className="size-3" />
-            </button>
-          )}
-          {onClone && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onClone();
-              }}
-              disabled={cloning}
-              className="rounded p-1 text-stone-400 opacity-0 transition hover:bg-stone-100 hover:text-emerald-700 group-hover:opacity-100 disabled:opacity-50"
-              title="Clone report"
-              aria-label="Clone report"
-            >
-              {cloning ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <CopyPlus className="size-3" />
-              )}
-            </button>
-          )}
-          <span className="text-[11px] text-stone-400">{timeAgo(report.createdAt)}</span>
-        </div>
-      </div>
-      <h4 className="mt-2 line-clamp-2 text-sm font-semibold text-stone-900">
-        {report.title}
-      </h4>
-      {report.headline && (
-        <p className="mt-1 line-clamp-2 text-xs text-stone-500">
-          {report.headline}
-        </p>
-      )}
-      <p className="mt-2 line-clamp-2 text-xs text-stone-500">
-        {report.summary}
-      </p>
-    </Card>
+    <li className="group flex items-center gap-2 transition-colors">
+      <button type="button" onClick={onOpen} className="min-w-0 flex-1 py-3 text-left">
+        <span className="block truncate text-sm font-medium text-stone-900 group-hover:underline group-hover:underline-offset-4 sm:text-base">
+          {report.title}
+        </span>
+        <span className="mt-1 flex items-center gap-2 text-xs text-stone-500">
+          <span className="rounded bg-stone-100 px-1.5 py-px text-stone-600 group-hover:bg-stone-200">
+            {report.type[0].toUpperCase() + report.type.slice(1)}
+          </span>
+          <span className="tabular-nums">
+            {report.mediaIds.length === 0
+              ? "No citations"
+              : `Cites ${report.mediaIds.length} asset${report.mediaIds.length === 1 ? "" : "s"}`}
+          </span>
+          <span aria-hidden>·</span>
+          <span>{timeAgo(report.createdAt)}</span>
+        </span>
+      </button>
+      <button type="button" onClick={onShare} className={iconBtn} title="Share (read-only link)" aria-label="Share report">
+        <Share2 className="size-3.5" />
+      </button>
+      <button type="button" onClick={onClone} disabled={cloning} className={iconBtn} title="Clone report" aria-label="Clone report">
+        {cloning ? <Loader2 className="size-3.5 animate-spin" /> : <CopyPlus className="size-3.5" />}
+      </button>
+    </li>
   );
 }
 

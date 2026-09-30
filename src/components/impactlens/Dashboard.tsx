@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Header, sectionOf } from "@/components/impactlens/Header";
+import { Header, Sidebar, sectionOf } from "@/components/impactlens/Header";
 import { OverviewTab } from "@/components/impactlens/OverviewTab";
 import { LibraryTab } from "@/components/impactlens/LibraryTab";
 import { ProjectsTab } from "@/components/impactlens/ProjectsTab";
@@ -23,15 +23,20 @@ export function Dashboard() {
   const setTab = useImpactStore((s) => s.setTab);
   const section = sectionOf(activeTab);
   const view = section.views.find((v) => v.id === activeTab)!;
+  // A view switch is a page change: start it at the top, not at the last view's scroll.
+  React.useEffect(() => {
+    if (window.scrollY > 0) window.scrollTo({ top: 0 });
+  }, [activeTab]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-stone-50 text-stone-900">
+    <div className="min-h-screen bg-stone-50 text-stone-900 lg:pl-60">
+      <Sidebar />
       <Header />
-      <main className="flex-1">
-        <div className="mx-auto w-full max-w-7xl px-4 pb-16 pt-6 sm:px-6">
+      <main>
+        <div className="mx-auto w-full max-w-[1440px] px-4 pb-20 pt-6 sm:px-6 lg:px-10 lg:pt-8">
           {section.views.length > 1 && (
-            <div className="mb-6 flex items-end gap-6 border-b border-stone-200">
-              <h1 className="pb-2.5 text-xl font-semibold tracking-tight text-stone-900">
+            <div className="mb-8 flex flex-wrap items-end gap-x-8 gap-y-3 border-b border-stone-200">
+              <h1 className="pb-3 text-2xl font-semibold tracking-tight text-stone-900">
                 {section.label}
               </h1>
               <div role="tablist" aria-label={`${section.label} views`} className="flex gap-1 overflow-x-auto [scrollbar-width:none]">
@@ -43,9 +48,9 @@ export function Dashboard() {
                     aria-selected={v.id === activeTab}
                     onClick={() => setTab(v.id)}
                     className={cn(
-                      "-mb-px whitespace-nowrap border-b-2 px-2.5 pb-2.5 pt-1 text-sm transition-colors",
+                      "-mb-px whitespace-nowrap border-b-2 px-3 pb-3 pt-1 text-sm transition-colors",
                       v.id === activeTab
-                        ? "border-stone-900 font-medium text-stone-900"
+                        ? "border-emerald-600 font-medium text-stone-900"
                         : "border-transparent text-stone-500 hover:text-stone-900"
                     )}
                   >

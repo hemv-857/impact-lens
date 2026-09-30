@@ -46,11 +46,11 @@ export const metadata: Metadata = {
 };
 
 const CONTRACT = `<!--
-THESIS: every field photo is an accessioned piece of evidence: numbered, provenanced, verified, citable. Refuses the KPI-card dashboard.
-OWN-WORLD: accession register. Cool archival neutrals, ink #16201c, archive-box blue-grey, one commit colour (field green #1f6b4a). Ruled ledger rows, mono accession numbers, tabular figures, state as marks (stamp tick / ring / dashed ring).
-STORY: open, see what awaits review, verify or analyze, move to projects or draft a report from verified evidence.
-FIRST VIEWPORT: Home: five-figure tally strip; left 8/12 review queue as ledger rows (thumb, title, A-number, confidence, mark, action); right 4/12 active projects and latest reports. Add media is the one green button in the header.
-FORM: Accession Register, candidate 7 of 7, seed a4e4674a.
+THESIS: a dark field register where the evidence leads: the org's own verified photos carry the first viewport, and the next item to review gets the most space. Refuses the icon-KPI-card dashboard.
+OWN-WORLD: warm near-black ground (#14110e), tonal panels a step up (#1b1714) with hairline edges, bone text, one ember accent (#ef8a4a, near-black text on it) for commit actions, selection and the verified stamp. Public Sans, mono only for accession numbers. Light theme derived from the same tokens.
+STORY: open, read one sentence of state, verify the featured asset, then move to projects or draft a report from verified evidence.
+FIRST VIEWPORT: Home: left rail nav with review count; photo hero with the state sentence and four totals; below, an 8/12 review panel led by a large featured asset with Verify, and a 4/12 aside of projects (verified share) and latest reports. Add media is the one ember button in the top bar.
+FORM: Field Register (dark), brief-pinned by the user's reference; supersedes seed a4e4674a.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 -->`;
 
@@ -62,7 +62,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${publicSans.variable} ${geistMono.variable} antialiased bg-stone-50 text-stone-900`}
+        className={`${publicSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <div hidden dangerouslySetInnerHTML={{ __html: CONTRACT }} />
         <Providers>{children}</Providers>
