@@ -1,5 +1,7 @@
 # ImpactLens
 
+<a href="https://github.com/hemv-857/impact-lens/actions/workflows/ci.yml"><img src="https://github.com/hemv-857/impact-lens/actions/workflows/ci.yml/badge.svg" alt="impact-lens CI"></a> <a href="https://github.com/hemv-857/impact-lens/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a> <img src="https://img.shields.io/badge/TypeScript-3178C6.svg" alt="TypeScript">
+
 ImpactLens is a media platform for impact and sustainability organizations. Teams upload photos and videos from the field, and the AI writes captions, adds tags, and records the signals it found along with a confidence score. From there you can group media by project, compare before and after shots, search in plain language, and generate impact reports and campaign content.
 
 ## Demo
@@ -142,3 +144,7 @@ Video analysis needs `ffmpeg` on the PATH. Vercel doesn't provide it, so video u
 - `GET /api/health` is an unauthenticated liveness and database probe. It returns 200 `ok` or 503 `unavailable`.
 - When the AI provider fails, search falls back to keyword ranking and returns `degraded: true`. AI output that isn't valid JSON is rejected and never stored as a result.
 - Cloudinary uploads keep the untouched original in `originalUrl`, read the capture date from EXIF, and show 640 px previews in grids.
+
+## License
+
+[LICENSE](https://github.com/hemv-857/impact-lens/blob/main/LICENSE) — see the file for the full text.
