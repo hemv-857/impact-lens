@@ -145,6 +145,10 @@ Video analysis needs `ffmpeg` on the PATH. Vercel doesn't provide it, so video u
 - When the AI provider fails, search falls back to keyword ranking and returns `degraded: true`. AI output that isn't valid JSON is rejected and never stored as a result.
 - Cloudinary uploads keep the untouched original in `originalUrl`, read the capture date from EXIF, and show 640 px previews in grids.
 
-## License
+## Contributing
 
-[LICENSE](https://github.com/hemv-857/impact-lens/blob/main/LICENSE) — see the file for the full text.
+Open a PR. CI runs on every push and pull request and must be green before merge ([workflow](.github/workflows/ci.yml)).
+
+Keep commits conventional — `type: description`.
+
+#
